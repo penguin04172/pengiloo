@@ -17,6 +17,9 @@ class Team(BaseModel):
     has_connected: bool | None = None
     fta_notes: str | None = None
 
+    class Config:
+        orm_mode = True
+
 class TeamDB(db.Entity):
     id = PrimaryKey(int, auto=False)
     name = Optional(str)

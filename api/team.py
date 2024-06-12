@@ -4,7 +4,8 @@ from pony.orm import db_session
 from models.team import *
 
 router = APIRouter(
-    prefix="/api/team"
+    prefix="/api/team",
+    tags=["teams"]
 )
 
 @router.get("/")
