@@ -1,6 +1,4 @@
 from fastapi import APIRouter, HTTPException, status
-from pony.orm import db_session
-
 from models.team import *
 
 router = APIRouter(
