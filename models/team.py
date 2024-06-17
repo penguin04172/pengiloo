@@ -18,7 +18,7 @@ class Team(BaseModel):
     fta_notes: str | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TeamDB(db.Entity):
     id = PrimaryKey(int, auto=False)
@@ -37,29 +37,35 @@ class TeamDB(db.Entity):
 
 @db_session
 def read_all_teams():
-    return list(TeamDB.select())
+    return [Team(**t.to_dict()) for t in TeamDB.select()]
 
 @db_session
 def read_team_by_id(id: int):
-    return TeamDB[id].to_dict()
+    team = TeamDB.get(id=id)
+    if team is None:
+        return None
+    
+    return Team(**team.to_dict())
 
 @db_session
 def create_team(team: Team):
     if TeamDB.get(id=team.id) is not None:
         return None
     team = TeamDB(**team.model_dump(exclude_none=True))
-    return team.to_dict()
+    return Team(**team.to_dict())
 
 @db_session
 def update_team(team: Team):
-    TeamDB[team.id].set(**team.model_dump(exclude_none=True))
-    return TeamDB[team.id].to_dict()
+    team_db = TeamDB.get(id=team.id)
+    if team_db is None:
+        return None
+    team_db.set(**team.model_dump(exclude_none=True))
+    return Team(**team_db.to_dict())
 
 @db_session
 def delete_team(id: int):
     TeamDB[id].delete()
 
-@db_session
 def truncate_teams():
-    db.drop_table(table_name=str(TeamDB), with_all_data=True)
+    db.drop_table(table_name=TeamDB._table_, with_all_data=True)
     db.create_tables()
