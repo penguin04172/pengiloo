@@ -1,11 +1,11 @@
 from pony.orm import *
 from pydantic import BaseModel
-from enum import Enum
+from enum import IntEnum
 from .database import db
 from game.match_timing import match_timing
 from game.score import game_specific
 
-class PLAYOFF_TYPE(Enum):
+class PLAYOFF_TYPE(IntEnum):
     double_elimination = 0
     single_elimination = 1
 
@@ -46,6 +46,9 @@ class Event(BaseModel):
     melody_bonus_threshold_with_coop: int | None = None
     amplification_note_limit: int | None = None
     amplification_duration_sec: int | None = None
+    
+    class Config:
+        from_attributes = True
 
 class EventDB(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -53,7 +56,7 @@ class EventDB(db.Entity):
     playoff_type = Required(int, default=PLAYOFF_TYPE.double_elimination)
     num_playoff_alliance = Required(int, default=8)
     selection_round_2_order = Required(str, default="L")
-    selection_round_3_order = Required(str, default="")
+    selection_round_3_order = Optional(str)
     tba_download_enabled = Required(bool, default=True)
     tba_publishing_enabled = Required(bool, default=False)
     tba_event_code = Optional(str)
@@ -88,16 +91,16 @@ class EventDB(db.Entity):
 
 @db_session
 def read_event_settings():
-    all_event_settings = list(EventDB.select())
+    all_event_settings = EventDB.select()
 
     if len(all_event_settings) == 1:
-        return all_event_settings[0]
+        return Event(**all_event_settings.first().to_dict())
     
     event_settings = EventDB()
-    return event_settings.to_dict()
+    return Event(**event_settings.to_dict())
 
 @db_session
 def update_event_settings(event_settings: Event):
     event = EventDB.select().first()
     event.set(**event_settings.model_dump(exclude_none=True))
-    return event.to_dict()
+    return Event(**event.to_dict())
