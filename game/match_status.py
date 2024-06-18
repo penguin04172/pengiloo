@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class MATCH_STATUS(Enum):
+class MATCH_STATUS(IntEnum):
     match_scheduled = 0
     match_hidden = 1
     red_won_match = 2
