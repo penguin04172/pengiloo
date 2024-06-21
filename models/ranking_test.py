@@ -1,6 +1,7 @@
 import unittest
 from .database import db
 from .ranking import *
+from game.ranking import Ranking, RankingField
 
 class TeamTest(unittest.TestCase):
     @classmethod
@@ -68,7 +69,7 @@ class TeamTest(unittest.TestCase):
         ranking_2 = read_ranking_for_team(7641)
         self.assertEqual(ranking_1, ranking_2)
 
-        ranking_1.random = 0.1234
+        ranking_1.fields.random = 0.1234
         update_ranking(ranking_1)
         ranking_2 = read_ranking_for_team(7641)
         self.assertEqual(ranking_1, ranking_2)
@@ -82,10 +83,10 @@ class TeamTest(unittest.TestCase):
 
     def test_read_all_rankings(self):
         rankings = read_all_rankings()
-        self.assertIsNone(rankings)
+        self.assertEqual(len(rankings), 0)
 
         for i in range(20):
-            create_ranking(Ranking(team_id=i, rank=i))
+            create_ranking(Ranking(team_id=i+1, rank=i))
         
         rankings = read_all_rankings()
         self.assertEqual(20, len(rankings))
