@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict
 from datetime import timedelta
 from .game_specific import game_specific, TIME_CONSTANT
@@ -12,8 +12,8 @@ class AmpSpeaker(BaseModel):
     auto_speaker_notes: int = 0
     teleop_unamplified_speaker_notes: int = 0
     teleop_amplified_speaker_notes: int = 0
-    last_amplified_time: timedelta = timedelta()
-    last_amplified_speaker_notes: int = 0
+    last_amplified_time: timedelta = Field(timedelta(), exclude=True)
+    last_amplified_speaker_notes: int = Field(0, exclude=0)
 
     def update_state(self, amp_note_count: int, speaker_note_count: int, amplify_button: bool, coop_button: bool, match_start_time: timedelta, current_time: timedelta):
         new_amp_notes = amp_note_count - self.amp_notes_scored()
