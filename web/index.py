@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
-@router.get("/")
+
+@router.get('/')
 async def get_index():
-    return {"message": "Hello World"}
+	return {'message': 'Hello World'}
