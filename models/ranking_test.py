@@ -1,7 +1,15 @@
 import unittest
-from .database import db
-from .ranking import *
+
 from game.ranking import Ranking, RankingField
+
+from .database import db
+from .ranking import (
+	create_ranking,
+	read_all_rankings,
+	read_ranking_for_team,
+	truncate_ranking,
+	update_ranking,
+)
 
 
 class TeamTest(unittest.TestCase):
@@ -77,7 +85,7 @@ class TeamTest(unittest.TestCase):
 
 	def test_truncate_rankings(self):
 		ranking_ex = self.ranking_1()
-		ranking_1 = create_ranking(ranking_ex)
+		create_ranking(ranking_ex)
 		truncate_ranking()
 		ranking_2 = read_ranking_for_team(7641)
 		self.assertIsNone(ranking_2)

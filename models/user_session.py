@@ -1,7 +1,9 @@
-from pony.orm import *
-from pydantic import BaseModel
-from .database import db
 from datetime import datetime
+
+from pony.orm import Optional, PrimaryKey, Required, db_session
+from pydantic import BaseModel
+
+from .database import db
 
 
 class UserSession(BaseModel):

@@ -1,7 +1,8 @@
-from pydantic import BaseModel
 import random
+
+from pydantic import BaseModel
+
 from .match_status import ScoreSummary
-from typing import List
 
 
 class RankingField(BaseModel):
@@ -99,7 +100,7 @@ class Ranking(BaseModel):
 		)
 
 
-class Rankings(List[Ranking]):
+class Rankings(list[Ranking]):
 	def len(self) -> int:
 		return len(self)
 

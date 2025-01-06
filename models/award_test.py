@@ -1,6 +1,18 @@
 import unittest
+
+from models.award import (
+	Award,
+	AwardType,
+	create_award,
+	delete_award,
+	read_all_awards,
+	read_award_by_id,
+	read_awards_by_type,
+	truncate_awards,
+	update_award,
+)
+
 from .database import db
-from .award import *
 
 
 class TestAlliance(unittest.TestCase):

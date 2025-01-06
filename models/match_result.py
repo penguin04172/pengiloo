@@ -1,9 +1,10 @@
-from pony.orm import *
+from pony.orm import Json, Optional, PrimaryKey, Required, db_session, desc
 from pydantic import BaseModel
-from typing import List, Dict
+
+from game.score import Score
+
 from .database import db
 from .match import MATCH_TYPE
-from game.score import Score
 
 
 class MatchResult(BaseModel):
@@ -13,8 +14,8 @@ class MatchResult(BaseModel):
 	match_type: MATCH_TYPE
 	red_score: Score = Score()
 	blue_score: Score = Score()
-	red_cards: Dict[str, str] = {}
-	blue_cards: Dict[str, str] = {}
+	red_cards: dict[str, str] = {}
+	blue_cards: dict[str, str] = {}
 
 	class Config:
 		from_attributes = True

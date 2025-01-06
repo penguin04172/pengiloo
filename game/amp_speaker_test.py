@@ -1,7 +1,8 @@
 import unittest
+from datetime import timedelta
+
 from .amp_speaker import AmpSpeaker
 from .game_specific import game_specific
-from datetime import timedelta
 
 match_start_time = timedelta()
 

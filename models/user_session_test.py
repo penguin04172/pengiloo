@@ -1,7 +1,14 @@
 import unittest
-from .database import db
-from .user_session import *
 from datetime import datetime
+
+from .database import db
+from .user_session import (
+	UserSession,
+	create_user_session,
+	delete_user_session,
+	read_user_session_by_token,
+	truncate_user_sessions,
+)
 
 
 class TeamTest(unittest.TestCase):
@@ -25,7 +32,7 @@ class TeamTest(unittest.TestCase):
 			**{'id': 0, 'token': 'token1', 'user_name': 'Pengu', 'created_at': datetime.now()}
 		)
 
-		user_session1 = create_user_session(user_session)
+		create_user_session(user_session)
 		user_session2 = read_user_session_by_token(user_session.token)
 		self.assertEqual(user_session.token, user_session2.token)
 		self.assertEqual(user_session.user_name, user_session2.user_name)

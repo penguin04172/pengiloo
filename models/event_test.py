@@ -1,6 +1,7 @@
 import unittest
+
 from .database import db
-from .event import *
+from .event import PLAYOFF_TYPE, Event, read_event_settings, update_event_settings
 
 
 class EventTest(unittest.TestCase):

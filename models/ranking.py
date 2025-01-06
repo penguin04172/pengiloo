@@ -1,7 +1,8 @@
-from pony.orm import *
-from typing import List
-from .database import db
+from pony.orm import Json, Optional, PrimaryKey, db_session
+
 from game.ranking import Ranking
+
+from .database import db
 
 
 class RankingDB(db.Entity):
@@ -52,7 +53,7 @@ def read_all_rankings():
 	return [Ranking(**rank.to_dict()) for rank in rankings]
 
 
-def replace_all_rankings(rankings: List[Ranking]):
+def replace_all_rankings(rankings: list[Ranking]):
 	truncate_ranking()
 
 	for rank in rankings:

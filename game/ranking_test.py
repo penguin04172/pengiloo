@@ -1,7 +1,8 @@
-import unittest
-from .ranking import *
-from .match_status import ScoreSummary
 import random
+import unittest
+
+from .match_status import ScoreSummary
+from .ranking import *
 
 
 class TestRanking(unittest.TestCase):

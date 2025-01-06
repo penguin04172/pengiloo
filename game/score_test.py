@@ -1,8 +1,8 @@
 import unittest
-from .score import *
-from .game_specific import GameSpecific
-from .foul import Foul
+
 from .amp_speaker import AmpSpeaker
+from .foul import Foul
+from .score import *
 
 
 class ScoreTest(unittest.TestCase):

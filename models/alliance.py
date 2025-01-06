@@ -1,8 +1,8 @@
+from pony.orm import IntArray, Optional, PrimaryKey, db_session
 from pydantic import BaseModel
-from typing import List
-from pony.orm import *
+
 from .database import db
-from .match import Match, MATCH_TYPE
+from .match import Match
 
 
 class AllianceSelectionRankedTeam(BaseModel):
@@ -13,8 +13,8 @@ class AllianceSelectionRankedTeam(BaseModel):
 
 class Alliance(BaseModel):
 	id: int
-	team_ids: List[int]
-	line_up: List[int] = [0] * 3
+	team_ids: list[int]
+	line_up: list[int] = [0] * 3
 
 
 class AllianceDB(db.Entity):
@@ -65,7 +65,7 @@ def read_all_alliances():
 
 
 @db_session
-def update_alliance_from_match(alliance_id: int, match_team_ids: List[int]):
+def update_alliance_from_match(alliance_id: int, match_team_ids: list[int]):
 	alliance = read_alliance_by_id(alliance_id)
 	if alliance is None:
 		return None

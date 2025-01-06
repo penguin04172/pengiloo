@@ -1,9 +1,12 @@
-from pony.orm import *
-from pydantic import BaseModel
-from enum import IntEnum
 from datetime import datetime
-from .database import db
+from enum import IntEnum
+
+from pony.orm import Json, Optional, PrimaryKey, Required, db_session
+from pydantic import BaseModel
+
 from game.match_status import MATCH_STATUS
+
+from .database import db
 
 
 class MATCH_TYPE(IntEnum):

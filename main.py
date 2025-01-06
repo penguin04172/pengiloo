@@ -1,7 +1,7 @@
 import fastapi
-from models.database import db
 
-from api import match, team, event
+from api import event, match, team
+from models.database import db
 from web import index
 
 app = fastapi.FastAPI()

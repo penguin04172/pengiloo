@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from .rule import Rule, get_rule_by_id
 
 

@@ -1,5 +1,6 @@
+from pony.orm import Optional, PrimaryKey, db_session
 from pydantic import BaseModel
-from pony.orm import *
+
 from .database import db
 
 

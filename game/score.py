@@ -1,10 +1,11 @@
-from pydantic import BaseModel
-from typing import List, Dict
 from enum import IntEnum
+
+from pydantic import BaseModel
+
 from .amp_speaker import AmpSpeaker
 from .foul import Foul
-from .match_status import ScoreSummary
 from .game_specific import game_specific
+from .match_status import ScoreSummary
 
 
 class ENDGAME_STATUS(IntEnum):
@@ -22,12 +23,12 @@ class STAGE_POSITION(IntEnum):
 
 
 class Score(BaseModel):
-	leave_statuses: List[bool] = [False] * 3
+	leave_statuses: list[bool] = [False] * 3
 	amp_speaker: AmpSpeaker = AmpSpeaker()
-	endgame_statuses: List[ENDGAME_STATUS] = [ENDGAME_STATUS.none] * 3
-	microphone_statuses: List[bool] = [False] * 3
-	trap_statuses: List[bool] = [False] * 3
-	fouls: List[Foul] = []
+	endgame_statuses: list[ENDGAME_STATUS] = [ENDGAME_STATUS.none] * 3
+	microphone_statuses: list[bool] = [False] * 3
+	trap_statuses: list[bool] = [False] * 3
+	fouls: list[Foul] = []
 	playoff_dq: bool = False
 
 	def summarize(self, opponentScore: 'Score') -> ScoreSummary:

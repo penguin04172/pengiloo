@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
+
 from models.event import *
 
 router = APIRouter(prefix='/api/event', tags=['event_settings'])

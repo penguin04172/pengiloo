@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import List, Dict
 from datetime import timedelta
-from .game_specific import game_specific, TIME_CONSTANT
+
+from pydantic import BaseModel, Field
+
 from . import match_timing
+from .game_specific import TIME_CONSTANT, game_specific
 
 
 class AmpSpeaker(BaseModel):

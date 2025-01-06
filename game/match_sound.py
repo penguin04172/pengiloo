@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel
-from typing import List
+
 from .match_timing import match_timing
 
 
@@ -9,7 +10,7 @@ class MatchSound(BaseModel):
 	match_time_sec: float
 
 
-match_sounds: List[MatchSound]
+match_sounds: list[MatchSound]
 
 
 def update_match_sounds():

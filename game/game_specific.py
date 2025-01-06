@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from enum import IntEnum
+
+from pydantic import BaseModel
 
 
 class TIME_CONSTANT(IntEnum):

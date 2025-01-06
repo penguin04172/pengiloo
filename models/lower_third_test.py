@@ -1,6 +1,17 @@
 import unittest
+
 from .database import db
-from .lower_third import *
+from .lower_third import (
+	LowerThird,
+	create_lower_third,
+	delete_lower_third,
+	read_all_lower_thirds,
+	read_lower_third_by_award_id,
+	read_lower_third_by_id,
+	read_next_lower_third_display_order,
+	truncate_lower_thirds,
+	update_lower_third,
+)
 
 
 class TeamTest(unittest.TestCase):
@@ -46,7 +57,7 @@ class TeamTest(unittest.TestCase):
 		self.assertIsNone(lower_third_2)
 
 	def test_truncate_lower_thirds(self):
-		lower_third = create_lower_third(
+		create_lower_third(
 			LowerThird(top_text='Top Text', bottom_text='Bottom Text', display_order=0)
 		)
 		truncate_lower_thirds()
@@ -56,7 +67,7 @@ class TeamTest(unittest.TestCase):
 	def test_read_lower_third_by_award_id(self):
 		next_display_order = read_next_lower_third_display_order()
 		self.assertEqual(1, next_display_order)
-		lower_third_1 = create_lower_third(
+		create_lower_third(
 			LowerThird(top_text='Top Text', bottom_text='Bottom Text', display_order=1)
 		)
 		lower_third_2 = create_lower_third(

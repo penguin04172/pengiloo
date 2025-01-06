@@ -1,7 +1,18 @@
 import unittest
+
+from .alliance import (
+	Alliance,
+	create_alliance,
+	delete_alliance,
+	read_all_alliances,
+	read_alliance_by_id,
+	read_off_field_team_ids,
+	truncate_alliance,
+	update_alliance,
+	update_alliance_from_match,
+)
 from .database import db
-from .alliance import *
-from .match import Match, MATCH_TYPE
+from .match import MATCH_TYPE, Match
 
 
 class TestAlliance(unittest.TestCase):
@@ -48,13 +59,13 @@ class TestAlliance(unittest.TestCase):
 	def test_update_alliance_from_match(self):
 		alliance_ex = Alliance(id=3, team_ids=[7641, 6998, 8121, 8790], line_up=[8121, 7641, 6998])
 		create_alliance(alliance_ex)
-		alliance_1 = update_alliance_from_match(3, [8790, 6083, 8121])
+		update_alliance_from_match(3, [8790, 6083, 8121])
 		alliance_2 = read_alliance_by_id(3)
 		self.assertEqual([7641, 6998, 8121, 8790, 6083], alliance_2.team_ids)
 		self.assertEqual([8790, 6083, 8121], alliance_2.line_up)
 
 	def test_trunate_alliance_teams(self):
-		alliance_ex = Alliance(id=1, team_ids=[7641, 6998, 8121, 8790], line_up=[8121, 7641, 6998])
+		Alliance(id=1, team_ids=[7641, 6998, 8121, 8790], line_up=[8121, 7641, 6998])
 		truncate_alliance()
 		alliance_2 = read_alliance_by_id(1)
 		self.assertIsNone(alliance_2)

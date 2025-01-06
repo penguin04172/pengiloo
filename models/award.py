@@ -1,6 +1,8 @@
-from pony.orm import *
-from pydantic import BaseModel
 from enum import IntEnum
+
+from pony.orm import Optional, PrimaryKey, Required, db_session
+from pydantic import BaseModel
+
 from .database import db
 
 

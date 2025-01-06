@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
+
 from models.team import *
 
 router = APIRouter(prefix='/api/team', tags=['teams'])

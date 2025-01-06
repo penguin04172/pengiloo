@@ -1,5 +1,5 @@
+
 from pydantic import BaseModel
-from typing import Dict
 
 
 class Rule(BaseModel):
@@ -235,7 +235,7 @@ def get_rule_by_id(id: int) -> Rule:
 	return get_all_rules().get(id)
 
 
-def get_all_rules() -> Dict[int, Rule]:
+def get_all_rules() -> dict[int, Rule]:
 	if rule_map == {}:
 		for rule in rules:
 			rule_map[rule[0]] = Rule(

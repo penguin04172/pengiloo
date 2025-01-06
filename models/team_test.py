@@ -1,6 +1,15 @@
 import unittest
+
 from .database import db
-from .team import *
+from .team import (
+	Team,
+	create_team,
+	delete_team,
+	read_all_teams,
+	read_team_by_id,
+	truncate_teams,
+	update_team,
+)
 
 
 class TeamTest(unittest.TestCase):

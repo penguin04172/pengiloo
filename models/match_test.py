@@ -1,7 +1,20 @@
 import unittest
-from .database import db
-from .match import *
 from datetime import datetime
+
+from .database import db
+from .match import (
+	MATCH_STATUS,
+	MATCH_TYPE,
+	Match,
+	TbaMatchKey,
+	create_match,
+	delete_match,
+	read_match_by_id,
+	read_match_by_type_order,
+	read_matches_by_type,
+	truncate_matches,
+	update_match,
+)
 
 
 class MatchTest(unittest.TestCase):
@@ -71,7 +84,7 @@ class MatchTest(unittest.TestCase):
 			blue2=5,
 			blue3=6,
 		)
-		match = create_match(match_ex)
+		create_match(match_ex)
 		truncate_matches()
 		match_2 = read_match_by_id(1)
 		self.assertIsNone(match_2)

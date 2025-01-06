@@ -1,9 +1,19 @@
 import unittest
-from .database import db
-from .match_result import *
-from game.foul import Foul
+
 from game.amp_speaker import AmpSpeaker
-from game.score import Score, ENDGAME_STATUS
+from game.foul import Foul
+from game.score import ENDGAME_STATUS, Score
+
+from .database import db
+from .match_result import (
+	MATCH_TYPE,
+	MatchResult,
+	create_match_result,
+	delete_match_result,
+	read_match_result_for_match,
+	truncate_match_results,
+	update_match_result,
+)
 
 
 class MatchResultTest(unittest.TestCase):
@@ -103,15 +113,15 @@ class MatchResultTest(unittest.TestCase):
 		self.assertIsNone(match_result_2)
 
 	def test_truncate_match_results(self):
-		match_result = create_match_result(self.build_test_match_result(7641, 1))
+		create_match_result(self.build_test_match_result(7641, 1))
 		truncate_match_results()
 		match_result_2 = read_match_result_for_match(7641)
 		self.assertIsNone(match_result_2)
 
 	def test_read_match_result_for_match(self):
-		match_result_1 = create_match_result(self.build_test_match_result(7641, 2))
+		create_match_result(self.build_test_match_result(7641, 2))
 		match_result_2 = create_match_result(self.build_test_match_result(7641, 5))
-		match_result_3 = create_match_result(self.build_test_match_result(7641, 4))
+		create_match_result(self.build_test_match_result(7641, 4))
 
 		match_result_4 = read_match_result_for_match(7641)
 		self.assertEqual(match_result_2, match_result_4)

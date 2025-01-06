@@ -1,9 +1,12 @@
-from pony.orm import *
-from pydantic import BaseModel
 from enum import IntEnum
-from .database import db
+
+from pony.orm import Optional, PrimaryKey, Required, db_session
+from pydantic import BaseModel
+
 from game.match_timing import match_timing
 from game.score import game_specific
+
+from .database import db
 
 
 class PLAYOFF_TYPE(IntEnum):
