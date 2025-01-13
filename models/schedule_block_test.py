@@ -1,5 +1,5 @@
 import unittest
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from .base import db
 from .match import MATCH_TYPE
