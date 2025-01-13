@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 ruff.toml
+.ruff_cache/
+matchmaker/
