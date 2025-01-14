@@ -1,4 +1,6 @@
 from .alliance import (
+    Alliance,
+    AllianceSelectionRankedTeam,
     create_alliance,
     delete_alliance,
     read_all_alliances,
@@ -10,6 +12,8 @@ from .alliance import (
     update_alliance_from_match,
 )
 from .award import (
+    Award,
+    AwardType,
     create_award,
     delete_award,
     read_all_awards,
@@ -18,8 +22,9 @@ from .award import (
     truncate_awards,
     update_award,
 )
-from .event import read_event_settings, update_event_settings
+from .event import Event, read_event_settings, update_event_settings
 from .lower_third import (
+    LowerThird,
     create_lower_third,
     delete_lower_third,
     read_all_lower_thirds,
@@ -30,6 +35,10 @@ from .lower_third import (
     update_lower_third,
 )
 from .match import (
+    MATCH_TYPE,
+    Match,
+    MatchOut,
+    TbaMatchKey,
     create_match,
     delete_match,
     read_all_matches,
@@ -40,6 +49,7 @@ from .match import (
     update_match,
 )
 from .match_result import (
+    MatchResult,
     create_match_result,
     delete_match_result,
     read_match_result_for_match,
@@ -47,6 +57,7 @@ from .match_result import (
     update_match_result,
 )
 from .ranking import (
+    Ranking,
     create_ranking,
     delete_ranking,
     read_all_rankings,
@@ -55,7 +66,25 @@ from .ranking import (
     truncate_ranking,
     update_ranking,
 )
+from .schedule_block import (
+    ScheduleBlock,
+    create_schedule_block,
+    delete_schedule_block_by_match_type,
+    read_schedule_blocks_by_match_type,
+    truncate_schedule_blocks,
+)
+from .scheduled_break import (
+    ScheduledBreak,
+    create_scheduled_break,
+    delete_scheduled_breaks_by_match_type,
+    read_scheduled_break_by_id,
+    read_scheduled_break_by_match_type_order,
+    read_scheduled_breaks_by_match_type,
+    truncate_scheduled_breaks,
+    update_scheduled_break,
+)
 from .team import (
+    Team,
     create_team,
     delete_team,
     read_all_teams,
@@ -64,8 +93,11 @@ from .team import (
     update_team,
 )
 from .user_session import (
+    UserSession,
     create_user_session,
     delete_user_session,
     read_user_session_by_token,
     truncate_user_sessions,
 )
+
+BASE_DIR = '.'
