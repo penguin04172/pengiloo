@@ -194,7 +194,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=4,
                 rx_rate=1,
                 tx_rate=2,
-                signal_noise_radio=3,
+                signal_noise_ratio=3,
             ),
         )
         self.assertEqual(
@@ -205,7 +205,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=8,
                 rx_rate=5,
                 tx_rate=6,
-                signal_noise_radio=7,
+                signal_noise_ratio=7,
             ),
         )
         self.assertEqual(
@@ -216,7 +216,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=12,
                 rx_rate=9,
                 tx_rate=10,
-                signal_noise_radio=11,
+                signal_noise_ratio=11,
             ),
         )
         self.assertEqual(
@@ -227,7 +227,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=16,
                 rx_rate=13,
                 tx_rate=14,
-                signal_noise_radio=15,
+                signal_noise_ratio=15,
             ),
         )
         self.assertEqual(
@@ -238,7 +238,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=20,
                 rx_rate=17,
                 tx_rate=18,
-                signal_noise_radio=19,
+                signal_noise_ratio=19,
             ),
         )
         self.assertEqual(
@@ -249,7 +249,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=24,
                 rx_rate=21,
                 tx_rate=22,
-                signal_noise_radio=23,
+                signal_noise_ratio=23,
             ),
         )
 
@@ -292,7 +292,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=12,
                 rx_rate=9,
                 tx_rate=10,
-                signal_noise_radio=11,
+                signal_noise_ratio=11,
             ),
         )
         self.assertEqual(wifi_status[3], TeamWifiStatus())
@@ -304,7 +304,7 @@ class AccessPointTest(unittest.IsolatedAsyncioTestCase):
                 mbits=20,
                 rx_rate=17,
                 tx_rate=18,
-                signal_noise_radio=19,
+                signal_noise_ratio=19,
             ),
         )
         self.assertEqual(wifi_status[5], TeamWifiStatus())

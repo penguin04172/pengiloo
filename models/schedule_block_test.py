@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from .base import db
-from .match import MATCH_TYPE
+from .match import MatchType
 from .schedule_block import (
     ScheduleBlock,
     create_schedule_block,
@@ -30,7 +30,7 @@ class TestScheduleBlock(unittest.TestCase):
 
     def test_schedule_block_crud(self):
         schedule_block1 = ScheduleBlock(
-            match_type=MATCH_TYPE.pratice,
+            match_type=MatchType.PRATICE,
             start_time=datetime.now(),
             num_matches=10,
             match_spacing_sec=600,
@@ -38,7 +38,7 @@ class TestScheduleBlock(unittest.TestCase):
         schedule_block1 = create_schedule_block(schedule_block1)
 
         schedule_block2 = ScheduleBlock(
-            match_type=MATCH_TYPE.qualification,
+            match_type=MatchType.QUALIFICATION,
             start_time=datetime.now(),
             num_matches=20,
             match_spacing_sec=480,
@@ -46,29 +46,29 @@ class TestScheduleBlock(unittest.TestCase):
         schedule_block2 = create_schedule_block(schedule_block2)
 
         schedule_block3 = ScheduleBlock(
-            match_type=MATCH_TYPE.qualification,
+            match_type=MatchType.QUALIFICATION,
             start_time=schedule_block2.start_time + timedelta(seconds=20 * 480),
             num_matches=20,
             match_spacing_sec=480,
         )
         schedule_block3 = create_schedule_block(schedule_block3)
 
-        blocks = read_schedule_blocks_by_match_type(MATCH_TYPE.pratice)
+        blocks = read_schedule_blocks_by_match_type(MatchType.PRATICE)
         self.assertEqual(len(blocks), 1)
         self.assertEqual(blocks[0], schedule_block1)
 
-        blocks = read_schedule_blocks_by_match_type(MATCH_TYPE.qualification)
+        blocks = read_schedule_blocks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(blocks), 2)
         self.assertEqual(blocks[0], schedule_block2)
         self.assertEqual(blocks[1], schedule_block3)
 
-        delete_schedule_block_by_match_type(MATCH_TYPE.pratice)
-        blocks = read_schedule_blocks_by_match_type(MATCH_TYPE.pratice)
+        delete_schedule_block_by_match_type(MatchType.PRATICE)
+        blocks = read_schedule_blocks_by_match_type(MatchType.PRATICE)
         self.assertEqual(len(blocks), 0)
 
-        blocks = read_schedule_blocks_by_match_type(MATCH_TYPE.qualification)
+        blocks = read_schedule_blocks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(blocks), 2)
 
         truncate_schedule_blocks()
-        blocks = read_schedule_blocks_by_match_type(MATCH_TYPE.qualification)
+        blocks = read_schedule_blocks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(blocks), 0)

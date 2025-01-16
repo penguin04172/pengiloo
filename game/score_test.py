@@ -2,15 +2,17 @@ import unittest
 
 from .amp_speaker import AmpSpeaker
 from .foul import Foul
-from .score import *
+from .game_specific import specific
+from .score import EndgameStatus, Score
+from .test_helper import score_1, score_2
 
 
 class ScoreTest(unittest.TestCase):
     def test_score_summary(self):
-        game_specific.melody_bouns_threshold_without_coop = 18
-        game_specific.melody_bonus_threshold_with_coop = 15
-        red_score = self.score_1()
-        blue_score = self.score_2()
+        specific.melody_bonus_threshold_without_coop = 18
+        specific.melody_bonus_threshold_with_coop = 15
+        red_score = score_1()
+        blue_score = score_2()
 
         red_summary = red_score.summarize(blue_score)
         self.assertEqual(4, red_summary.leave_points)
@@ -62,8 +64,8 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(0, blue_score.summarize(red_score).score)
 
     def test_melody_bonus_ranking_point(self):
-        red_score = self.score_1()
-        blue_score = self.score_2()
+        red_score = score_1()
+        blue_score = score_2()
 
         red_summary = red_score.summarize(blue_score)
         blue_summary = blue_score.summarize(red_score)
@@ -95,7 +97,7 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(True, blue_summary.melody_bonus_ranking_point)
 
         # Increase non-coopertition threshold above the blue note count
-        game_specific.melody_bouns_threshold_without_coop = 19
+        specific.melody_bonus_threshold_without_coop = 19
         red_summary = red_score.summarize(blue_score)
         blue_summary = blue_score.summarize(red_score)
         self.assertEqual(True, red_summary.coopertition_criteria_met)
@@ -110,7 +112,7 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(False, blue_summary.melody_bonus_ranking_point)
 
         # Reduce red notes to the non-coopertition threshold
-        game_specific.melody_bonus_threshold_with_coop = 16
+        specific.melody_bonus_threshold_with_coop = 16
         red_score.amp_speaker.teleop_amp_notes = 3
         red_summary = red_score.summarize(blue_score)
         blue_summary = blue_score.summarize(red_score)
@@ -141,7 +143,7 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(True, blue_summary.melody_bonus_ranking_point)
 
         # Disable the coopertition bonus
-        game_specific.melody_bonus_threshold_with_coop = 0
+        specific.melody_bonus_threshold_with_coop = 0
         blue_score.amp_speaker.auto_speaker_notes = 9
         red_summary = red_score.summarize(blue_score)
         blue_summary = blue_score.summarize(red_score)
@@ -159,57 +161,57 @@ class ScoreTest(unittest.TestCase):
     def test_score_ensemble_bonus_ranking_point(self):
         score = Score()
 
-        score.endgame_statuses = [ENDGAME_STATUS.none, ENDGAME_STATUS.none, ENDGAME_STATUS.none]
+        score.endgame_statuses = [EndgameStatus.NONE, EndgameStatus.NONE, EndgameStatus.NONE]
         score.microphone_statuses = [False, False, False]
         score.trap_statuses = [False, False, False]
         self.assertEqual(False, score.summarize(Score()).ensemble_bonus_ranking_point)
 
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_left,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_right,
+            EndgameStatus.STAGE_LEFT,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_RIGHT,
         ]
         self.assertEqual(False, score.summarize(Score()).ensemble_bonus_ranking_point)
 
         # Try various combinations of Harmony
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_left,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_left,
+            EndgameStatus.STAGE_LEFT,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_LEFT,
         ]
         self.assertEqual(11, score.summarize(Score()).stage_points)
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_left,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_LEFT,
         ]
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_right,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_RIGHT,
         ]
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_right,
-            ENDGAME_STATUS.stage_right,
-            ENDGAME_STATUS.stage_center,
+            EndgameStatus.STAGE_RIGHT,
+            EndgameStatus.STAGE_RIGHT,
+            EndgameStatus.STAGE_CENTER,
         ]
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_center,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_CENTER,
         ]
         self.assertEqual(13, score.summarize(Score()).stage_points)
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
 
         # Try various combinations with microphones
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_left,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_right,
+            EndgameStatus.STAGE_LEFT,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_RIGHT,
         ]
         score.microphone_statuses = [True, False, False]
         self.assertEqual(10, score.summarize(Score()).stage_points)
@@ -218,17 +220,17 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(12, score.summarize(Score()).stage_points)
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.none,
-            ENDGAME_STATUS.stage_right,
-            ENDGAME_STATUS.stage_right,
+            EndgameStatus.NONE,
+            EndgameStatus.STAGE_RIGHT,
+            EndgameStatus.STAGE_RIGHT,
         ]
         score.microphone_statuses = [False, False, True]
         self.assertEqual(10, score.summarize(Score()).stage_points)
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.park,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_right,
+            EndgameStatus.PARK,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_RIGHT,
         ]
         score.microphone_statuses = [False, True, False]
         self.assertEqual(8, score.summarize(Score()).stage_points)
@@ -237,22 +239,22 @@ class ScoreTest(unittest.TestCase):
         # Try various combinations with traps
         score.microphone_statuses = [False, False, False]
         score.endgame_statuses = [
-            ENDGAME_STATUS.stage_left,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.park,
+            EndgameStatus.STAGE_LEFT,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.PARK,
         ]
         score.trap_statuses = [False, False, True]
         self.assertEqual(12, score.summarize(Score()).stage_points)
         self.assertEqual(True, score.summarize(Score()).ensemble_bonus_ranking_point)
         score.endgame_statuses = [
-            ENDGAME_STATUS.park,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.park,
+            EndgameStatus.PARK,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.PARK,
         ]
         score.trap_statuses = [True, True, True]
         self.assertEqual(20, score.summarize(Score()).stage_points)
         self.assertEqual(False, score.summarize(Score()).ensemble_bonus_ranking_point)
-        score.endgame_statuses = [ENDGAME_STATUS.park, ENDGAME_STATUS.park, ENDGAME_STATUS.park]
+        score.endgame_statuses = [EndgameStatus.PARK, EndgameStatus.PARK, EndgameStatus.PARK]
         self.assertEqual(18, score.summarize(Score()).stage_points)
         self.assertEqual(False, score.summarize(Score()).ensemble_bonus_ranking_point)
 
@@ -276,56 +278,56 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(0, summary.bonus_ranking_points)
 
     def test_score_equals(self):
-        score_1 = self.score_1()
-        score_2 = self.score_1()
-        self.assertTrue(score_1.equals(score_2))
-        self.assertTrue(score_2.equals(score_1))
+        s_1 = score_1()
+        s_2 = score_1()
+        self.assertTrue(s_1.equals(s_2))
+        self.assertTrue(s_2.equals(s_1))
 
-        score_3 = self.score_2()
-        self.assertFalse(score_1.equals(score_3))
-        self.assertFalse(score_3.equals(score_1))
+        s_3 = score_2()
+        self.assertFalse(s_1.equals(s_3))
+        self.assertFalse(s_3.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.leave_statuses[0] = False
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.leave_statuses[0] = False
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.amp_speaker.auto_amp_notes = 5
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.amp_speaker.auto_amp_notes = 5
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.endgame_statuses[1] = ENDGAME_STATUS.park
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.endgame_statuses[1] = EndgameStatus.PARK
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.microphone_statuses[0] = True
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.microphone_statuses[0] = True
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.trap_statuses[0] = False
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.trap_statuses[0] = False
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.fouls[0].is_technical = False
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.fouls[0].is_technical = False
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.fouls[0].team_id += 1
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.fouls[0].team_id += 1
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.fouls[0].rule_id = 1
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.fouls[0].rule_id = 1
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))
 
-        score_2 = self.score_1()
-        score_2.playoff_dq = not score_2.playoff_dq
-        self.assertFalse(score_1.equals(score_2))
-        self.assertFalse(score_2.equals(score_1))
+        s_2 = score_1()
+        s_2.playoff_dq = not s_2.playoff_dq
+        self.assertFalse(s_1.equals(s_2))
+        self.assertFalse(s_2.equals(s_1))

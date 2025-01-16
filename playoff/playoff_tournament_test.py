@@ -31,7 +31,7 @@ class PlayoffTournamentTest(unittest.TestCase):
             PlayoffTournament(5, 8)
 
     def test_playoff_tournament_getters(self):
-        playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.single_elimination, 2)
+        playoff_tournament = PlayoffTournament(models.PlayoffType.SINGLE_ELIMINATION, 2)
         self.assertEqual(len(playoff_tournament.MatchGroups()), 1)
         self.assertIn('F', playoff_tournament.MatchGroups())
         self.assertEqual(playoff_tournament.FinalMatchup(), playoff_tournament.MatchGroups()['F'])
@@ -41,8 +41,8 @@ class PlayoffTournamentTest(unittest.TestCase):
 
         playoff_tournament.FinalMatchup().update(
             {
-                43: PlayoffMatchResult(game.MATCH_STATUS.blue_won_match),
-                44: PlayoffMatchResult(game.MATCH_STATUS.blue_won_match),
+                43: PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH),
+                44: PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH),
             }
         )
         self.assertTrue(playoff_tournament.is_complete())
@@ -52,13 +52,13 @@ class PlayoffTournamentTest(unittest.TestCase):
     def test_playoff_tournament_matches_and_breaks(self):
         create_test_alliance(8)
 
-        playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.double_elimination, 8)
+        playoff_tournament = PlayoffTournament(models.PlayoffType.DOUBLE_ELIMINATION, 8)
         start_time = datetime.fromtimestamp(5000)
         playoff_tournament.create_match_and_breaks(start_time)
         with self.assertRaises(ValueError):
             playoff_tournament.create_match_and_breaks(start_time + timedelta(hours=1))
 
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         self.assertEqual(len(matches), 19)
         assert_match(
             self,
@@ -282,11 +282,11 @@ class PlayoffTournamentTest(unittest.TestCase):
         )
 
         for i in range(16):
-            self.assertEqual(matches[i].status, game.MATCH_STATUS.match_scheduled)
+            self.assertEqual(matches[i].status, game.MatchStatus.MATCH_SCHEDULE)
         for i in range(17, 19):
-            self.assertEqual(matches[i].status, game.MATCH_STATUS.match_hidden)
+            self.assertEqual(matches[i].status, game.MatchStatus.MATCH_HIDDEN)
 
-        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MATCH_TYPE.playoff)
+        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MatchType.PLAYOFF)
         self.assertEqual(len(scheduled_breaks), 5)
         assert_break(self, scheduled_breaks[0], 11, 10160, 360, 'Field Break')
         assert_break(self, scheduled_breaks[1], 13, 11360, 900, 'Award Break')
@@ -296,10 +296,10 @@ class PlayoffTournamentTest(unittest.TestCase):
 
         models.truncate_matches()
         models.truncate_scheduled_breaks()
-        playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.single_elimination, 3)
+        playoff_tournament = PlayoffTournament(models.PlayoffType.SINGLE_ELIMINATION, 3)
         start_time = datetime.fromtimestamp(1000)
         playoff_tournament.create_match_and_breaks(start_time)
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         self.assertEqual(len(matches), 9)
         assert_match(
             self, matches[0], 38, 1000, 'Semifinal 2-1', 'SF2-1', '', 'SF2', 2, 3, True, 'sf', 2, 1
@@ -318,11 +318,11 @@ class PlayoffTournamentTest(unittest.TestCase):
         assert_match(self, matches[8], 48, 6340, 'Overtime 3', 'O3', '', 'F', 1, 0, True, 'f', 1, 6)
 
         for i in range(6):
-            self.assertEqual(matches[i].status, game.MATCH_STATUS.match_scheduled)
+            self.assertEqual(matches[i].status, game.MatchStatus.MATCH_SCHEDULE)
         for i in range(6, 9):
-            self.assertEqual(matches[i].status, game.MATCH_STATUS.match_hidden)
+            self.assertEqual(matches[i].status, game.MatchStatus.MATCH_HIDDEN)
 
-        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MATCH_TYPE.playoff)
+        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MatchType.PLAYOFF)
         self.assertEqual(len(scheduled_breaks), 3)
         assert_break(self, scheduled_breaks[0], 43, 2800, 480, 'Field Break')
         assert_break(self, scheduled_breaks[1], 44, 3580, 480, 'Field Break')
@@ -331,12 +331,12 @@ class PlayoffTournamentTest(unittest.TestCase):
     def test_playoff_tournament_update_matches(self):
         create_test_alliance(4)
 
-        playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.single_elimination, 4)
+        playoff_tournament = PlayoffTournament(models.PlayoffType.SINGLE_ELIMINATION, 4)
         self.assertRaises(ValueError, playoff_tournament.update_matches)
 
         playoff_tournament.create_match_and_breaks(datetime.fromtimestamp(0))
 
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         self.assertEqual(matches[0].red1, 102)
         self.assertEqual(matches[0].red2, 101)
         self.assertEqual(matches[0].red3, 103)
@@ -344,28 +344,28 @@ class PlayoffTournamentTest(unittest.TestCase):
         self.assertEqual(matches[0].blue2, 401)
         self.assertEqual(matches[0].blue3, 403)
 
-        matches[0].status = game.MATCH_STATUS.blue_won_match
+        matches[0].status = game.MatchStatus.BLUE_WON_MATCH
         models.update_match(matches[0])
         models.update_alliance_from_match(1, [103, 102, 101])
         models.update_alliance_from_match(4, [404, 405, 406])
 
         playoff_tournament.update_matches()
 
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         self.assertEqual(matches[0].red1, 102)
         self.assertEqual(matches[0].red2, 101)
         self.assertEqual(matches[0].red3, 103)
         self.assertEqual(matches[0].blue1, 402)
         self.assertEqual(matches[0].blue2, 401)
         self.assertEqual(matches[0].blue3, 403)
-        self.assertEqual(matches[2].status, game.MATCH_STATUS.match_scheduled)
+        self.assertEqual(matches[2].status, game.MatchStatus.MATCH_SCHEDULE)
         self.assertEqual(matches[2].red1, 103)
         self.assertEqual(matches[2].red2, 102)
         self.assertEqual(matches[2].red3, 101)
         self.assertEqual(matches[2].blue1, 404)
         self.assertEqual(matches[2].blue2, 405)
         self.assertEqual(matches[2].blue3, 406)
-        self.assertEqual(matches[4].status, game.MATCH_STATUS.match_scheduled)
+        self.assertEqual(matches[4].status, game.MatchStatus.MATCH_SCHEDULE)
         self.assertEqual(matches[4].red1, 103)
         self.assertEqual(matches[4].red2, 102)
         self.assertEqual(matches[4].red3, 101)
@@ -373,25 +373,25 @@ class PlayoffTournamentTest(unittest.TestCase):
         self.assertEqual(matches[4].blue2, 405)
         self.assertEqual(matches[4].blue3, 406)
 
-        matches[1].status = game.MATCH_STATUS.blue_won_match
+        matches[1].status = game.MatchStatus.BLUE_WON_MATCH
         models.update_match(matches[1])
-        matches[2].status = game.MATCH_STATUS.blue_won_match
+        matches[2].status = game.MatchStatus.BLUE_WON_MATCH
         models.update_match(matches[2])
-        matches[3].status = game.MATCH_STATUS.blue_won_match
+        matches[3].status = game.MatchStatus.BLUE_WON_MATCH
         models.update_match(matches[3])
         models.update_alliance_from_match(4, [403, 402, 406])
 
         playoff_tournament.update_matches()
 
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         self.assertEqual(matches[2].red1, 103)
         self.assertEqual(matches[2].red2, 102)
         self.assertEqual(matches[2].red3, 101)
         self.assertEqual(matches[2].blue1, 404)
         self.assertEqual(matches[2].blue2, 405)
         self.assertEqual(matches[2].blue3, 406)
-        self.assertEqual(matches[4].status, game.MATCH_STATUS.match_hidden)
-        self.assertEqual(matches[5].status, game.MATCH_STATUS.match_hidden)
+        self.assertEqual(matches[4].status, game.MatchStatus.MATCH_HIDDEN)
+        self.assertEqual(matches[5].status, game.MatchStatus.MATCH_HIDDEN)
         self.assertEqual(matches[6].playoff_red_alliance, 4)
         self.assertEqual(matches[6].playoff_blue_alliance, 3)
         self.assertEqual(matches[6].red1, 403)
@@ -401,16 +401,16 @@ class PlayoffTournamentTest(unittest.TestCase):
         self.assertEqual(matches[6].blue2, 301)
         self.assertEqual(matches[6].blue3, 303)
 
-        matches[1].status = game.MATCH_STATUS.red_won_match
+        matches[1].status = game.MatchStatus.RED_WON_MATCH
         models.update_match(matches[1])
-        matches[2].status = game.MATCH_STATUS.red_won_match
+        matches[2].status = game.MatchStatus.RED_WON_MATCH
         models.update_match(matches[2])
 
         playoff_tournament.update_matches()
 
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
-        self.assertEqual(matches[4].status, game.MATCH_STATUS.match_scheduled)
-        self.assertEqual(matches[5].status, game.MATCH_STATUS.match_scheduled)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
+        self.assertEqual(matches[4].status, game.MatchStatus.MATCH_SCHEDULE)
+        self.assertEqual(matches[5].status, game.MatchStatus.MATCH_SCHEDULE)
         self.assertEqual(matches[6].playoff_red_alliance, 0)
         self.assertEqual(matches[6].playoff_blue_alliance, 0)
         self.assertEqual(matches[6].red1, 0)

@@ -69,13 +69,13 @@ class Matchup:
         for match in self.match_specs:
             match_result = playoff_match_result.get(match.order)
             if match_result is not None:
-                if match_result.status == game.MATCH_STATUS.red_won_match:
+                if match_result.status == game.MatchStatus.RED_WON_MATCH:
                     self.red_alliance_wins += 1
                     self.num_matches_played += 1
-                elif match_result.status == game.MATCH_STATUS.blue_won_match:
+                elif match_result.status == game.MatchStatus.BLUE_WON_MATCH:
                     self.blue_alliance_wins += 1
                     self.num_matches_played += 1
-                elif match_result.status == game.MATCH_STATUS.tie_match:
+                elif match_result.status == game.MatchStatus.TIE_MATCH:
                     self.num_matches_played += 1
             else:
                 unplayed_matches.append(match)

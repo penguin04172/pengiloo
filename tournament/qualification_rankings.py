@@ -3,7 +3,7 @@ import models
 
 
 def calculate_rankings(preserve_previous_rank: bool = False):
-    matches = models.read_matches_by_type(models.MATCH_TYPE.qualification, False)
+    matches = models.read_matches_by_type(models.MatchType.QUALIFICATION, False)
     if not matches:
         return
 
@@ -46,7 +46,7 @@ def calculate_rankings(preserve_previous_rank: bool = False):
     return sorted_rankings
 
 
-def calculate_team_cards(match_type: models.MATCH_TYPE):
+def calculate_team_cards(match_type: models.MatchType):
     teams = models.read_all_teams()
     for team in teams:
         team.yellow_card = False

@@ -1,14 +1,9 @@
 import fastapi
 
-from api import event, match, team
-from models.database import db
+from models.base import db
 from web import index
 
 app = fastapi.FastAPI()
-
-app.include_router(team.router)
-app.include_router(event.router)
-app.include_router(match.router)
 
 app.include_router(index.router)
 

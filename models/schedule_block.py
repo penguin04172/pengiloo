@@ -4,12 +4,12 @@ from pony.orm import Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
 from .base import db
-from .match import MATCH_TYPE
+from .match import MatchType
 
 
 class ScheduleBlock(BaseModel):
     id: int | None = None
-    match_type: MATCH_TYPE
+    match_type: MatchType
     start_time: datetime
     num_matches: int
     match_spacing_sec: int
@@ -27,7 +27,7 @@ class ScheduleBlockDB(db.Entity):
 
 
 @db_session
-def read_schedule_blocks_by_match_type(match_type: MATCH_TYPE):
+def read_schedule_blocks_by_match_type(match_type: MatchType):
     return [
         ScheduleBlock(**t.to_dict()) for t in ScheduleBlockDB.select() if t.match_type == match_type
     ]
@@ -42,7 +42,7 @@ def create_schedule_block(schedule_block: ScheduleBlock):
 
 
 @db_session
-def delete_schedule_block_by_match_type(match_type: MATCH_TYPE):
+def delete_schedule_block_by_match_type(match_type: MatchType):
     ScheduleBlockDB.select(match_type=match_type.value).delete(bulk=True)
 
 

@@ -9,21 +9,18 @@ class MatchTiming(BaseModel):
     warning_remaining_duration_sec: int = 20
     timeout_duration_sec: int = 0
 
-    @classmethod
-    def get_duration_to_auto_end(cls):
-        return cls.warmup_duration_sec + cls.auto_duration_sec
+    def get_duration_to_auto_end(self):
+        return self.warmup_duration_sec + self.auto_duration_sec
 
-    @classmethod
-    def get_duration_to_teleop_start(cls):
-        return cls.warmup_duration_sec + cls.auto_duration_sec + cls.pause_duration_sec
+    def get_duration_to_teleop_start(self):
+        return self.warmup_duration_sec + self.auto_duration_sec + self.pause_duration_sec
 
-    @classmethod
-    def get_duration_to_teleop_end(cls):
+    def get_duration_to_teleop_end(self):
         return (
-            cls.warmup_duration_sec
-            + cls.auto_duration_sec
-            + cls.pause_duration_sec
-            + cls.teleop_duration_sec
+            self.warmup_duration_sec
+            + self.auto_duration_sec
+            + self.pause_duration_sec
+            + self.teleop_duration_sec
         )
 
 

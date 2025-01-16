@@ -1,4 +1,4 @@
-from pony.orm import Optional, PrimaryKey, db_session
+from pony.orm import Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
 from .base import db
@@ -8,7 +8,7 @@ class LowerThird(BaseModel):
     id: int | None = None
     top_text: str | None = None
     bottom_text: str | None = None
-    display_order: int | None = None
+    display_order: int = 0
     award_id: int | None = None
 
 
@@ -16,7 +16,7 @@ class LowerThirdDB(db.Entity):
     id = PrimaryKey(int, auto=True)
     top_text = Optional(str)
     bottom_text = Optional(str)
-    display_order = Optional(int)
+    display_order = Required(int)
     award_id = Optional(int)
 
 

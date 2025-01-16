@@ -11,6 +11,7 @@ from .single_elimination import (
     new_single_elemination_match,
     new_single_elimination_bracket,
 )
+from .specs import PlayoffMatchResult
 
 
 class TestMatchup(unittest.TestCase):
@@ -106,18 +107,18 @@ class TestMatchup(unittest.TestCase):
         for match_spec in match_specs:
             self.assertFalse(match_spec.is_hidden)
 
-        playoff_match_results = {1: game.MATCH_STATUS.blue_won_match}
+        playoff_match_results = {1: PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)}
         qf1.update(playoff_match_results)
         for match_spec in match_specs:
             self.assertFalse(match_spec.is_hidden)
 
-        playoff_match_results[5] = game.MATCH_STATUS.blue_won_match
+        playoff_match_results[5] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         qf1.update(playoff_match_results)
         self.assertFalse(match_specs[0].is_hidden)
         self.assertFalse(match_specs[1].is_hidden)
         self.assertTrue(match_specs[2].is_hidden)
 
-        playoff_match_results[5] = game.MATCH_STATUS.red_won_match
+        playoff_match_results[5] = PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH)
         qf1.update(playoff_match_results)
         for match_spec in match_specs:
             self.assertFalse(match_spec.is_hidden)
@@ -135,22 +136,25 @@ class TestMatchup(unittest.TestCase):
         for i in range(6):
             self.assertEqual(match_specs[i].is_hidden, i > 2)
 
-        playoff_match_results = {1: game.MATCH_STATUS.red_won_match, 2: game.MATCH_STATUS.tie_match}
+        playoff_match_results = {
+            1: PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH),
+            2: PlayoffMatchResult(game.MatchStatus.TIE_MATCH),
+        }
         final.update(playoff_match_results)
         for i in range(6):
             self.assertEqual(match_specs[i].is_hidden, i > 2)
 
-        playoff_match_results[3] = game.MATCH_STATUS.blue_won_match
+        playoff_match_results[3] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final.update(playoff_match_results)
         for i in range(6):
             self.assertEqual(match_specs[i].is_hidden, i > 3)
 
-        playoff_match_results[4] = game.MATCH_STATUS.tie_match
+        playoff_match_results[4] = PlayoffMatchResult(game.MatchStatus.TIE_MATCH)
         final.update(playoff_match_results)
         for i in range(6):
             self.assertEqual(match_specs[i].is_hidden, i > 4)
 
-        playoff_match_results[5] = game.MATCH_STATUS.blue_won_match
+        playoff_match_results[5] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final.update(playoff_match_results)
         for i in range(6):
             self.assertEqual(match_specs[i].is_hidden, i > 4)

@@ -3,15 +3,14 @@ from enum import IntEnum
 from pony.orm import Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
-from game.match_timing import match_timing
-from game.score import game_specific
+import game
 
 from .base import db
 
 
-class PLAYOFF_TYPE(IntEnum):
-    double_elimination = 0
-    single_elimination = 1
+class PlayoffType(IntEnum):
+    DOUBLE_ELIMINATION = 0
+    SINGLE_ELIMINATION = 1
 
 
 class Event(BaseModel):
@@ -34,14 +33,14 @@ class Event(BaseModel):
     switch_password: str | None = None
     plc_address: str | None = None
     admin_password: str | None = None
-    team_sign_red_1_address: str | None = None
-    team_sign_red_2_address: str | None = None
-    team_sign_red_3_address: str | None = None
-    team_sign_red_timer_address: str | None = None
-    team_sign_blue_1_address: str | None = None
-    team_sign_blue_2_address: str | None = None
-    team_sign_blue_3_address: str | None = None
-    team_sign_blue_timer_address: str | None = None
+    team_sign_red_1_id: str | None = None
+    team_sign_red_2_id: str | None = None
+    team_sign_red_3_id: str | None = None
+    team_sign_red_timer_id: str | None = None
+    team_sign_blue_1_id: str | None = None
+    team_sign_blue_2_id: str | None = None
+    team_sign_blue_3_id: str | None = None
+    team_sign_blue_timer_id: str | None = None
     warmup_duration_sec: int | None = None
     auto_duration_sec: int | None = None
     pause_duration_sec: int | None = None
@@ -59,7 +58,7 @@ class Event(BaseModel):
 class EventDB(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str, default='Untitled Event')
-    playoff_type = Required(int, default=PLAYOFF_TYPE.double_elimination)
+    playoff_type = Required(int, default=PlayoffType.DOUBLE_ELIMINATION)
     num_playoff_alliance = Required(int, default=8)
     selection_round_2_order = Required(str, default='L')
     selection_round_3_order = Optional(str)
@@ -77,29 +76,29 @@ class EventDB(db.Entity):
     switch_password = Optional(str)
     plc_address = Optional(str)
     admin_password = Optional(str)
-    team_sign_red_1_address = Optional(str)
-    team_sign_red_2_address = Optional(str)
-    team_sign_red_3_address = Optional(str)
-    team_sign_red_timer_address = Optional(str)
-    team_sign_blue_1_address = Optional(str)
-    team_sign_blue_2_address = Optional(str)
-    team_sign_blue_3_address = Optional(str)
-    team_sign_blue_timer_address = Optional(str)
-    warmup_duration_sec = Required(int, default=match_timing.warmup_duration_sec)
-    auto_duration_sec = Required(int, default=match_timing.auto_duration_sec)
-    pause_duration_sec = Required(int, default=match_timing.pause_duration_sec)
-    teleop_duration_sec = Required(int, default=match_timing.teleop_duration_sec)
+    team_sign_red_1_id = Optional(str)
+    team_sign_red_2_id = Optional(str)
+    team_sign_red_3_id = Optional(str)
+    team_sign_red_timer_id = Optional(str)
+    team_sign_blue_1_id = Optional(str)
+    team_sign_blue_2_id = Optional(str)
+    team_sign_blue_3_id = Optional(str)
+    team_sign_blue_timer_id = Optional(str)
+    warmup_duration_sec = Required(int, default=game.timing.warmup_duration_sec)
+    auto_duration_sec = Required(int, default=game.timing.auto_duration_sec)
+    pause_duration_sec = Required(int, default=game.timing.pause_duration_sec)
+    teleop_duration_sec = Required(int, default=game.timing.teleop_duration_sec)
     warning_remaining_duration_sec = Required(
-        int, default=match_timing.warning_remaining_duration_sec
+        int, default=game.timing.warning_remaining_duration_sec
     )
     melody_bonus_threshold_without_coop = Required(
-        int, default=game_specific.melody_bouns_threshold_without_coop
+        int, default=game.specific.melody_bonus_threshold_without_coop
     )
     melody_bonus_threshold_with_coop = Required(
-        int, default=game_specific.melody_bonus_threshold_with_coop
+        int, default=game.specific.melody_bonus_threshold_with_coop
     )
-    amplification_note_limit = Required(int, default=game_specific.amplification_note_limit)
-    amplification_duration_sec = Required(int, default=game_specific.amplification_duration_sec)
+    amplification_note_limit = Required(int, default=game.specific.amplification_note_limit)
+    amplification_duration_sec = Required(int, default=game.specific.amplification_duration_sec)
 
 
 @db_session

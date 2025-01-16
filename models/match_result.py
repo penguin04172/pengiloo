@@ -4,14 +4,14 @@ from pydantic import BaseModel
 from game.score import Score
 
 from .base import db
-from .match import MATCH_TYPE
+from .match import MatchType
 
 
 class MatchResult(BaseModel):
     id: int | None = None
     match_id: int
     play_number: int | None = None
-    match_type: MATCH_TYPE
+    match_type: MatchType
     red_score: Score = Score()
     blue_score: Score = Score()
     red_cards: dict[str, str] = {}

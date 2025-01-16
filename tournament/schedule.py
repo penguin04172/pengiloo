@@ -15,7 +15,7 @@ TEAMS_PER_MATCH = 6
 async def build_random_schedule(
     teams: list[models.Team],
     schedule_blocks: list[models.ScheduleBlock],
-    match_type: models.MATCH_TYPE,
+    match_type: models.MatchType,
 ):
     num_teams = len(teams)
     num_matches = count_matches(schedule_blocks)
@@ -44,11 +44,11 @@ async def build_random_schedule(
 
     for i, anon_match in enumerate(anon_schedule):
         match = models.Match(type=match_type, type_order=i + 1)
-        if match_type == models.MATCH_TYPE.pratice:
+        if match_type == models.MatchType.PRATICE:
             match.short_name = f'P{i + 1}'
             match.long_name = f'Practice {i + 1}'
             match.tba_match_key.comp_level = 'p'
-        elif match_type == models.MATCH_TYPE.qualification:
+        elif match_type == models.MatchType.QUALIFICATION:
             match.short_name = f'Q{i + 1}'
             match.long_name = f'Qualification {i + 1}'
             match.tba_match_key.comp_level = 'qm'

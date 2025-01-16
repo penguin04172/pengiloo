@@ -1,7 +1,7 @@
 import unittest
 
 from .base import db
-from .event import PLAYOFF_TYPE, Event, read_event_settings, update_event_settings
+from .event import Event, PlayoffType, read_event_settings, update_event_settings
 
 
 class EventTest(unittest.TestCase):
@@ -24,7 +24,7 @@ class EventTest(unittest.TestCase):
         event = Event(
             id=1,
             name='Untitled Event',
-            playoff_type=PLAYOFF_TYPE.double_elimination,
+            playoff_type=PlayoffType.DOUBLE_ELIMINATION,
             num_playoff_alliance=8,
             selection_round_2_order='L',
             selection_round_3_order='',

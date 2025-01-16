@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 
 from .base import db
-from .match import MATCH_TYPE
+from .match import MatchType
 from .scheduled_break import (
     ScheduledBreak,
     create_scheduled_break,
@@ -33,7 +33,7 @@ class TestScheduleBreak(unittest.TestCase):
 
     def test_schedule_break_crud(self):
         scheduled_break1 = ScheduledBreak(
-            match_type=MATCH_TYPE.qualification,
+            match_type=MatchType.QUALIFICATION,
             type_order_before=50,
             time=datetime.now(),
             duration_sec=600,
@@ -42,7 +42,7 @@ class TestScheduleBreak(unittest.TestCase):
         scheduled_break1 = create_scheduled_break(scheduled_break1)
 
         scheduled_break2 = ScheduledBreak(
-            match_type=MATCH_TYPE.qualification,
+            match_type=MatchType.QUALIFICATION,
             type_order_before=25,
             time=datetime.now(),
             duration_sec=300,
@@ -51,7 +51,7 @@ class TestScheduleBreak(unittest.TestCase):
         scheduled_break2 = create_scheduled_break(scheduled_break2)
 
         scheduled_break3 = ScheduledBreak(
-            match_type=MATCH_TYPE.playoff,
+            match_type=MatchType.PLAYOFF,
             type_order_before=4,
             time=datetime.now(),
             duration_sec=900,
@@ -69,32 +69,32 @@ class TestScheduleBreak(unittest.TestCase):
         scheduled_break = read_scheduled_break_by_id(2)
         self.assertEqual(scheduled_break, scheduled_break2)
 
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.pratice)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PRATICE)
         self.assertEqual(len(scheduled_breaks), 0)
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.qualification)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(scheduled_breaks), 2)
         self.assertEqual(scheduled_breaks[0], scheduled_break1)
         self.assertEqual(scheduled_breaks[1], scheduled_break2)
 
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.playoff)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PLAYOFF)
         self.assertEqual(len(scheduled_breaks), 1)
         self.assertEqual(scheduled_breaks[0], scheduled_break3)
 
-        scheduled_break = read_scheduled_break_by_match_type_order(MATCH_TYPE.qualification, 25)
+        scheduled_break = read_scheduled_break_by_match_type_order(MatchType.QUALIFICATION, 25)
         self.assertEqual(scheduled_break, scheduled_break2)
-        scheduled_break = read_scheduled_break_by_match_type_order(MATCH_TYPE.playoff, 4)
+        scheduled_break = read_scheduled_break_by_match_type_order(MatchType.PLAYOFF, 4)
         self.assertEqual(scheduled_break, scheduled_break3)
-        scheduled_break = read_scheduled_break_by_match_type_order(MATCH_TYPE.playoff, 5)
+        scheduled_break = read_scheduled_break_by_match_type_order(MatchType.PLAYOFF, 5)
         self.assertIsNone(scheduled_break)
 
-        delete_scheduled_breaks_by_match_type(MATCH_TYPE.playoff)
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.playoff)
+        delete_scheduled_breaks_by_match_type(MatchType.PLAYOFF)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PLAYOFF)
         self.assertEqual(len(scheduled_breaks), 0)
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.qualification)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(scheduled_breaks), 2)
 
         truncate_scheduled_breaks()
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.qualification)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(scheduled_breaks), 0)
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MATCH_TYPE.playoff)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PLAYOFF)
         self.assertEqual(len(scheduled_breaks), 0)

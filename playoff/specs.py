@@ -2,9 +2,9 @@ import game
 
 
 class PlayoffMatchResult:
-    status: game.MATCH_STATUS
+    status: game.MatchStatus
 
-    def __init__(self, status: game.MATCH_STATUS):
+    def __init__(self, status: game.MatchStatus):
         self.status = status
 
 

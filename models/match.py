@@ -4,16 +4,16 @@ from enum import IntEnum
 from pony.orm import Json, Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
-from game.match_status import MATCH_STATUS
+from game.match_status import MatchStatus
 
 from .base import db
 
 
-class MATCH_TYPE(IntEnum):
-    test = 0
-    pratice = 1
-    qualification = 2
-    playoff = 3
+class MatchType(IntEnum):
+    TEST = 0
+    PRATICE = 1
+    QUALIFICATION = 2
+    PLAYOFF = 3
 
 
 class TbaMatchKey(BaseModel):
@@ -53,13 +53,13 @@ class MatchDB(db.Entity):
     started_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
     score_commit_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
     field_ready_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
-    status = Required(int, default=MATCH_STATUS.match_scheduled)
+    status = Required(int, default=MatchStatus.MATCH_SCHEDULE)
     use_tiebreak_criteria = Optional(bool)
     tba_match_key = Optional(Json)
 
 
 class Match(BaseModel):
-    type: MATCH_TYPE
+    type: MatchType
     type_order: int
     long_name: str | None = None
     short_name: str | None = None
@@ -68,24 +68,24 @@ class Match(BaseModel):
     playoff_match_group_id: str | None = None
     playoff_red_alliance: int | None = None
     playoff_blue_alliance: int | None = None
-    red1: int | None = None
-    red1_is_surrogate: bool | None = None
-    red2: int | None = None
-    red2_is_surrogate: bool | None = None
-    red3: int | None = None
-    red3_is_surrogate: bool | None = None
-    blue1: int | None = None
-    blue1_is_surrogate: bool | None = None
-    blue2: int | None = None
-    blue2_is_surrogate: bool | None = None
-    blue3: int | None = None
-    blue3_is_surrogate: bool | None = None
+    red1: int = 0
+    red1_is_surrogate: bool = False
+    red2: int = 0
+    red2_is_surrogate: bool = False
+    red3: int = 0
+    red3_is_surrogate: bool = False
+    blue1: int = 0
+    blue1_is_surrogate: bool = False
+    blue2: int = 0
+    blue2_is_surrogate: bool = False
+    blue3: int = 0
+    blue3_is_surrogate: bool = False
     started_at: datetime | None = None
     score_commit_at: datetime | None = None
     field_ready_at: datetime | None = None
-    status: MATCH_STATUS | None = None
+    status: MatchStatus | None = None
     use_tiebreak_criteria: bool | None = None
-    tba_match_key: TbaMatchKey | None = None
+    tba_match_key: TbaMatchKey = TbaMatchKey()
 
     class Config:
         from_attributes = True
@@ -96,25 +96,25 @@ class MatchOut(Match):
 
     def is_complete(self) -> bool:
         return (
-            self.status == MATCH_STATUS.red_won_match
-            or self.status == MATCH_STATUS.blue_won_match
-            or self.status == MATCH_STATUS.tie_match
+            self.status == MatchStatus.RED_WON_MATCH
+            or self.status == MatchStatus.BLUE_WON_MATCH
+            or self.status == MatchStatus.TIE_MATCH
         )
 
     def should_allow_substitution(self) -> bool:
-        return self.type != MATCH_TYPE.qualification
+        return self.type != MatchType.QUALIFICATION
 
     def should_allow_nexus_substitution(self) -> bool:
-        return self.type == MATCH_TYPE.pratice or self.type == MATCH_TYPE.playoff
+        return self.type == MatchType.PRATICE or self.type == MatchType.PLAYOFF
 
     def should_update_cards(self) -> bool:
-        return self.type == MATCH_TYPE.qualification or self.type == MATCH_TYPE.playoff
+        return self.type == MatchType.QUALIFICATION or self.type == MatchType.PLAYOFF
 
     def should_update_ranking(self) -> bool:
-        return self.type == MATCH_TYPE.qualification
+        return self.type == MatchType.QUALIFICATION
 
     def should_update_playoff_matches(self) -> bool:
-        return self.type == MATCH_TYPE.playoff
+        return self.type == MatchType.PLAYOFF
 
 
 @db_session
@@ -157,17 +157,17 @@ def read_all_matches():
 
 
 @db_session
-def read_matches_by_type(match_type: MATCH_TYPE, include_hidden: bool = False):
+def read_matches_by_type(match_type: MatchType, include_hidden: bool = False):
     matches = MatchDB.select()
     return [
         MatchOut(**m.to_dict())
         for m in matches
-        if m.type == match_type and (include_hidden or m.status != MATCH_STATUS.match_hidden)
+        if m.type == match_type and (include_hidden or m.status != MatchStatus.MATCH_HIDDEN)
     ]
 
 
 @db_session
-def read_match_by_type_order(match_type: MATCH_TYPE, type_order: int):
+def read_match_by_type_order(match_type: MatchType, type_order: int):
     match = MatchDB.select(type=match_type, type_order=type_order)
     if len(match) == 0:
         return None

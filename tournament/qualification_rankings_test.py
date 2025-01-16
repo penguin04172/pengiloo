@@ -116,7 +116,7 @@ class TestQualificationRankings(unittest.TestCase):
 
 def setup_match_results_for_testing():
     match1 = models.Match(
-        type=models.MATCH_TYPE.qualification,
+        type=models.MatchType.QUALIFICATION,
         type_order=1,
         red1=1,
         red2=2,
@@ -124,7 +124,7 @@ def setup_match_results_for_testing():
         blue1=4,
         blue2=5,
         blue3=6,
-        status=game.MATCH_STATUS.red_won_match,
+        status=game.MatchStatus.RED_WON_MATCH,
     )
     match1 = models.create_match(match1)
     match_result1 = build_test_match_result(match1.id, 1)
@@ -132,7 +132,7 @@ def setup_match_results_for_testing():
     models.create_match_result(match_result1)
 
     match2 = models.Match(
-        type=models.MATCH_TYPE.qualification,
+        type=models.MatchType.QUALIFICATION,
         type_order=2,
         red1=1,
         red2=3,
@@ -140,7 +140,7 @@ def setup_match_results_for_testing():
         blue1=2,
         blue2=4,
         blue3=6,
-        status=game.MATCH_STATUS.blue_won_match,
+        status=game.MatchStatus.BLUE_WON_MATCH,
         red2_is_surrogate=True,
         blue3_is_surrogate=True,
     )
@@ -150,7 +150,7 @@ def setup_match_results_for_testing():
     models.create_match_result(match_result2)
 
     match3 = models.Match(
-        type=models.MATCH_TYPE.qualification,
+        type=models.MatchType.QUALIFICATION,
         type_order=3,
         red1=6,
         red2=5,
@@ -158,19 +158,19 @@ def setup_match_results_for_testing():
         blue1=3,
         blue2=2,
         blue3=1,
-        status=game.MATCH_STATUS.tie_match,
+        status=game.MatchStatus.TIE_MATCH,
         red3_is_surrogate=True,
     )
     match3 = models.create_match(match3)
     match_result3 = build_test_match_result(match3.id, 1)
     models.create_match_result(match_result3)
     match_result3 = models.MatchResult(
-        match_id=match3.id, play_number=2, match_type=models.MATCH_TYPE.qualification
+        match_id=match3.id, play_number=2, match_type=models.MatchType.QUALIFICATION
     )
     models.create_match_result(match_result3)
 
     match4 = models.Match(
-        type=models.MATCH_TYPE.pratice,
+        type=models.MatchType.PRATICE,
         type_order=1,
         red1=1,
         red2=2,
@@ -178,14 +178,14 @@ def setup_match_results_for_testing():
         blue1=4,
         blue2=5,
         blue3=6,
-        status=game.MATCH_STATUS.red_won_match,
+        status=game.MatchStatus.RED_WON_MATCH,
     )
     match4 = models.create_match(match4)
     match_result4 = build_test_match_result(match4.id, 1)
     models.create_match_result(match_result4)
 
     match5 = models.Match(
-        type=models.MATCH_TYPE.playoff,
+        type=models.MatchType.PLAYOFF,
         type_order=8,
         red1=1,
         red2=2,
@@ -193,14 +193,14 @@ def setup_match_results_for_testing():
         blue1=4,
         blue2=5,
         blue3=6,
-        status=game.MATCH_STATUS.blue_won_match,
+        status=game.MatchStatus.BLUE_WON_MATCH,
     )
     match5 = models.create_match(match5)
     match_result5 = build_test_match_result(match5.id, 1)
     models.create_match_result(match_result5)
 
     match6 = models.Match(
-        type=models.MATCH_TYPE.qualification,
+        type=models.MatchType.QUALIFICATION,
         type_order=4,
         red1=7,
         red2=8,
@@ -208,7 +208,7 @@ def setup_match_results_for_testing():
         blue1=10,
         blue2=11,
         blue3=12,
-        status=game.MATCH_STATUS.match_scheduled,
+        status=game.MatchStatus.MATCH_SCHEDULE,
     )
     match6 = models.create_match(match6)
     match_result6 = build_test_match_result(match6.id, 1)

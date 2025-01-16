@@ -62,7 +62,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
 
         schedule_blocks = [
             models.ScheduleBlock(
-                match_type=models.MATCH_TYPE.pratice,
+                match_type=models.MatchType.PRATICE,
                 start_time=datetime.min,
                 num_matches=6,
                 match_spacing_sec=60,
@@ -70,12 +70,12 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         ]
 
         with patch('builtins.open', mock_open()) as mock_file:
-            matches = await build_random_schedule(teams, schedule_blocks, models.MATCH_TYPE.pratice)
+            matches = await build_random_schedule(teams, schedule_blocks, models.MatchType.PRATICE)
 
         self.assertEqual(len(matches), 6)
         self.assert_match(
             matches[0],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             1,
             0,
             'P1',
@@ -90,7 +90,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[1],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             2,
             60,
             'P2',
@@ -105,7 +105,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[2],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             3,
             120,
             'P3',
@@ -120,7 +120,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[3],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             4,
             180,
             'P4',
@@ -135,7 +135,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[4],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             5,
             240,
             'P5',
@@ -150,7 +150,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[5],
-            models.MATCH_TYPE.pratice,
+            models.MatchType.PRATICE,
             6,
             300,
             'P6',
@@ -166,7 +166,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
 
         schedule_blocks = [
             models.ScheduleBlock(
-                match_type=models.MATCH_TYPE.qualification,
+                match_type=models.MatchType.QUALIFICATION,
                 start_time=datetime.min,
                 num_matches=6,
                 match_spacing_sec=60,
@@ -175,13 +175,13 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
 
         with patch('builtins.open', mock_open()) as mock_file:
             matches = await build_random_schedule(
-                teams, schedule_blocks, models.MATCH_TYPE.qualification
+                teams, schedule_blocks, models.MatchType.QUALIFICATION
             )
 
         self.assertEqual(len(matches), 6)
         self.assert_match(
             matches[0],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             1,
             0,
             'Q1',
@@ -196,7 +196,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[1],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             2,
             60,
             'Q2',
@@ -211,7 +211,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[2],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             3,
             120,
             'Q3',
@@ -226,7 +226,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[3],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             4,
             180,
             'Q4',
@@ -241,7 +241,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[4],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             5,
             240,
             'Q5',
@@ -256,7 +256,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[5],
-            models.MATCH_TYPE.qualification,
+            models.MatchType.QUALIFICATION,
             6,
             300,
             'Q6',

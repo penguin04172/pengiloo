@@ -1,6 +1,6 @@
 from .amp_speaker import AmpSpeaker
 from .foul import Foul
-from .score import ENDGAME_STATUS, Score
+from .score import EndgameStatus, Score
 
 
 def score_1() -> Score:
@@ -23,7 +23,7 @@ def score_1() -> Score:
             teleop_unamplified_speaker_notes=1,
             teleop_amplified_speaker_notes=5,
         ),
-        endgame_statuses=[ENDGAME_STATUS.park, ENDGAME_STATUS.none, ENDGAME_STATUS.stage_left],
+        endgame_statuses=[EndgameStatus.PARK, EndgameStatus.NONE, EndgameStatus.STAGE_LEFT],
         microphone_statuses=[False, True, True],
         trap_statuses=[True, True, False],
         playoff_dq=False,
@@ -42,9 +42,9 @@ def score_2() -> Score:
             teleop_amplified_speaker_notes=23,
         ),
         endgame_statuses=[
-            ENDGAME_STATUS.stage_left,
-            ENDGAME_STATUS.stage_center,
-            ENDGAME_STATUS.stage_center,
+            EndgameStatus.STAGE_LEFT,
+            EndgameStatus.STAGE_CENTER,
+            EndgameStatus.STAGE_CENTER,
         ],
         microphone_statuses=[False, True, True],
         trap_statuses=[False, False, False],

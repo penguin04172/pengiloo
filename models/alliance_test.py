@@ -12,7 +12,7 @@ from .alliance import (
     update_alliance_from_match,
 )
 from .base import db
-from .match import MATCH_TYPE, Match
+from .match import Match, MatchType
 
 
 class TestAlliance(unittest.TestCase):
@@ -85,7 +85,7 @@ class TestAlliance(unittest.TestCase):
         self.build_test_alliances()
 
         match = Match(
-            type=MATCH_TYPE.playoff,
+            type=MatchType.PLAYOFF,
             type_order=1,
             playoff_red_alliance=1,
             playoff_blue_alliance=2,
@@ -114,7 +114,7 @@ class TestAlliance(unittest.TestCase):
         self.assertEqual([], blue_off_field_teams)
 
         match = Match(
-            type=MATCH_TYPE.playoff,
+            type=MatchType.PLAYOFF,
             type_order=1,
             playoff_red_alliance=2,
             playoff_blue_alliance=1,

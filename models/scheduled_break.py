@@ -4,12 +4,12 @@ from pony.orm import Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
 from .base import db
-from .match import MATCH_TYPE
+from .match import MatchType
 
 
 class ScheduledBreak(BaseModel):
     id: int | None = None
-    match_type: MATCH_TYPE
+    match_type: MatchType
     type_order_before: int
     time: datetime
     duration_sec: int
@@ -37,7 +37,7 @@ def create_scheduled_break(scheduled_break: ScheduledBreak):
 
 
 @db_session
-def read_scheduled_breaks_by_match_type(match_type: MATCH_TYPE):
+def read_scheduled_breaks_by_match_type(match_type: MatchType):
     return [
         ScheduledBreak(**t.to_dict())
         for t in ScheduledBreakDB.select()
@@ -54,7 +54,7 @@ def read_scheduled_break_by_id(id: int):
 
 
 @db_session
-def read_scheduled_break_by_match_type_order(match_type: MATCH_TYPE, type_order: int):
+def read_scheduled_break_by_match_type_order(match_type: MatchType, type_order: int):
     scheduled_break = ScheduledBreakDB.get(match_type=match_type, type_order_before=type_order)
     if scheduled_break is None:
         return None
@@ -71,7 +71,7 @@ def update_scheduled_break(scheduled_break: ScheduledBreak):
 
 
 @db_session
-def delete_scheduled_breaks_by_match_type(match_type: MATCH_TYPE):
+def delete_scheduled_breaks_by_match_type(match_type: MatchType):
     ScheduledBreakDB.select(match_type=match_type.value).delete(bulk=True)
 
 

@@ -22,7 +22,7 @@ from .award import (
     truncate_awards,
     update_award,
 )
-from .event import Event, read_event_settings, update_event_settings
+from .event import Event, PlayoffType, read_event_settings, update_event_settings
 from .lower_third import (
     LowerThird,
     create_lower_third,
@@ -35,9 +35,9 @@ from .lower_third import (
     update_lower_third,
 )
 from .match import (
-    MATCH_TYPE,
     Match,
     MatchOut,
+    MatchType,
     TbaMatchKey,
     create_match,
     delete_match,

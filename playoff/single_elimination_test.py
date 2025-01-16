@@ -2321,7 +2321,7 @@ class TestSingleElimination(unittest.TestCase):
         self.assertRaises(ValueError, new_single_elimination_bracket, 17)
 
     def test_single_elimination_progression(self):
-        playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.single_elimination, 3)
+        playoff_tournament = PlayoffTournament(models.PlayoffType.SINGLE_ELIMINATION, 3)
 
         final_matchup = playoff_tournament.FinalMatchup()
         match_specs = playoff_tournament.match_specs
@@ -2330,49 +2330,49 @@ class TestSingleElimination(unittest.TestCase):
 
         assertMatchOutcome(self, match_groups['SF2'], '', '')
 
-        plaoff_match_results[38] = PlayoffMatchResult(game.MATCH_STATUS.red_won_match)
+        plaoff_match_results[38] = PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         for i in range(3, 9):
             assertMatchSpecAlliances(self, [match_specs[i]], [ExpectedAlliance(1, 0)])
 
         assertMatchOutcome(self, match_groups['SF2'], '', '')
 
-        plaoff_match_results[40] = PlayoffMatchResult(game.MATCH_STATUS.red_won_match)
+        plaoff_match_results[40] = PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         for i in range(3, 9):
             assertMatchSpecAlliances(self, [match_specs[i]], [ExpectedAlliance(1, 2)])
 
         assertMatchOutcome(self, match_groups['SF2'], 'Advances to Final 1', 'Eliminated')
 
-        plaoff_match_results[40] = PlayoffMatchResult(game.MATCH_STATUS.blue_won_match)
+        plaoff_match_results[40] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         for i in range(3, 9):
             assertMatchSpecAlliances(self, [match_specs[i]], [ExpectedAlliance(1, 0)])
 
         assertMatchOutcome(self, match_groups['SF2'], '', '')
 
-        plaoff_match_results[42] = PlayoffMatchResult(game.MATCH_STATUS.blue_won_match)
+        plaoff_match_results[42] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         for i in range(3, 9):
             assertMatchSpecAlliances(self, [match_specs[i]], [ExpectedAlliance(1, 3)])
 
         assertMatchOutcome(self, match_groups['SF2'], 'Eliminated', 'Advances to Final 1')
 
-        plaoff_match_results[43] = PlayoffMatchResult(game.MATCH_STATUS.tie_match)
+        plaoff_match_results[43] = PlayoffMatchResult(game.MatchStatus.TIE_MATCH)
         final_matchup.update(plaoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
         self.assertEqual(final_matchup.losing_alliance_id(), 0)
         assertMatchOutcome(self, match_groups['F'], '', '')
 
-        plaoff_match_results[44] = PlayoffMatchResult(game.MATCH_STATUS.red_won_match)
+        plaoff_match_results[44] = PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
         self.assertEqual(final_matchup.losing_alliance_id(), 0)
         assertMatchOutcome(self, match_groups['F'], '', '')
 
-        plaoff_match_results[45] = PlayoffMatchResult(game.MATCH_STATUS.red_won_match)
+        plaoff_match_results[45] = PlayoffMatchResult(game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         self.assertTrue(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 1)
@@ -2386,14 +2386,14 @@ class TestSingleElimination(unittest.TestCase):
         self.assertEqual(final_matchup.losing_alliance_id(), 0)
         assertMatchOutcome(self, match_groups['F'], '', '')
 
-        plaoff_match_results[45] = PlayoffMatchResult(game.MATCH_STATUS.blue_won_match)
+        plaoff_match_results[45] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
         self.assertEqual(final_matchup.losing_alliance_id(), 0)
         assertMatchOutcome(self, match_groups['F'], '', '')
 
-        plaoff_match_results[46] = PlayoffMatchResult(game.MATCH_STATUS.blue_won_match)
+        plaoff_match_results[46] = PlayoffMatchResult(game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(plaoff_match_results)
         self.assertTrue(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 3)

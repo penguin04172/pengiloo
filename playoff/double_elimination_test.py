@@ -262,7 +262,7 @@ class TestDoubleElimination(unittest.TestCase):
 
     def test_double_elimination_progression(self):
         try:
-            playoff_tournament = PlayoffTournament(models.PLAYOFF_TYPE.double_elimination, 8)
+            playoff_tournament = PlayoffTournament(models.PlayoffType.DOUBLE_ELIMINATION, 8)
         except Exception as e:
             self.fail(f'Unexpected exception: {e}')
 
@@ -273,7 +273,7 @@ class TestDoubleElimination(unittest.TestCase):
 
         assertMatchOutcome(self, match_groups['M1'], '', '')
 
-        playoff_match_results[1] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[1] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -292,7 +292,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 5 - Round 2 Lower',
         )
 
-        playoff_match_results[1] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[1] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -309,7 +309,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 7 - Round 2 Upper',
         )
 
-        playoff_match_results[2] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[2] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -326,7 +326,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 5 - Round 2 Lower',
         )
 
-        playoff_match_results[3] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[3] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -343,7 +343,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 8 - Round 2 Upper',
         )
 
-        playoff_match_results[4] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[4] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -354,7 +354,7 @@ class TestDoubleElimination(unittest.TestCase):
             self.assertEqual(match_specs[i].red_alliance_id, 0)
             self.assertEqual(match_specs[i].blue_alliance_id, 0)
 
-        playoff_match_results[5] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[5] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -371,7 +371,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 10 - Round 3 Lower',
         )
 
-        playoff_match_results[6] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[6] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -382,7 +382,7 @@ class TestDoubleElimination(unittest.TestCase):
             self.assertEqual(match_specs[i].red_alliance_id, 0)
             self.assertEqual(match_specs[i].blue_alliance_id, 0)
 
-        playoff_match_results[7] = PlayoffMatchResult(status=game.MATCH_STATUS.tie_match)
+        playoff_match_results[7] = PlayoffMatchResult(status=game.MatchStatus.TIE_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -393,7 +393,7 @@ class TestDoubleElimination(unittest.TestCase):
             self.assertEqual(match_specs[i].red_alliance_id, 0)
             self.assertEqual(match_specs[i].blue_alliance_id, 0)
 
-        playoff_match_results[7] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[7] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -404,7 +404,7 @@ class TestDoubleElimination(unittest.TestCase):
             self.assertEqual(match_specs[i].red_alliance_id, 0)
             self.assertEqual(match_specs[i].blue_alliance_id, 0)
 
-        playoff_match_results[8] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[8] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -412,8 +412,8 @@ class TestDoubleElimination(unittest.TestCase):
             [ExpectedAlliance(8, 2), ExpectedAlliance(7, 5), ExpectedAlliance(4, 3)],
         )
 
-        playoff_match_results[9] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
-        playoff_match_results[10] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[9] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
+        playoff_match_results[10] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -421,7 +421,7 @@ class TestDoubleElimination(unittest.TestCase):
             [ExpectedAlliance(7, 8)],
         )
 
-        playoff_match_results[11] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[11] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -439,7 +439,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Match 13 - Round 5 Lower',
         )
 
-        playoff_match_results[12] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[12] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         assertMatchSpecAlliances(
             self,
@@ -450,7 +450,7 @@ class TestDoubleElimination(unittest.TestCase):
             self.assertEqual(match_specs[i].red_alliance_id, 4)
             self.assertEqual(match_specs[i].blue_alliance_id, 0)
 
-        playoff_match_results[13] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[13] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         for i in range(13, 19):
             self.assertEqual(match_specs[i].red_alliance_id, 4)
@@ -479,7 +479,7 @@ class TestDoubleElimination(unittest.TestCase):
             '',
         )
 
-        playoff_match_results[13] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[13] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         for i in range(13, 19):
             self.assertEqual(match_specs[i].red_alliance_id, 4)
@@ -491,7 +491,7 @@ class TestDoubleElimination(unittest.TestCase):
             'Advances to Final 1',
         )
 
-        playoff_match_results[14] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[14] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
@@ -503,7 +503,7 @@ class TestDoubleElimination(unittest.TestCase):
             '',
         )
 
-        playoff_match_results[15] = PlayoffMatchResult(status=game.MATCH_STATUS.red_won_match)
+        playoff_match_results[15] = PlayoffMatchResult(status=game.MatchStatus.RED_WON_MATCH)
         final_matchup.update(playoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
@@ -515,7 +515,7 @@ class TestDoubleElimination(unittest.TestCase):
             '',
         )
 
-        playoff_match_results[16] = PlayoffMatchResult(status=game.MATCH_STATUS.tie_match)
+        playoff_match_results[16] = PlayoffMatchResult(status=game.MatchStatus.TIE_MATCH)
         final_matchup.update(playoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
@@ -527,7 +527,7 @@ class TestDoubleElimination(unittest.TestCase):
             '',
         )
 
-        playoff_match_results[17] = PlayoffMatchResult(status=game.MATCH_STATUS.tie_match)
+        playoff_match_results[17] = PlayoffMatchResult(status=game.MatchStatus.TIE_MATCH)
         final_matchup.update(playoff_match_results)
         self.assertFalse(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 0)
@@ -539,7 +539,7 @@ class TestDoubleElimination(unittest.TestCase):
             '',
         )
 
-        playoff_match_results[18] = PlayoffMatchResult(status=game.MATCH_STATUS.blue_won_match)
+        playoff_match_results[18] = PlayoffMatchResult(status=game.MatchStatus.BLUE_WON_MATCH)
         final_matchup.update(playoff_match_results)
         self.assertTrue(final_matchup.is_complete())
         self.assertEqual(final_matchup.winning_alliance_id(), 7)

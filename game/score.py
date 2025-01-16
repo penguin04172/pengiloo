@@ -4,28 +4,28 @@ from pydantic import BaseModel
 
 from .amp_speaker import AmpSpeaker
 from .foul import Foul
-from .game_specific import game_specific
+from .game_specific import specific
 from .match_status import ScoreSummary
 
 
-class ENDGAME_STATUS(IntEnum):
-    none = 0
-    park = 1
-    stage_left = 2
-    stage_center = 3
-    stage_right = 4
+class EndgameStatus(IntEnum):
+    NONE = 0
+    PARK = 1
+    STAGE_LEFT = 2
+    STAGE_CENTER = 3
+    STAGE_RIGHT = 4
 
 
-class STAGE_POSITION(IntEnum):
-    left = 0
-    center = 1
-    right = 2
+class StagePosition(IntEnum):
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
 
 
 class Score(BaseModel):
     leave_statuses: list[bool] = [False] * 3
     amp_speaker: AmpSpeaker = AmpSpeaker()
-    endgame_statuses: list[ENDGAME_STATUS] = [ENDGAME_STATUS.none] * 3
+    endgame_statuses: list[EndgameStatus] = [EndgameStatus.NONE] * 3
     microphone_statuses: list[bool] = [False] * 3
     trap_statuses: list[bool] = [False] * 3
     fouls: list[Foul] = []
@@ -48,23 +48,23 @@ class Score(BaseModel):
 
         # Endgame points
         robots_by_position = {
-            STAGE_POSITION.left: 0,
-            STAGE_POSITION.center: 0,
-            STAGE_POSITION.right: 0,
+            StagePosition.LEFT: 0,
+            StagePosition.CENTER: 0,
+            StagePosition.RIGHT: 0,
         }
         for status in self.endgame_statuses:
             match status:
-                case ENDGAME_STATUS.park:
+                case EndgameStatus.PARK:
                     summary.park_points += 1
-                case ENDGAME_STATUS.stage_left:
+                case EndgameStatus.STAGE_LEFT:
                     summary.onstage_points += 3
-                    robots_by_position[STAGE_POSITION.left] += 1
-                case ENDGAME_STATUS.stage_center:
+                    robots_by_position[StagePosition.LEFT] += 1
+                case EndgameStatus.STAGE_CENTER:
                     summary.onstage_points += 3
-                    robots_by_position[STAGE_POSITION.center] += 1
-                case ENDGAME_STATUS.stage_right:
+                    robots_by_position[StagePosition.CENTER] += 1
+                case EndgameStatus.STAGE_RIGHT:
                     summary.onstage_points += 3
-                    robots_by_position[STAGE_POSITION.right] += 1
+                    robots_by_position[StagePosition.RIGHT] += 1
 
         total_onstage_robots = 0
         for position, onstage_robots in robots_by_position.items():
@@ -108,21 +108,21 @@ class Score(BaseModel):
 
         # Calculate bonus ranking points
         summary.num_notes = self.amp_speaker.total_notes_scored()
-        summary.num_notes_goal = game_specific.melody_bouns_threshold_without_coop
-        if game_specific.melody_bonus_threshold_with_coop > 0:
+        summary.num_notes_goal = specific.melody_bonus_threshold_without_coop
+        if specific.melody_bonus_threshold_with_coop > 0:
             summary.coopertition_criteria_met = self.amp_speaker.coop_activated
             summary.coopertition_bonus = (
                 summary.coopertition_criteria_met and opponent_score.amp_speaker.coop_activated
             )
             if summary.coopertition_bonus:
-                summary.num_notes_goal = game_specific.melody_bonus_threshold_with_coop
+                summary.num_notes_goal = specific.melody_bonus_threshold_with_coop
 
         if summary.num_notes >= summary.num_notes_goal:
             summary.melody_bonus_ranking_point = True
 
         if (
-            summary.stage_points >= game_specific.ENSEMBLE_BONUS_POINT_THRESHOLD
-            and total_onstage_robots >= game_specific.ENSEMBLE_BONUS_ROBOT_THRESHOLD
+            summary.stage_points >= specific.ENSEMBLE_BONUS_POINT_THRESHOLD
+            and total_onstage_robots >= specific.ENSEMBLE_BONUS_ROBOT_THRESHOLD
         ):
             summary.ensemble_bonus_ranking_point = True
 

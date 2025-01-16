@@ -115,7 +115,7 @@ def assert_match(
     tba_set_number,
     tba_match_number,
 ):
-    self.assertEqual(match.type, models.MATCH_TYPE.playoff)
+    self.assertEqual(match.type, models.MatchType.PLAYOFF)
     self.assertEqual(match.type_order, type_order)
     self.assertEqual(match.scheduled_time, datetime.fromtimestamp(time_in_sec))
     self.assertEqual(match.long_name, long_name)
@@ -149,7 +149,7 @@ def assert_match(
 
 
 def assert_break(self, scheduled_break, type_order_before, time_sec, duration_sec, description):
-    self.assertEqual(scheduled_break.match_type, models.MATCH_TYPE.playoff)
+    self.assertEqual(scheduled_break.match_type, models.MatchType.PLAYOFF)
     self.assertEqual(scheduled_break.type_order_before, type_order_before)
     self.assertEqual(scheduled_break.time, datetime.fromtimestamp(time_sec))
     self.assertEqual(scheduled_break.duration_sec, duration_sec)

@@ -18,7 +18,7 @@ class TeamWifiStatus(BaseModel):
     mbits: float = 0.0
     rx_rate: float = 0.0
     tx_rate: float = 0.0
-    signal_noise_radio: int = 0
+    signal_noise_ratio: int = 0
 
 
 class ConfigurationRequest(BaseModel):
@@ -215,11 +215,11 @@ def update_team_wifi_status(team_wifi_status: TeamWifiStatus, station_status: St
         team_wifi_status.mbits = 0
         team_wifi_status.rx_rate = 0
         team_wifi_status.tx_rate = 0
-        team_wifi_status.signal_noise_radio = 0
+        team_wifi_status.signal_noise_ratio = 0
     else:
         team_wifi_status.team_id = int(station_status.ssid)
         team_wifi_status.radio_linked = station_status.is_linked
         team_wifi_status.mbits = station_status.bandwidth_used_mbps
         team_wifi_status.rx_rate = station_status.rx_rate_mbps
         team_wifi_status.tx_rate = station_status.tx_rate_mbps
-        team_wifi_status.signal_noise_radio = station_status.signal_noise_ratio
+        team_wifi_status.signal_noise_ratio = station_status.signal_noise_ratio

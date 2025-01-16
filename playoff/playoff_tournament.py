@@ -16,12 +16,12 @@ class PlayoffTournament:
     break_specs: list[BreakSpec]
     final_matchup: Matchup
 
-    def __init__(self, playoff_type: models.PLAYOFF_TYPE, num_playoff_alliances: int):
-        if playoff_type == models.PLAYOFF_TYPE.double_elimination:
+    def __init__(self, playoff_type: models.PlayoffType, num_playoff_alliances: int):
+        if playoff_type == models.PlayoffType.DOUBLE_ELIMINATION:
             self.final_matchup, self.break_specs = new_double_elimination_bracket(
                 num_playoff_alliances
             )
-        elif playoff_type == models.PLAYOFF_TYPE.single_elimination:
+        elif playoff_type == models.PlayoffType.SINGLE_ELIMINATION:
             self.final_matchup, self.break_specs = new_single_elimination_bracket(
                 num_playoff_alliances
             )
@@ -53,12 +53,12 @@ class PlayoffTournament:
         return self.final_matchup.traverse(visit_function)
 
     def create_match_and_breaks(self, start_time: datetime):
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
 
         if len(matches) > 0:
             raise ValueError('Playoff matches already exist')
 
-        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MATCH_TYPE.playoff)
+        scheduled_breaks = models.read_scheduled_breaks_by_match_type(models.MatchType.PLAYOFF)
         if len(scheduled_breaks) > 0:
             raise ValueError('Scheduled breaks already exist')
 
@@ -83,7 +83,7 @@ class PlayoffTournament:
                 break_spec = self.break_specs[break_index]
                 models.create_scheduled_break(
                     models.ScheduledBreak(
-                        match_type=models.MATCH_TYPE.playoff,
+                        match_type=models.MatchType.PLAYOFF,
                         type_order_before=break_spec.order_before,
                         time=next_event_time,
                         duration_sec=break_spec.duration_sec,
@@ -95,7 +95,7 @@ class PlayoffTournament:
 
             match_spec = self.match_specs[match_index]
             match = models.Match(
-                type=models.MATCH_TYPE.playoff,
+                type=models.MatchType.PLAYOFF,
                 type_order=match_spec.order,
                 scheduled_time=next_event_time,
                 long_name=match_spec.long_name,
@@ -116,9 +116,9 @@ class PlayoffTournament:
 
             # print(match)
             if match_spec.is_hidden:
-                match.status = game.MATCH_STATUS.match_hidden
+                match.status = game.MatchStatus.MATCH_HIDDEN
             else:
-                match.status = game.MATCH_STATUS.match_scheduled
+                match.status = game.MatchStatus.MATCH_SCHEDULE
 
             models.create_match(match)
 
@@ -126,16 +126,16 @@ class PlayoffTournament:
             next_event_time = next_event_time + timedelta(seconds=match_spec.duration_sec)
 
     def update_matches(self):
-        matches = models.read_matches_by_type(models.MATCH_TYPE.playoff, True)
+        matches = models.read_matches_by_type(models.MatchType.PLAYOFF, True)
         if len(matches) == 0:
             raise ValueError('No playoff matches exist')
 
         playoff_match_results = dict[int, PlayoffMatchResult]()
         for match in matches:
             if match.status in [
-                game.MATCH_STATUS.red_won_match,
-                game.MATCH_STATUS.blue_won_match,
-                game.MATCH_STATUS.tie_match,
+                game.MatchStatus.RED_WON_MATCH,
+                game.MatchStatus.BLUE_WON_MATCH,
+                game.MatchStatus.TIE_MATCH,
             ]:
                 playoff_match_results[match.type_order] = PlayoffMatchResult(match.status)
 
@@ -155,15 +155,15 @@ class PlayoffTournament:
                 continue
 
             if match_spec.is_hidden:
-                match.status = game.MATCH_STATUS.match_hidden
+                match.status = game.MatchStatus.MATCH_HIDDEN
             else:
-                match.status = game.MATCH_STATUS.match_scheduled
+                match.status = game.MatchStatus.MATCH_SCHEDULE
 
             match.playoff_red_alliance = match_spec.red_alliance_id
             match.playoff_blue_alliance = match_spec.blue_alliance_id
 
             if (
-                match.status == game.MATCH_STATUS.match_scheduled
+                match.status == game.MatchStatus.MATCH_SCHEDULE
                 and match.playoff_red_alliance > 0
                 and len(alliances) >= match.playoff_red_alliance
             ):
@@ -172,7 +172,7 @@ class PlayoffTournament:
                 self.position_red_teams(match, models.Alliance(id=0, team_ids=[]))
 
             if (
-                match.status == game.MATCH_STATUS.match_scheduled
+                match.status == game.MatchStatus.MATCH_SCHEDULE
                 and match.playoff_blue_alliance > 0
                 and len(alliances) >= match.playoff_blue_alliance
             ):
