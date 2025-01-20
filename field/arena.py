@@ -1,9 +1,6 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from enum import IntEnum
-
-from pydantic import BaseModel
 
 import game
 import models
@@ -19,34 +16,22 @@ from .driver_station_connection import DriverStationConnection, DriverStationCon
 from .event_status import EventStatusMixin
 from .realtime_score import RealtimeScore
 from .scoring_panel_register import ScoringPanelRegister
+from .specs import (
+    ARENA_LOOP_PERIOD_MS,
+    ARENA_LOOP_WARNING_US,
+    DS_PACKET_PERIOD_MS,
+    DS_PACKET_WARNING_MS,
+    MATCH_END_SCORE_DWELL_SEC,
+    PERIODIC_TASK_PERIOD_SEC,
+    POST_TIMEOUT_SEC,
+    PRE_LOAD_NEXT_MATCH_DELAY_SEC,
+    SCHEDULED_BREAK_DELAY_SEC,
+    MatchState,
+)
 from .team_sign import TeamSigns
 
-ARENA_LOOP_PERIOD_MS = 10
-ARENA_LOOP_WARNING_US = 3000
-DS_PACKET_PERIOD_MS = 500
-DS_PACKET_WARNING_MS = 550
-PERIODIC_TASK_PERIOD_SEC = 30
-MATCH_END_SCORE_DWELL_SEC = 3
-POST_TIMEOUT_SEC = 4
-PRE_LOAD_NEXT_MATCH_DELAY_SEC = 5
-SCHEDULED_BREAK_DELAY_SEC = 5
-EARLY_LATE_THRESHOLD_MIN = 2.5
-MAX_MATCH_GAP_MIN = 20
 
-
-class MatchState(IntEnum):
-    PRE_MATCH = 0
-    START_MATCH = 1
-    WARMUP_PERIOD = 2
-    AUTO_PERIOD = 3
-    PAUSE_PERIOD = 4
-    TELEOP_PERIOD = 5
-    POST_MATCH = 6
-    TIMEOUT_ACTIVE = 7
-    POST_TIMEOUT = 8
-
-
-class AllianceStation(BaseModel):
+class AllianceStation:
     ds_conn: DriverStationConnection = None
     ethernet: bool = False
     a_stop: bool = False
@@ -59,7 +44,7 @@ class AllianceStation(BaseModel):
 
 class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaNotifiersMixin):
     event: Event
-    access_point: AccessPoint
+    access_point: AccessPoint = AccessPoint()
     # network_switch:
     # plc:
     tba_client: tba
@@ -78,8 +63,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     blue_realtime_score: RealtimeScore
     last_ds_packet_time: datetime
     last_period_task_time: datetime
-    field_reset: bool
-    audience_display_mode: str
+    field_reset: bool = False
+    audience_display_mode: str = 'blank'
     saved_match: models.MatchOut
     saved_match_result: models.MatchResult
     saved_rankings: game.Rankings
@@ -90,12 +75,12 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     alliance_selection_time_remaining_sec: int
     playoff_tournament: playoff.PlayoffTournament
     lower_third: models.LowerThird
-    show_lower_third: bool
-    mute_match_sounds: bool
-    match_aborted: bool
-    sounds_played: set[game.MatchSounds]
-    break_description: str
-    preloaded_teams: list[models.Team]
+    show_lower_third: bool = False
+    mute_match_sounds: bool = False
+    match_aborted: bool = False
+    sounds_played: set[game.MatchSounds] = set()
+    break_description: str = ''
+    preloaded_teams: list[models.Team] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -111,21 +96,21 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.displays = dict[str, Display]()
         self.team_signs = TeamSigns()
 
-        self.load_settings()
+        asyncio.run(self.load_settings())
 
         self.scoring_panel_registry = ScoringPanelRegister()
 
         self.match_state = MatchState.PRE_MATCH
-        self.load_test_match()
+        asyncio.run(self.load_test_match())
         self.last_match_time_sec = 0
         self.last_match_state = -1
 
         self.audience_display_mode = 'blank'
-        self.saved_match = models.MatchOut()
-        self.saved_match_result = models.MatchResult()
+        self.saved_match = models.MatchOut(id=0, type=models.MatchType.TEST, type_order=0)
+        self.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
         self.alliance_station_display_mode = 'Match'
 
-    def load_settings(self):
+    async def load_settings(self):
         settings = models.read_event_settings()
         self.event = settings
 
@@ -162,7 +147,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         game.timing.teleop_duration_sec = settings.teleop_duration_sec
         game.timing.warning_remaining_duration_sec = settings.warning_remaining_duration_sec
         game.update_match_sounds()
-        self.match_timing_notifier.notify()
+        await self.match_timing_notifier.notify()
 
         game.specific.melody_bonus_threshold_with_coop = settings.melody_bonus_threshold_with_coop
         game.specific.melody_bonus_threshold_without_coop = (
@@ -186,10 +171,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         alliances = models.read_all_alliances()
         if len(alliances) > 0:
             return self.playoff_tournament.update_matches(alliances)
-        else:
-            raise Exception('No alliances found')
 
-    def load_match(self, match: models.MatchOut):
+    async def load_match(self, match: models.MatchOut):
         if (
             self.match_state != MatchState.PRE_MATCH
             and self.match_state != MatchState.TIMEOUT_ACTIVE
@@ -223,16 +206,17 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         # self.plc.reset_match()
 
         # Notify any listeners that the match has been loaded
-        self.match_load_notifier.notify()
-        self.realtime_score_notifier.notify()
+        await self.match_load_notifier.notify()
+        await self.realtime_score_notifier.notify()
         self.alliance_station_display_mode = 'match'
-        self.alliance_station_display_mode_notifier.notify()
-        self.scoring_status_notifier.notify()
+        await self.alliance_station_display_mode_notifier.notify()
+        await self.scoring_status_notifier.notify()
 
     def load_test_match(self):
         return self.load_match(
             models.MatchOut(
-                type=models.MATCH_TYPE.test,
+                id=0,
+                type=models.MatchType.TEST,
                 type_order=0,
                 short_name='T',
                 long_name='Test Match',
@@ -257,7 +241,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
                 asyncio.create_task(scheduled_break_delay())
 
-    def substitute_team(self, red1: int, red2: int, red3: int, blue1: int, blue2: int, blue3: int):
+    async def substitute_team(
+        self, red1: int, red2: int, red3: int, blue1: int, blue2: int, blue3: int
+    ):
         if not self.current_match.should_allow_substitution():
             raise ValueError('Match does not allow substitution')
 
@@ -283,7 +269,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             ],
             False,
         )
-        self.match_load_notifier.notify()
+        await self.match_load_notifier.notify()
 
         if self.current_match.type != models.MATCH_TYPE.test:
             models.update_match(self.current_match)
@@ -317,7 +303,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         else:
             raise Exception('Cannot start match')
 
-    def abort_match(self):
+    async def abort_match(self):
         if self.match_state in [
             MatchState.PRE_MATCH,
             MatchState.POST_MATCH,
@@ -337,9 +323,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.match_state = MatchState.POST_MATCH
         self.match_aborted = True
         self.audience_display_mode = 'blank'
-        self.audience_display_mode_notifier.notify()
+        await self.audience_display_mode_notifier.notify()
         self.alliance_station_display_mode = 'logo'
-        self.alliance_station_display_mode_notifier.notify()
+        await self.alliance_station_display_mode_notifier.notify()
 
         # stop blackmagic
         return
@@ -365,7 +351,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.mute_match_sounds = False
         return
 
-    def start_timeout(self, description: str, duration_sec: int):
+    async def start_timeout(self, description: str, duration_sec: int):
         if self.match_state != MatchState.PRE_MATCH:
             raise Exception(
                 'Cannot start timeout while match is in progress or with results pending'
@@ -374,26 +360,26 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         game.timing.timeout_duration_sec = duration_sec
         game.update_match_sounds()
         self.sounds_played = set[game.MatchSounds]()
-        self.match_timing_notifier.notify()
+        await self.match_timing_notifier.notify()
         self.break_description = description
-        self.match_load_notifier.notify()
+        await self.match_load_notifier.notify()
         self.match_state = MatchState.TIMEOUT_ACTIVE
         self.match_start_time = datetime.now()
         self.last_match_time_sec = -1
         self.alliance_station_display_mode = 'timeout'
-        self.alliance_station_display_mode_notifier.notify()
+        await self.alliance_station_display_mode_notifier.notify()
 
-    def set_audience_display_mode(self, mode: str):
+    async def set_audience_display_mode(self, mode: str):
         if self.audience_display_mode != mode:
             self.audience_display_mode = mode
-            self.audience_display_mode_notifier.notify()
+            await self.audience_display_mode_notifier.notify()
             if mode == 'score':
                 self.play_sound('match_result')
 
-    def set_alliance_station_display_mode(self, mode: str):
+    async def set_alliance_station_display_mode(self, mode: str):
         if self.alliance_station_display_mode != mode:
             self.alliance_station_display_mode = mode
-            self.alliance_station_display_mode_notifier.notify()
+            await self.alliance_station_display_mode_notifier.notify()
 
     def match_time_sec(self):
         if self.match_state in [
@@ -405,7 +391,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         else:
             return (datetime.now() - self.match_start_time).total_seconds()
 
-    def update(self):
+    async def update(self):
         auto = False
         enabled = False
         send_ds_packet = False
@@ -420,9 +406,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.last_match_time_sec = -1
             auto = True
             self.audience_display_mode = 'match'
-            self.audience_display_mode_notifier.notify()
+            await self.audience_display_mode_notifier.notify()
             self.alliance_station_display_mode = 'match'
-            self.alliance_station_display_mode_notifier.notify()
+            await self.alliance_station_display_mode_notifier.notify()
 
             # start blackmagic
             if game.timing.warmup_duration_sec > 0:
@@ -481,9 +467,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 async def post_match_dwell():
                     await asyncio.sleep(MATCH_END_SCORE_DWELL_SEC)
                     self.audience_display_mode = 'blank'
-                    self.audience_display_mode_notifier.notify()
+                    await self.audience_display_mode_notifier.notify()
                     self.alliance_station_display_mode = 'logo'
-                    self.alliance_station_display_mode_notifier.notify()
+                    await self.alliance_station_display_mode_notifier.notify()
 
                 asyncio.create_task(post_match_dwell())
 
@@ -500,9 +486,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 async def post_timeout_dwell():
                     await asyncio.sleep(MATCH_END_SCORE_DWELL_SEC)
                     self.audience_display_mode = 'blank'
-                    self.audience_display_mode_notifier.notify()
+                    await self.audience_display_mode_notifier.notify()
                     self.alliance_station_display_mode = 'logo'
-                    self.alliance_station_display_mode_notifier.notify()
+                    await self.alliance_station_display_mode_notifier.notify()
 
                 asyncio.create_task(post_timeout_dwell())
         elif self.match_state == MatchState.POST_TIMEOUT:
@@ -513,7 +499,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             int(match_time_sec) != int(self.last_match_time_sec)
             or self.match_state != self.last_match_state
         ):
-            self.match_time_notifier.notify()
+            await self.match_time_notifier.notify()
 
         ms_since_last_ds_packet = (datetime.now() - self.last_ds_packet_time).total_seconds() * 1000
         if send_ds_packet or ms_since_last_ds_packet > DS_PACKET_PERIOD_MS:
@@ -523,7 +509,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             ):
                 logging.warning(f'Last DS packet was {ms_since_last_ds_packet}ms ago')
             self.send_ds_packet(auto, enabled)
-            self.arena_status_notifier.notify()
+            await self.arena_status_notifier.notify()
 
         self.handle_sounds(match_time_sec)
         # self.handle_plc_io()

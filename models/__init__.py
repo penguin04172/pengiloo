@@ -22,6 +22,7 @@ from .award import (
     truncate_awards,
     update_award,
 )
+from .base import db
 from .event import Event, PlayoffType, read_event_settings, update_event_settings
 from .lower_third import (
     LowerThird,

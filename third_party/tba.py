@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 import models
 from game.ranking import RankingField
-from game.score import ENDGAME_STATUS, Score, ScoreSummary
-from models.event import PLAYOFF_TYPE, Event
-from models.match import MATCH_TYPE, MatchOut
+from game.score import EndgameStatus, Score, ScoreSummary
+from models.event import Event, PlayoffType
+from models.match import MatchOut, MatchType
 from models.match_result import MatchResult
 
 TBA_BASE_URL = 'https://www.thebluealliance.com'
@@ -191,8 +191,8 @@ class TbaClient(BaseModel):
         return None
 
     async def publish_matches(self):
-        qual_matches = models.read_matches_by_type(MATCH_TYPE.qualification, False)
-        playoff_matches = models.read_matches_by_type(MATCH_TYPE.playoff, False)
+        qual_matches = models.read_matches_by_type(MatchType.QUALIFICATION, False)
+        playoff_matches = models.read_matches_by_type(MatchType.PLAYOFF, False)
         event_settings = models.read_event_settings()
         matches = qual_matches + playoff_matches
         tba_matches = []
@@ -292,7 +292,7 @@ class TbaClient(BaseModel):
             return f"Got status code {resp['status']} from TBA: {resp['body']}"
 
         event_settings = models.read_event_settings()
-        playoff_type = 10 if event_settings.playoff_type == PLAYOFF_TYPE.double_elimination else 0
+        playoff_type = 10 if event_settings.playoff_type == PlayoffType.DOUBLE_ELIMINATION else 0
 
         resp = await self.post_request('info', 'update', bytes({'playoff_type': playoff_type}))
         if resp['status'] != 200:
@@ -524,11 +524,11 @@ class TbaPublishedAward(BaseModel):
 
 leave_mapping = {False: 'No', True: 'Yes'}
 endgame_status_mapping = {
-    ENDGAME_STATUS.none: 'None',
-    ENDGAME_STATUS.park: 'Parked',
-    ENDGAME_STATUS.stage_left: 'StageLeft',
-    ENDGAME_STATUS.stage_center: 'CenterStage',
-    ENDGAME_STATUS.stage_right: 'StageRight',
+    EndgameStatus.NONE: 'None',
+    EndgameStatus.PARK: 'Parked',
+    EndgameStatus.STAGE_LEFT: 'StageLeft',
+    EndgameStatus.STAGE_CENTER: 'CenterStage',
+    EndgameStatus.STAGE_RIGHT: 'StageRight',
 }
 
 

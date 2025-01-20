@@ -4,9 +4,9 @@ import game
 import models
 from websocket.notifier import Notifier
 
-from .arena import MatchState
 from .display import Display
 from .realtime_score import RealtimeScore
+from .specs import MatchState
 
 
 class MatchTimeMessage(BaseModel):
@@ -145,7 +145,8 @@ class ArenaNotifiersMixin:
 
         red_off_field_teams = []
         blue_off_field_team = []
-        if self.current_match.type == models.MATCH_TYPE.playoff:
+        match_group = None
+        if self.current_match.type == models.MatchType.PLAYOFF:
             match_group = self.playoff_tournament.MatchGroups()[
                 self.current_match.playoff_match_group_id
             ]
@@ -186,7 +187,7 @@ class ArenaNotifiersMixin:
         )
 
     def generate_match_timing_message(self):
-        return game.game_timing
+        return game.timing
 
     def generate_realtime_score_message(self):
         return {

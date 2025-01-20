@@ -2,13 +2,13 @@ import logging
 import socket
 from datetime import datetime
 
-from pydantic import BaseModel, dataclasses
+from pydantic import dataclasses
 
 import game
 from models import MatchOut
 
-from .arena import AllianceStation, Arena, MatchState
 from .realtime_score import RealtimeScore
+from .specs import MatchState
 
 
 @dataclasses.dataclass
@@ -23,12 +23,12 @@ TEAM_SIGN_ADDRESS_PREFIX = '10.0.100.'
 TEAM_SIGN_PORT = 10011
 TEAM_SIGN_PACKET_MAGIC_STRING = 'CYPRX'
 TEAM_SIGN_PACKET_HEADER_LENGTH = 7
-TEAM_SIGN_COMMAND_SET_DISPLAY = 0x04
-TEAM_SIGN_ADDRESS_SINGLE = 0x01
-TEAM_SIGN_PACKET_TYPE_FRONT_TEXT = 0x01
-TEAM_SIGN_PACKET_TYPE_REAR_TEXT = 0x02
-TEAM_SIGN_PACKET_TYPE_FRONT_INTENSITY = 0x03
-TEAM_SIGN_PACKET_TYPE_COLOR = 0x04
+TEAM_SIGN_COMMAND_SET_DISPLAY = bytearray([0x04])
+TEAM_SIGN_ADDRESS_SINGLE = bytearray([0x01])
+TEAM_SIGN_PACKET_TYPE_FRONT_TEXT = bytearray([0x01])
+TEAM_SIGN_PACKET_TYPE_REAR_TEXT = bytearray([0x02])
+TEAM_SIGN_PACKET_TYPE_FRONT_INTENSITY = bytearray([0x03])
+TEAM_SIGN_PACKET_TYPE_COLOR = bytearray([0x04])
 TEAM_SIGN_PACKET_PERIOD_MS = 5000
 TEAM_SIGN_BLINK_PERIOD_MS = 750
 
@@ -48,7 +48,7 @@ def blink_color(original_color: RGBA):
     return RGBA(original_color.r, original_color.g, original_color.b, 0)
 
 
-class TeamSign(BaseModel):
+class TeamSign:
     is_timer: bool = False
     address: bytearray = bytearray()
     next_match_team_id: int = 0
@@ -63,12 +63,15 @@ class TeamSign(BaseModel):
     packet_index: int = 0
     last_packet_time: datetime = datetime.min
 
+    def __init__(self, is_timer: bool = False):
+        self.is_timer = is_timer
+
     @staticmethod
-    def generate_timer_texts(arena: 'Arena', countdown: str, in_match_rear_text: str):
+    def generate_timer_texts(arena, countdown: str, in_match_rear_text: str):
         if arena.alliance_station_display_mode == 'blank':
             return ('     ', white_color, '')
 
-        if arena.alliance_station_display_mode == 'alliance_selection':
+        if arena.audience_display_mode == 'alliance_selection':
             if arena.alliance_selection_show_timer:
                 return (countdown, white_color, '')
             else:
@@ -90,8 +93,8 @@ class TeamSign(BaseModel):
 
     def generate_team_number_texts(
         self,
-        arena: 'Arena',
-        alliance_station: 'AllianceStation',
+        arena,
+        alliance_station,
         is_red: bool,
         countdown: str,
         in_match_rear_text: str,
@@ -106,7 +109,7 @@ class TeamSign(BaseModel):
                 return ('     ', white_color, '')
 
         if alliance_station.team is None:
-            return ('     ', white_color, f"{"No Team Assigned": 20s}")
+            return ('     ', white_color, f"{"No Team Assigned":>20}")
 
         front_text = f'{alliance_station.team.id: 5d}'
         if (
@@ -132,7 +135,7 @@ class TeamSign(BaseModel):
             or arena.match_state == MatchState.TIMEOUT_ACTIVE
         ):
             if alliance_station.bypass:
-                message = 'BYPASS'
+                message = 'Bypassed'
             elif not alliance_station.ethernet:
                 message = 'Connect PC'
             elif alliance_station.ds_conn is None:
@@ -156,7 +159,7 @@ class TeamSign(BaseModel):
         ):
             rear_text = f'Next Team Up: {self.next_match_team_id}'
         elif len(message) > 0:
-            rear_text = f'{alliance_station.team.id: <} {message: 14}'
+            rear_text = f'{alliance_station.team.id:<5} {message:>14}'
         else:
             rear_text = in_match_rear_text
 
@@ -212,13 +215,14 @@ class TeamSign(BaseModel):
 
     def update(
         self,
-        arena: 'Arena',
-        alliance_station: 'AllianceStation',
+        arena,
+        alliance_station,
         is_red: bool,
         countdown: str,
         in_match_rear_text: str,
     ):
-        if self.address == 0:
+        self.packet_data = bytearray()
+        if self.address == bytearray():
             return
 
         if self.is_timer:
@@ -244,8 +248,12 @@ class TeamSign(BaseModel):
             return
 
         ip_address = f'{TEAM_SIGN_ADDRESS_PREFIX}{id}'
+        try:
+            self.udp_conn.connect((ip_address, TEAM_SIGN_PORT))
+        except Exception as err:
+            logging.warning(f'Failed to connect to team sign at {ip_address}: {err}')
+            return
 
-        self.udp_conn.connect((ip_address, TEAM_SIGN_PORT))
         address_parts = ip_address.split('.')
         if len(address_parts) != 4:
             logging.warning(f'Failed to configure team sign: invalid IP address: {ip_address}')
@@ -257,7 +265,7 @@ class TeamSign(BaseModel):
         self.last_packet_time = datetime.now()
 
 
-class TeamSigns(BaseModel):
+class TeamSigns:
     red_1: TeamSign = TeamSign()
     red_2: TeamSign = TeamSign()
     red_3: TeamSign = TeamSign()
@@ -266,6 +274,9 @@ class TeamSigns(BaseModel):
     blue_2: TeamSign = TeamSign()
     blue_3: TeamSign = TeamSign()
     blue_timer: TeamSign = TeamSign(is_timer=True)
+
+    def __init__(self):
+        pass
 
     @staticmethod
     def generate_in_match_rear_text(
@@ -285,16 +296,16 @@ class TeamSigns(BaseModel):
         opponent_score_total = opponent_score_summary.score - opponent_score_summary.stage_points
 
         if is_red:
-            alliance_scores = f'R{score_total: 03d}-B{opponent_score_total: 03d}'
+            alliance_scores = f'R{score_total:03d}-B{opponent_score_total:03d}'
         else:
-            alliance_scores = f'B{score_total: 03d}-R{opponent_score_total: 03d}'
+            alliance_scores = f'B{score_total:03d}-R{opponent_score_total:03d}'
 
         if realtime_score.amplified_time_remaining_sec > 0:
-            alliance_scores = f'Amp:{realtime_score.amplified_time_remaining_sec: 2d}'
+            alliance_scores = f'Amp:{realtime_score.amplified_time_remaining_sec:2d}'
 
-        return f'{countdown[1:]} {score_summary.num_notes: 02d}/{score_summary.num_notes_goal: 02d} {alliance_scores: 9}'
+        return f'{countdown[1:]} {score_summary.num_notes:02}/{score_summary.num_notes_goal:02} {alliance_scores:>9}'
 
-    def update(self, arena: 'Arena'):
+    def update(self, arena):
         match_time_sec = int(arena.match_time_sec())
 
         match arena.match_state:

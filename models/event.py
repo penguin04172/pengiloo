@@ -16,7 +16,7 @@ class PlayoffType(IntEnum):
 class Event(BaseModel):
     name: str | None = None
     playoff_type: int | None = None
-    num_playoff_alliance: int | None = None
+    num_playoff_alliance: int = 8
     selection_round_2_order: str | None = None
     selection_round_3_order: str | None = None
     tba_download_enabled: bool | None = None
@@ -33,14 +33,14 @@ class Event(BaseModel):
     switch_password: str | None = None
     plc_address: str | None = None
     admin_password: str | None = None
-    team_sign_red_1_id: str | None = None
-    team_sign_red_2_id: str | None = None
-    team_sign_red_3_id: str | None = None
-    team_sign_red_timer_id: str | None = None
-    team_sign_blue_1_id: str | None = None
-    team_sign_blue_2_id: str | None = None
-    team_sign_blue_3_id: str | None = None
-    team_sign_blue_timer_id: str | None = None
+    team_sign_red_1_id: int = 0
+    team_sign_red_2_id: int = 0
+    team_sign_red_3_id: int = 0
+    team_sign_red_timer_id: int = 0
+    team_sign_blue_1_id: int = 0
+    team_sign_blue_2_id: int = 0
+    team_sign_blue_3_id: int = 0
+    team_sign_blue_timer_id: int = 0
     warmup_duration_sec: int | None = None
     auto_duration_sec: int | None = None
     pause_duration_sec: int | None = None
@@ -76,14 +76,14 @@ class EventDB(db.Entity):
     switch_password = Optional(str)
     plc_address = Optional(str)
     admin_password = Optional(str)
-    team_sign_red_1_id = Optional(str)
-    team_sign_red_2_id = Optional(str)
-    team_sign_red_3_id = Optional(str)
-    team_sign_red_timer_id = Optional(str)
-    team_sign_blue_1_id = Optional(str)
-    team_sign_blue_2_id = Optional(str)
-    team_sign_blue_3_id = Optional(str)
-    team_sign_blue_timer_id = Optional(str)
+    team_sign_red_1_id = Optional(int, default=0)
+    team_sign_red_2_id = Optional(int, default=0)
+    team_sign_red_3_id = Optional(int, default=0)
+    team_sign_red_timer_id = Optional(int, default=0)
+    team_sign_blue_1_id = Optional(int, default=0)
+    team_sign_blue_2_id = Optional(int, default=0)
+    team_sign_blue_3_id = Optional(int, default=0)
+    team_sign_blue_timer_id = Optional(int, default=0)
     warmup_duration_sec = Required(int, default=game.timing.warmup_duration_sec)
     auto_duration_sec = Required(int, default=game.timing.auto_duration_sec)
     pause_duration_sec = Required(int, default=game.timing.pause_duration_sec)

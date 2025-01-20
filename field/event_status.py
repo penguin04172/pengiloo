@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 import models
 
-from .arena import EARLY_LATE_THRESHOLD_MIN, MAX_MATCH_GAP_MIN, MatchState
+from .specs import EARLY_LATE_THRESHOLD_MIN, MAX_MATCH_GAP_MIN, MatchState
 
 MAX_EXPECTED_CYCLE_TIME_SEC = 900
 

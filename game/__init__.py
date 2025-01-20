@@ -1,3 +1,4 @@
+from .amp_speaker import AmpSpeaker
 from .foul import Foul
 from .game_specific import specific
 from .match_sounds import MatchSounds, sounds, update_match_sounds

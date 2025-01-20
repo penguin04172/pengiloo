@@ -4,13 +4,11 @@ import re
 import socket
 from datetime import datetime
 
-from pydantic import BaseModel
-
 import game
 import models
 import network
 
-from .arena import Arena, MatchState
+from .specs import MatchState
 
 DRIVER_STATION_TCP_LISTEN_PORT = 1750
 DRIVER_STATION_UDP_SEND_PORT = 1121
@@ -22,9 +20,9 @@ MAX_TCP_PACKET_BYTES = 4096
 alliance_station_position_map = {'R1': 0, 'R2': 1, 'R3': 2, 'B1': 3, 'B2': 4, 'B3': 5}
 
 
-class DriverStationConnection(BaseModel):
-    team_id: int
-    alliance_station: str
+class DriverStationConnection:
+    team_id: int = 0
+    alliance_station: str = ''
     auto: bool = False
     enabled: bool = False
     e_stop: bool = False
@@ -41,17 +39,21 @@ class DriverStationConnection(BaseModel):
     last_robot_linked_time: datetime = datetime.now()
     packet_count: int = 0
     missed_packet_offset: int = 0
-    tcp_conn: socket.socket | None
-    udp_conn: socket.socket | None = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    tcp_conn: socket.socket
+    udp_conn: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     log: None = None
     wrong_station: str = ''
 
-    def __post_init__(self):
-        ip_address, _ = self.tcp_conn.getpeername()
-        logging.info(f'Driver station for Team {self.team_id} connected from {ip_address}')
-        self.udp_conn.connect((ip_address, DRIVER_STATION_UDP_SEND_PORT))
+    def __init__(self, team_id: int, assigned_station: str, tcp_conn: socket.socket):
+        self.team_id = team_id
+        self.alliance_station = assigned_station
+        self.tcp_conn = tcp_conn
+        if self.tcp_conn is not None:
+            ip_address, _ = self.tcp_conn.getpeername()
+            logging.info(f'Driver station for Team {self.team_id} connected from {ip_address}')
+            self.udp_conn.connect((ip_address, DRIVER_STATION_UDP_SEND_PORT))
 
-    def update(self, arena: 'Arena'):
+    def update(self, arena):
         self.send_control_packet(arena)
 
         if (
@@ -81,7 +83,7 @@ class DriverStationConnection(BaseModel):
         self.missed_packet_offset = self.missed_packet_count
         # self.log =
 
-    def encode_control_packet(self, arena: 'Arena'):
+    def encode_control_packet(self, arena):
         packet = bytearray(22)
 
         # packet number
@@ -160,7 +162,7 @@ class DriverStationConnection(BaseModel):
         self.packet_count += 1
         return packet
 
-    def send_control_packet(self, arena: 'Arena'):
+    def send_control_packet(self, arena):
         packet = self.encode_control_packet(arena)
         if self.udp_conn is not None:
             self.udp_conn.send(packet)
@@ -171,7 +173,7 @@ class DriverStationConnection(BaseModel):
         # number of missed packet from ds to robot
         self.missed_packet_count = int(data[2]) - self.missed_packet_offset
 
-    async def handle_tcp_connection(self, arena: 'Arena'):
+    async def handle_tcp_connection(self, arena):
         buffer = bytearray(MAX_TCP_PACKET_BYTES)
         while True:
             self.tcp_conn.settimeout(DRIVER_STATION_TCP_LINK_TIMEOUT_SEC)
