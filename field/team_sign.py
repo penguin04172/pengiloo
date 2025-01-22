@@ -222,7 +222,7 @@ class TeamSign:
         in_match_rear_text: str,
     ):
         self.packet_data = bytearray()
-        if self.address == bytearray():
+        if self.address == bytearray([0]):
             return
 
         if self.is_timer:

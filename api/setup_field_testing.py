@@ -1,10 +1,12 @@
+from fastapi import APIRouter
+
 import game
 import models
 
-from .router import setup_router
+router = APIRouter(prefix='/setup/field_testing', tags=['field_testing'])
 
 
-@setup_router.get('/field_testing')
+@router.get('/field_testing')
 async def get_field_testing():
     return {
         'event_settings': models.read_event_settings(),

@@ -1,22 +1,24 @@
 import random
 import string
 
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 
 import models
 
-from .router import arena, setup_router
+from .arena import api_arena
+
+router = APIRouter(prefix='/setup/teams', tags=['teams'])
 
 KEY_CHARS = string.ascii_letters + string.digits
 
 
-@setup_router.get('/teams')
+@router.get('/')
 async def get_teams():
     teams = models.read_all_teams()
     return teams
 
 
-@setup_router.post('/teams')
+@router.post('/')
 async def create_team(team_numbers: list[int]):
     if not can_modify_team_list():
         raise HTTPException(
@@ -29,7 +31,7 @@ async def create_team(team_numbers: list[int]):
     return {'status': 'success'}
 
 
-@setup_router.delete('/teams/clear')
+@router.delete('/clear')
 async def clear_teams():
     if not can_modify_team_list():
         raise HTTPException(
@@ -41,7 +43,7 @@ async def clear_teams():
     return {'status': 'success'}
 
 
-@setup_router.get('/teams/wpa')
+@router.get('/wpa')
 async def generate_wpa_keys(all: bool = False):
     teams = models.read_all_teams()
     for team in teams:
@@ -52,7 +54,7 @@ async def generate_wpa_keys(all: bool = False):
     return {'status': 'success'}
 
 
-@setup_router.get('/teams/{team_number}')
+@router.get('/{team_number}')
 async def get_team(team_number: int):
     team = models.read_team_by_id(team_number)
     if team is None:
@@ -61,7 +63,7 @@ async def get_team(team_number: int):
     return team
 
 
-@setup_router.post('/teams/{team_number}')
+@router.post('/{team_number}')
 async def update_team(team_number: int, new_team: models.Team):
     team = models.read_team_by_id(team_number)
     if team is None:
@@ -76,7 +78,7 @@ async def update_team(team_number: int, new_team: models.Team):
     team.rookie_year = new_team.rookie_year
     team.robot_name = new_team.robot_name
     team.accomplishments = new_team.accomplishments
-    if arena.event.network_security_enabled:
+    if api_arena.event.network_security_enabled:
         team.wpakey = new_team.wpakey
         if len(team.wpakey) < 8 or len(team.wpakey) > 63:
             raise HTTPException(
@@ -90,7 +92,7 @@ async def update_team(team_number: int, new_team: models.Team):
     return {'status': 'success'}
 
 
-@setup_router.delete('/teams/{team_number}')
+@router.delete('/{team_number}')
 async def delete_team(team_number: int):
     if not can_modify_team_list():
         raise HTTPException(

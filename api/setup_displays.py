@@ -1,10 +1,12 @@
+from fastapi import APIRouter
+
 import models
 from field.display import display_type_names
 
-from .router import setup_router
+router = APIRouter(prefix='/setup/displays', tags=['displays'])
 
 
-@setup_router.get('/displays')
+@router.get('/')
 async def get_displays():
     return {
         'event_settings': models.read_event_settings(),

@@ -1,18 +1,18 @@
 from datetime import datetime
 
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import models
 import tournament
 
-from .router import setup_router
+router = APIRouter(prefix='/setup/schedule', tags=['schedule'])
 
 cached_matches = dict[models.MatchType, list[models.MatchOut]]()
 cached_team_first_match = dict[models.MatchType, dict[int, str]]()
 
 
-@setup_router.get('/schedule')
+@router.get('/')
 async def get_schedule(match_type: models.MatchType):
     if match_type not in [
         models.MatchType.PRACTICE,
@@ -39,7 +39,7 @@ class GenerateScheduleRequest(BaseModel):
     start_time: datetime
 
 
-@setup_router.post('/schedule/generate')
+@router.post('/generate')
 async def generate_schedule(schedule_request: GenerateScheduleRequest):
     if schedule_request.match_type not in [
         models.MatchType.PRACTICE,
@@ -90,7 +90,7 @@ async def generate_schedule(schedule_request: GenerateScheduleRequest):
     return matches
 
 
-@setup_router.post('/schedule/save')
+@router.post('/save')
 async def save_schedule(match_type: models.MatchType):
     existing_matches = models.read_matches_by_type(match_type)
     if len(existing_matches) > 0:

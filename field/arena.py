@@ -84,30 +84,34 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.alliance_stations = dict[str, AllianceStation]()
-        self.alliance_stations['R1'] = AllianceStation()
-        self.alliance_stations['R2'] = AllianceStation()
-        self.alliance_stations['R3'] = AllianceStation()
-        self.alliance_stations['B1'] = AllianceStation()
-        self.alliance_stations['B2'] = AllianceStation()
-        self.alliance_stations['B3'] = AllianceStation()
+    @classmethod
+    async def new_arena(cls):
+        arena = cls()
+        arena.alliance_stations = dict[str, AllianceStation]()
+        arena.alliance_stations['R1'] = AllianceStation()
+        arena.alliance_stations['R2'] = AllianceStation()
+        arena.alliance_stations['R3'] = AllianceStation()
+        arena.alliance_stations['B1'] = AllianceStation()
+        arena.alliance_stations['B2'] = AllianceStation()
+        arena.alliance_stations['B3'] = AllianceStation()
 
-        self.displays = dict[str, Display]()
-        self.team_signs = TeamSigns()
+        arena.displays = dict[str, Display]()
+        arena.team_signs = TeamSigns()
 
-        asyncio.run(self.load_settings())
+        await arena.load_settings()
 
-        self.scoring_panel_registry = ScoringPanelRegister()
+        arena.scoring_panel_registry = ScoringPanelRegister()
 
-        self.match_state = MatchState.PRE_MATCH
-        asyncio.run(self.load_test_match())
-        self.last_match_time_sec = 0
-        self.last_match_state = -1
+        arena.match_state = MatchState.PRE_MATCH
+        await arena.load_test_match()
+        arena.last_match_time_sec = 0
+        arena.last_match_state = -1
 
-        self.audience_display_mode = 'blank'
-        self.saved_match = models.MatchOut(id=0, type=models.MatchType.TEST, type_order=0)
-        self.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
-        self.alliance_station_display_mode = 'Match'
+        arena.audience_display_mode = 'blank'
+        arena.saved_match = models.MatchOut(id=0, type=models.MatchType.TEST, type_order=0)
+        arena.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
+        arena.alliance_station_display_mode = 'Match'
+        return arena
 
     async def load_settings(self):
         settings = models.read_event_settings()
@@ -518,14 +522,16 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.last_match_state = self.match_state
 
     async def run(self):
-        asyncio.create_task(self.listen_for_driver_stations())
-        asyncio.create_task(self.listen_for_ds_udp_packets())
-        asyncio.create_task(self.access_point.run())
+        task_list = []
+        # task_list.append(asyncio.create_task(self.listen_for_driver_stations()))
+        # task_list.append(asyncio.create_task(self.listen_for_ds_udp_packets()))
+        # task_list.append(asyncio.create_task(self.access_point.run()))
         # run plc
+        self.running = True
 
-        while True:
+        while self.running:
             loop_start_time = datetime.now()
-            self.update()
+            await self.update()
             if (
                 datetime.now() - self.last_period_task_time
             ).total_seconds() > PERIODIC_TASK_PERIOD_SEC:
@@ -534,9 +540,14 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
             loop_run_time = (datetime.now() - loop_start_time).total_seconds() * 1000000
             if loop_run_time > ARENA_LOOP_WARNING_US:
-                logging.warning('Arena loop took a long time: {loop_run_time}us')
+                logging.warning(f'Arena loop took a long time: {loop_run_time}us')
 
             await asyncio.sleep(ARENA_LOOP_PERIOD_MS / 1000)
+
+        for task in task_list:
+            task.cancel()
+
+        await asyncio.gather(*task_list, return_exceptions=True)
 
     def red_score_summary(self):
         return self.red_realtime_score.current_score.summarize(
@@ -733,4 +744,4 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     async def run_periodic_task(self):
         await self.update_early_late_message()
-        self.purge_disconnected_displays()
+        await self.purge_disconnected_displays()

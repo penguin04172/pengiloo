@@ -1,17 +1,17 @@
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 
 import models
 
-from .router import setup_router
+router = APIRouter(prefix='/setup/breaks', tags=['breaks'])
 
 
-@setup_router.get('/breaks')
+@router.get('/')
 async def get_breaks():
     breaks = models.read_scheduled_breaks_by_match_type(models.MatchType.PLAYOFF)
     return breaks
 
 
-@setup_router.post('/breaks')
+@router.post('/')
 async def update_break(id: int, description: str):
     break_ = models.read_scheduled_break_by_id(id)
     if break_ is None:

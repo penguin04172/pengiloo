@@ -1,18 +1,18 @@
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 
 import models
 
-from .router import setup_router
+router = APIRouter(prefix='/setup/awards', tags=['awards'])
 
 
-@setup_router.get('/awards')
+@router.get('/')
 async def get_awards():
     awards = models.read_all_awards()
     teams = models.read_all_teams()
     return {'awards': awards, 'teams': teams}
 
 
-@setup_router.post('/awards')
+@router.post('/')
 async def create_or_update_award(award: models.Award):
     if award.id is None:
         return models.create_award(award)
@@ -23,7 +23,7 @@ async def create_or_update_award(award: models.Award):
     return models.update_award(award)
 
 
-@setup_router.delete('/awards/{id}')
+@router.delete('/{id}')
 async def delete_award(id: int):
     models.delete_award(id)
     return {'status': 'ok'}

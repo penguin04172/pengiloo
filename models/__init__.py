@@ -90,7 +90,6 @@ from .sponsor_slides import (
     delete_sponsor_slide,
     read_all_sponsor_slides,
     read_sponsor_slide_by_id,
-    read_sponsor_slide_by_order,
     truncate_sponsor_slides,
     update_sponsor_slide,
 )
