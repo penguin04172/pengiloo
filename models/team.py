@@ -10,6 +10,7 @@ class Team(BaseModel):
     nickname: str = ''
     city: str = ''
     state_prov: str = ''
+    country: str = ''
     school_name: str = ''
     rookie_year: int = 0
     robot_name: str = ''
@@ -29,6 +30,7 @@ class TeamDB(db.Entity):
     nickname = Optional(str)
     city = Optional(str)
     state_prov = Optional(str)
+    country: str = Optional(str)
     school_name = Optional(str)
     rookie_year = Optional(int)
     robot_name = Optional(str)

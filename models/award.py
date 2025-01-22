@@ -13,11 +13,11 @@ class AwardType(IntEnum):
 
 
 class Award(BaseModel):
-    id: int | None = None
+    id: int = None
     type: AwardType = AwardType.judged_award
-    award_name: str | None = None
-    team_id: int | None = None
-    person_name: str | None = None
+    award_name: str = ''
+    team_id: int = 0
+    person_name: str = ''
 
 
 class AwardDB(db.Entity):

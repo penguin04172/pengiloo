@@ -32,7 +32,7 @@ async def build_random_schedule(
     )
     stdout, stderr = await process.communicate()
     if stderr:
-        raise Exception(stderr.decode())
+        raise RuntimeError(stderr.decode())
 
     schedule_list = stdout.decode().splitlines()
     if len(schedule_list) != num_matches:

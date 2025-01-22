@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pony.orm import Optional, PrimaryKey, Required, db_session
+from pony.orm import PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
 from .base import db

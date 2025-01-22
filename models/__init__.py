@@ -22,7 +22,7 @@ from .award import (
     truncate_awards,
     update_award,
 )
-from .base import db
+from .base import backup_db, db
 from .event import Event, PlayoffType, read_event_settings, update_event_settings
 from .lower_third import (
     LowerThird,
@@ -83,6 +83,16 @@ from .scheduled_break import (
     read_scheduled_breaks_by_match_type,
     truncate_scheduled_breaks,
     update_scheduled_break,
+)
+from .sponsor_slides import (
+    SponsorSlide,
+    create_sponsor_slide,
+    delete_sponsor_slide,
+    read_all_sponsor_slides,
+    read_sponsor_slide_by_id,
+    read_sponsor_slide_by_order,
+    truncate_sponsor_slides,
+    update_sponsor_slide,
 )
 from .team import (
     Team,
