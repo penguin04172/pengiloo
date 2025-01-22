@@ -69,7 +69,7 @@ class TestScheduleBreak(unittest.TestCase):
         scheduled_break = read_scheduled_break_by_id(2)
         self.assertEqual(scheduled_break, scheduled_break2)
 
-        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PRATICE)
+        scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.PRACTICE)
         self.assertEqual(len(scheduled_breaks), 0)
         scheduled_breaks = read_scheduled_breaks_by_match_type(MatchType.QUALIFICATION)
         self.assertEqual(len(scheduled_breaks), 2)

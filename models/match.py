@@ -11,7 +11,7 @@ from .base import db
 
 class MatchType(IntEnum):
     TEST = 0
-    PRATICE = 1
+    PRACTICE = 1
     QUALIFICATION = 2
     PLAYOFF = 3
 
@@ -31,7 +31,7 @@ class MatchDB(db.Entity):
     id = PrimaryKey(int, auto=True)
     type = Required(int)
     type_order = Required(int)
-    scheduled_time = Optional(datetime, volatile=True)
+    scheduled_time = Required(datetime, volatile=True)
     long_name = Optional(str)
     short_name = Optional(str)
     name_detail = Optional(str)
@@ -61,10 +61,10 @@ class MatchDB(db.Entity):
 class Match(BaseModel):
     type: MatchType
     type_order: int
-    long_name: str | None = None
-    short_name: str | None = None
-    scheduled_time: datetime | None = None
-    name_detail: str | None = None
+    long_name: str = ''
+    short_name: str = ''
+    scheduled_time: datetime = datetime.fromtimestamp(0)
+    name_detail: str = ''
     playoff_match_group_id: str | None = None
     playoff_red_alliance: int | None = None
     playoff_blue_alliance: int | None = None
@@ -92,7 +92,7 @@ class Match(BaseModel):
 
 
 class MatchOut(Match):
-    id: int
+    id: int = None
 
     def is_complete(self) -> bool:
         return (
@@ -105,7 +105,7 @@ class MatchOut(Match):
         return self.type != MatchType.QUALIFICATION
 
     def should_allow_nexus_substitution(self) -> bool:
-        return self.type == MatchType.PRATICE or self.type == MatchType.PLAYOFF
+        return self.type == MatchType.PRACTICE or self.type == MatchType.PLAYOFF
 
     def should_update_cards(self) -> bool:
         return self.type == MatchType.QUALIFICATION or self.type == MatchType.PLAYOFF
@@ -159,11 +159,14 @@ def read_all_matches():
 @db_session
 def read_matches_by_type(match_type: MatchType, include_hidden: bool = False):
     matches = MatchDB.select()
-    return [
-        MatchOut(**m.to_dict())
-        for m in matches
-        if m.type == match_type and (include_hidden or m.status != MatchStatus.MATCH_HIDDEN)
-    ]
+    return sorted(
+        [
+            MatchOut(**m.to_dict())
+            for m in matches
+            if m.type == match_type and (include_hidden or m.status != MatchStatus.MATCH_HIDDEN)
+        ],
+        key=lambda m: m.type_order,
+    )
 
 
 @db_session

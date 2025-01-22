@@ -17,7 +17,7 @@ class DisplayType(IntEnum):
     FIELD_MONITOR = 6
     LOGO = 7
     QUEUEING = 8
-    RANKING = 9
+    RANKINGS = 9
     TWITCH_STREAM = 10
     WALL = 11
     WEBPAGE = 12
@@ -32,7 +32,7 @@ display_type_names = {
     DisplayType.FIELD_MONITOR: 'Field Monitor',
     DisplayType.LOGO: 'Logo',
     DisplayType.QUEUEING: 'Queueing',
-    DisplayType.RANKING: 'Ranking',
+    DisplayType.RANKINGS: 'Ranking',
     DisplayType.TWITCH_STREAM: 'Twitch Stream',
     DisplayType.WALL: 'Wall',
     DisplayType.WEBPAGE: 'Webpage',
@@ -40,27 +40,33 @@ display_type_names = {
 
 display_type_paths = {
     DisplayType.PLACEHOLDER: '/display',
-    DisplayType.ALLIANCE_STATION: 'displays/alliance_station',
-    DisplayType.ANNOUNCER: 'displays/announcer',
-    DisplayType.AUDIENCE: 'displays/audience',
-    DisplayType.BRACKET: 'displays/bracket',
-    DisplayType.FIELD_MONITOR: 'displays/field_monitor',
-    DisplayType.LOGO: 'displays/logo',
-    DisplayType.QUEUEING: 'displays/queueing',
-    DisplayType.RANKING: 'displays/ranking',
-    DisplayType.TWITCH_STREAM: 'displays/twitch',
-    DisplayType.WALL: 'displays/wall',
-    DisplayType.WEBPAGE: 'displays/webpage',
+    DisplayType.ALLIANCE_STATION: '/displays/alliance_station',
+    DisplayType.ANNOUNCER: '/displays/announcer',
+    DisplayType.AUDIENCE: '/displays/audience',
+    DisplayType.BRACKET: '/displays/bracket',
+    DisplayType.FIELD_MONITOR: '/displays/field_monitor',
+    DisplayType.LOGO: '/displays/logo',
+    DisplayType.QUEUEING: '/displays/queueing',
+    DisplayType.RANKINGS: '/displays/rankings',
+    DisplayType.TWITCH_STREAM: '/displays/twitch',
+    DisplayType.WALL: '/displays/wall',
+    DisplayType.WEBPAGE: '/displays/webpage',
 }
 
 
 class DisplayConfiguration:
     id: str
-    nickname: str
-    type: DisplayType
-    configuration: dict[str, str]
+    nickname: str = ''
+    type: DisplayType = DisplayType.INVALID
+    configuration: dict[str, str] = {}
 
-    def __init__(self, id: str, nickname: str, type: DisplayType, configuration: dict[str, str]):
+    def __init__(
+        self,
+        id: str,
+        nickname: str = '',
+        type: DisplayType = DisplayType.INVALID,
+        configuration: dict[str, str] = {},
+    ):
         self.id = id
         self.nickname = nickname
         self.type = type
@@ -77,8 +83,8 @@ class Display:
     def __init__(
         self,
         display_configuration: DisplayConfiguration,
-        ip_address: str,
-        last_connected_time: datetime,
+        ip_address: str = '',
+        last_connected_time: datetime = datetime.fromtimestamp(0),
     ):
         self.display_configuration = display_configuration
         self.ip_address = ip_address
@@ -115,7 +121,7 @@ class DisplayMixin:
             display_id += 1
         return str(display_id)
 
-    def register_display(self, config: DisplayConfiguration, ip_address: str) -> Display:
+    async def register_display(self, config: DisplayConfiguration, ip_address: str) -> Display:
         display = self.displays.get(config.id)
 
         if display is not None and config.type == DisplayType.PLACEHOLDER:
@@ -137,22 +143,22 @@ class DisplayMixin:
             display.ip_address = ip_address
             display.connection_count += 1
             display.last_connected_time = datetime.now()
-            display.notifier.notify()
+            await display.notifier.notify()
 
-        self.display_configuration_notifier.notify()
+        await self.display_configuration_notifier.notify()
         return display
 
-    def update_display(self, config: DisplayConfiguration):
+    async def update_display(self, config: DisplayConfiguration):
         display = self.displays.get(config.id)
         if display is None:
             raise ValueError(f'Display {config.id} not found')
 
         if vars(display.display_configuration) != vars(config):
             display.display_configuration = config
-            display.notifier.notify()
-            self.display_configuration_notifier.notify()
+            await display.notifier.notify()
+            await self.display_configuration_notifier.notify()
 
-    def mark_display_disconnect(self, display_id: str):
+    async def mark_display_disconnect(self, display_id: str):
         display = self.displays.get(display_id)
         if display is not None:
             if (
@@ -166,47 +172,43 @@ class DisplayMixin:
                 display.connection_count -= 1
 
             display.last_connected_time = datetime.now()
-            self.display_configuration_notifier.notify()
+            await self.display_configuration_notifier.notify()
 
-    def purge_disconnected_displays(self):
+    async def purge_disconnected_displays(self):
         deleted = False
-        for display_id, display in self.displays.items():
+        for i in list(self.displays.keys()):
             if (
-                display.connection_count == 0
-                and display.display_configuration.nickname == ''
-                and (
-                    datetime.now() - display.display_configuration.last_connected_time
-                ).total_seconds()
-                > DISPLAY_PURGE_TTL_MIN * 60
+                self.displays[i].connection_count == 0
+                and self.displays[i].display_configuration.nickname == ''
+                and (datetime.now() - self.displays[i].last_connected_time).total_seconds()
+                >= DISPLAY_PURGE_TTL_MIN * 60
             ):
-                del self.displays[display_id]
+                del self.displays[i]
                 deleted = True
 
         if deleted:
-            self.display_configuration_notifier.notify()
+            await self.display_configuration_notifier.notify()
 
-    @staticmethod
-    def display_from_url(path: str, query: dict[str, list[str]]):
-        if 'display_id' not in query:
-            raise ValueError('Display ID not specified')
 
-        display_configuration = DisplayConfiguration(
-            id=query['display_id'][0],
-            nickname=query.get('nickname', [''])[0],
-            type=DisplayType.INVALID,
-            configuration={
-                key: value[0]
-                for key, value in query.items()
-                if key not in ['display_id', 'nickname']
-            },
-        )
+def display_from_url(path: str, query: dict[str, list[str]]):
+    if 'display_id' not in query:
+        raise ValueError('Display ID not specified')
 
-        for display_type, display_path in display_type_paths.items():
-            if path.startswith(display_path):
-                display_configuration.type = display_type
-                break
+    display_configuration = DisplayConfiguration(
+        id=query['display_id'][0],
+        nickname=query.get('nickname', [''])[0],
+        type=DisplayType.INVALID,
+        configuration={
+            key: value[0] for key, value in query.items() if key not in ['display_id', 'nickname']
+        },
+    )
 
-        if display_configuration.type == DisplayType.INVALID:
-            raise ValueError(f'Could not determine display type from {path}')
+    for display_type, display_path in display_type_paths.items():
+        if path == f'{display_path}/websocket':
+            display_configuration.type = display_type
+            break
 
-        return display_configuration
+    if display_configuration.type == DisplayType.INVALID:
+        raise ValueError(f'Could not determine display type from {path}')
+
+    return display_configuration

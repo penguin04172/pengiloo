@@ -30,7 +30,7 @@ class TestScheduleBlock(unittest.TestCase):
 
     def test_schedule_block_crud(self):
         schedule_block1 = ScheduleBlock(
-            match_type=MatchType.PRATICE,
+            match_type=MatchType.PRACTICE,
             start_time=datetime.now(),
             num_matches=10,
             match_spacing_sec=600,
@@ -53,7 +53,7 @@ class TestScheduleBlock(unittest.TestCase):
         )
         schedule_block3 = create_schedule_block(schedule_block3)
 
-        blocks = read_schedule_blocks_by_match_type(MatchType.PRATICE)
+        blocks = read_schedule_blocks_by_match_type(MatchType.PRACTICE)
         self.assertEqual(len(blocks), 1)
         self.assertEqual(blocks[0], schedule_block1)
 
@@ -62,8 +62,8 @@ class TestScheduleBlock(unittest.TestCase):
         self.assertEqual(blocks[0], schedule_block2)
         self.assertEqual(blocks[1], schedule_block3)
 
-        delete_schedule_block_by_match_type(MatchType.PRATICE)
-        blocks = read_schedule_blocks_by_match_type(MatchType.PRATICE)
+        delete_schedule_block_by_match_type(MatchType.PRACTICE)
+        blocks = read_schedule_blocks_by_match_type(MatchType.PRACTICE)
         self.assertEqual(len(blocks), 0)
 
         blocks = read_schedule_blocks_by_match_type(MatchType.QUALIFICATION)

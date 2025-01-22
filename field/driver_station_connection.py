@@ -40,17 +40,18 @@ class DriverStationConnection:
     packet_count: int = 0
     missed_packet_offset: int = 0
     tcp_conn: socket.socket
-    udp_conn: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_conn: socket.socket = None
     log: None = None
     wrong_station: str = ''
 
-    def __init__(self, team_id: int, assigned_station: str, tcp_conn: socket.socket):
+    def __init__(self, team_id: int, alliance_station: str = '', tcp_conn: socket.socket = None):
         self.team_id = team_id
-        self.alliance_station = assigned_station
+        self.alliance_station = alliance_station
         self.tcp_conn = tcp_conn
         if self.tcp_conn is not None:
             ip_address, _ = self.tcp_conn.getpeername()
             logging.info(f'Driver station for Team {self.team_id} connected from {ip_address}')
+            self.udp_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.udp_conn.connect((ip_address, DRIVER_STATION_UDP_SEND_PORT))
 
     def update(self, arena):
@@ -87,8 +88,8 @@ class DriverStationConnection:
         packet = bytearray(22)
 
         # packet number
-        packet[0] = bytes((self.packet_count >> 8) & 0xFF)
-        packet[1] = bytes((self.packet_count) & 0xFF)
+        packet[0] = (self.packet_count >> 8) & 0xFF
+        packet[1] = (self.packet_count) & 0xFF
 
         # protocol version
         packet[2] = 0
@@ -109,30 +110,30 @@ class DriverStationConnection:
         # match type
         packet[6] = 0
         match = arena.current_match
-        if match.type == models.MATCH_TYPE.pratice:
+        if match.type == models.MatchType.PRACTICE:
             packet[6] = 1
-        elif match.type == models.MATCH_TYPE.qualification:
+        elif match.type == models.MatchType.QUALIFICATION:
             packet[6] = 2
-        elif match.type == models.MATCH_TYPE.playoff:
+        elif match.type == models.MatchType.PLAYOFF:
             packet[6] = 3
 
         # match number
-        packet[7] = bytes(match.type_order >> 8)
-        packet[8] = bytes(match.type_order & 0xFF)
+        packet[7] = match.type_order >> 8
+        packet[8] = match.type_order & 0xFF
         packet[9] = 1
 
         # current time
         current_time = datetime.now()
-        packet[10] = bytes((current_time.microsecond >> 24) & 0xFF)
-        packet[11] = bytes((current_time.microsecond >> 16) & 0xFF)
-        packet[12] = bytes((current_time.microsecond >> 8) & 0xFF)
-        packet[13] = bytes(current_time.microsecond & 0xFF)
-        packet[14] = bytes(current_time.second)
-        packet[15] = bytes(current_time.minute)
-        packet[16] = bytes(current_time.hour)
-        packet[17] = bytes(current_time.day)
-        packet[18] = bytes(current_time.month)
-        packet[19] = bytes(current_time.year - 1900)
+        packet[10] = (current_time.microsecond >> 24) & 0xFF
+        packet[11] = (current_time.microsecond >> 16) & 0xFF
+        packet[12] = (current_time.microsecond >> 8) & 0xFF
+        packet[13] = current_time.microsecond & 0xFF
+        packet[14] = current_time.second
+        packet[15] = current_time.minute
+        packet[16] = current_time.hour
+        packet[17] = current_time.day
+        packet[18] = current_time.month
+        packet[19] = current_time.year - 1900
 
         # match remaining time
         if arena.match_state in [
@@ -140,24 +141,22 @@ class DriverStationConnection:
             MatchState.TIMEOUT_ACTIVE,
             MatchState.POST_TIMEOUT,
         ]:
-            match_seconds_remaining = game.game_timing.auto_duration_sec
+            match_seconds_remaining = game.timing.auto_duration_sec
         elif arena.match_state in [MatchState.START_MATCH, MatchState.AUTO_PERIOD]:
-            match_seconds_remaining = game.game_timing.auto_duration_sec - int(
-                arena.match_time_sec()
-            )
+            match_seconds_remaining = game.timing.auto_duration_sec - int(arena.match_time_sec())
         elif arena.match_state in [MatchState.PAUSE_PERIOD]:
-            match_seconds_remaining = game.game_timing.teleop_duration_sec
+            match_seconds_remaining = game.timing.teleop_duration_sec
         elif arena.match_state in [MatchState.TELEOP_PERIOD]:
             match_seconds_remaining = (
-                game.game_timing.auto_duration_sec
-                + game.game_timing.teleop_duration_sec
-                + game.game_timing.pause_duration_sec
+                game.timing.auto_duration_sec
+                + game.timing.teleop_duration_sec
+                + game.timing.pause_duration_sec
                 - int(arena.match_time_sec())
             )
         else:
             match_seconds_remaining = 0
-        packet[20] = bytes((match_seconds_remaining >> 8) & 0xFF)
-        packet[21] = bytes(match_seconds_remaining & 0xFF)
+        packet[20] = (match_seconds_remaining >> 8) & 0xFF
+        packet[21] = match_seconds_remaining & 0xFF
 
         self.packet_count += 1
         return packet

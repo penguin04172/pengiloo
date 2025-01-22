@@ -44,7 +44,7 @@ async def build_random_schedule(
 
     for i, anon_match in enumerate(anon_schedule):
         match = models.Match(type=match_type, type_order=i + 1)
-        if match_type == models.MatchType.PRATICE:
+        if match_type == models.MatchType.PRACTICE:
             match.short_name = f'P{i + 1}'
             match.long_name = f'Practice {i + 1}'
             match.tba_match_key.comp_level = 'p'

@@ -109,7 +109,7 @@ class TeamSign:
                 return ('     ', white_color, '')
 
         if alliance_station.team is None:
-            return ('     ', white_color, f"{"No Team Assigned":>20}")
+            return ('     ', white_color, f'{"No Team Assigned":>20}')
 
         front_text = f'{alliance_station.team.id: 5d}'
         if (
@@ -313,37 +313,35 @@ class TeamSigns:
                 if arena.audience_display_mode == 'alliance_selection':
                     countdown_sec = arena.alliance_selection_time_remaining_sec
                 else:
-                    countdown_sec = game.game_timing.auto_duration_sec
+                    countdown_sec = game.timing.auto_duration_sec
             case MatchState.START_MATCH:
                 pass
             case MatchState.WARMUP_PERIOD:
-                countdown_sec = game.game_timing.auto_duration_sec
+                countdown_sec = game.timing.auto_duration_sec
             case MatchState.AUTO_PERIOD:
                 countdown_sec = (
-                    game.game_timing.warmup_duration_sec
-                    + game.game_timing.auto_duration_sec
-                    - match_time_sec
+                    game.timing.warmup_duration_sec + game.timing.auto_duration_sec - match_time_sec
                 )
             case MatchState.TELEOP_PERIOD:
                 countdown_sec = (
-                    game.game_timing.warmup_duration_sec
-                    + game.game_timing.auto_duration_sec
-                    + game.game_timing.teleop_duration_sec
-                    + game.game_timing.pause_duration_sec
+                    game.timing.warmup_duration_sec
+                    + game.timing.auto_duration_sec
+                    + game.timing.teleop_duration_sec
+                    + game.timing.pause_duration_sec
                     - match_time_sec
                 )
             case MatchState.TIMEOUT_ACTIVE:
-                countdown_sec = game.game_timing.timeout_duration_sec - match_time_sec
+                countdown_sec = game.timing.timeout_duration_sec - match_time_sec
             case _:
                 countdown_sec = 0
 
-        countdown = f'{countdown_sec//60: 02d}:{countdown_sec%60: 02d}'
+        countdown = f'{countdown_sec // 60: 02d}:{countdown_sec % 60: 02d}'
 
         red_in_match_rear_text = self.generate_in_match_rear_text(
-            True, countdown, arena.red_real_time_score, arena.blue_real_time_score
+            True, countdown, arena.red_realtime_score, arena.blue_realtime_score
         )
         blue_in_match_rear_text = self.generate_in_match_rear_text(
-            False, countdown, arena.blue_real_time_score, arena.red_real_time_score
+            False, countdown, arena.blue_realtime_score, arena.red_realtime_score
         )
 
         self.red_1.update(

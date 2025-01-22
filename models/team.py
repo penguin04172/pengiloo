@@ -6,18 +6,18 @@ from .base import db
 
 class Team(BaseModel):
     id: int
-    name: str | None = None
-    nickname: str | None = None
-    city: str | None = None
-    state_prov: str | None = None
-    school_name: str | None = None
-    rookie_year: int | None = None
-    robot_name: str | None = None
-    accomplishments: str | None = None
-    wpakey: str | None = None
-    yellow_card: bool | None = None
-    has_connected: bool | None = None
-    fta_notes: str | None = None
+    name: str = ''
+    nickname: str = ''
+    city: str = ''
+    state_prov: str = ''
+    school_name: str = ''
+    rookie_year: int = 0
+    robot_name: str = ''
+    accomplishments: str = ''
+    wpakey: str = ''
+    yellow_card: bool = False
+    has_connected: bool = False
+    fta_notes: str = ''
 
     class Config:
         from_attributes = True

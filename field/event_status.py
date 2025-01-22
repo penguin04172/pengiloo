@@ -20,9 +20,15 @@ class EventStatusMixin:
     event_status: EventStatus
 
     def __init__(self, *args, **kwargs):
+        self.event_status = EventStatus(
+            cycle_time='',
+            early_late_message='',
+            last_match_start_time=datetime.fromtimestamp(0),
+            last_match_scheduled_start_time=datetime.fromtimestamp(0),
+        )
         super().__init__(*args, **kwargs)
 
-    def update_cycle_time(self, match_start_time: datetime):
+    async def update_cycle_time(self, match_start_time: datetime):
         expected_cycle_time_sec = (
             self.current_match.scheduled_time - self.event_status.last_match_scheduled_start_time
         ).total_seconds()
@@ -30,7 +36,7 @@ class EventStatusMixin:
         if (
             self.event_status.last_match_start_time == datetime.fromtimestamp(0)
             or expected_cycle_time_sec > MAX_EXPECTED_CYCLE_TIME_SEC
-            or self.current_match.type == models.MATCH_TYPE.test
+            or self.current_match.type == models.MatchType.TEST
         ):
             self.event_status.cycle_time = ''
         else:
@@ -46,25 +52,25 @@ class EventStatusMixin:
                 self.event_status.cycle_time = f'{minutes}:{seconds:02}'
 
             delta_sec = cycle_time_sec - int(expected_cycle_time_sec)
-            direction = 'faster' if delta_sec < 0 else 'slower'
+            direction = 'slower' if delta_sec > 0 else 'faster'
             delta_sec = abs(delta_sec)
             self.event_status.cycle_time += (
-                f' ({delta_sec // 60}m:{delta_sec % 60}s {direction} than scheduled)'
+                f' ({delta_sec // 60}:{delta_sec % 60:02} {direction} than scheduled)'
             )
 
         self.event_status.last_match_start_time = match_start_time
         self.event_status.last_match_scheduled_start_time = self.current_match.scheduled_time
-        self.event_status_notifier.notify()
+        await self.event_status_notifier.notify()
 
-    def update_early_late_message(self):
+    async def update_early_late_message(self):
         new_early_late_message = self.get_early_late_message()
         if new_early_late_message != self.event_status.early_late_message:
             self.event_status.early_late_message = new_early_late_message
-            self.event_status_notifier.notify()
+            await self.event_status_notifier.notify()
 
     def get_early_late_message(self):
         current_match = self.current_match
-        if current_match.type == models.MATCH_TYPE.test:
+        if current_match.type == models.MatchType.TEST:
             return ''
         if current_match.is_complete():
             return ''
@@ -98,7 +104,7 @@ class EventStatusMixin:
                     and (
                         current_match.scheduled_time - matches[previous_match_index].scheduled_time
                     ).total_seconds()
-                    <= MAX_MATCH_GAP_MIN * 60
+                    < MAX_MATCH_GAP_MIN * 60
                 ):
                     previous_match = matches[previous_match_index]
                     previous_minutes_late = (
@@ -125,5 +131,5 @@ class EventStatusMixin:
             return f'Event is running {int(minutes_late)} minutes late'
         elif minutes_late < -EARLY_LATE_THRESHOLD_MIN:
             return f'Event is running {int(-minutes_late)} minutes early'
-
-        return 'Event is running on schedule'
+        else:
+            return 'Event is running on schedule'

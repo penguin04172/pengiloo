@@ -62,7 +62,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
 
         schedule_blocks = [
             models.ScheduleBlock(
-                match_type=models.MatchType.PRATICE,
+                match_type=models.MatchType.PRACTICE,
                 start_time=datetime.min,
                 num_matches=6,
                 match_spacing_sec=60,
@@ -70,12 +70,12 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         ]
 
         with patch('builtins.open', mock_open()) as mock_file:
-            matches = await build_random_schedule(teams, schedule_blocks, models.MatchType.PRATICE)
+            matches = await build_random_schedule(teams, schedule_blocks, models.MatchType.PRACTICE)
 
         self.assertEqual(len(matches), 6)
         self.assert_match(
             matches[0],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             1,
             0,
             'P1',
@@ -90,7 +90,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[1],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             2,
             60,
             'P2',
@@ -105,7 +105,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[2],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             3,
             120,
             'P3',
@@ -120,7 +120,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[3],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             4,
             180,
             'P4',
@@ -135,7 +135,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[4],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             5,
             240,
             'P5',
@@ -150,7 +150,7 @@ class TestSchedule(unittest.IsolatedAsyncioTestCase):
         )
         self.assert_match(
             matches[5],
-            models.MatchType.PRATICE,
+            models.MatchType.PRACTICE,
             6,
             300,
             'P6',

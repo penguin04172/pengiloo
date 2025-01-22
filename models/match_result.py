@@ -8,9 +8,9 @@ from .match import MatchType
 
 
 class MatchResult(BaseModel):
-    id: int | None = None
+    id: int = None
     match_id: int
-    play_number: int | None = None
+    play_number: int = 0
     match_type: MatchType
     red_score: Score = Score()
     blue_score: Score = Score()

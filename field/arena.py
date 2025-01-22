@@ -8,7 +8,6 @@ import network
 import playoff
 from models.event import Event
 from network.access_point import AccessPoint
-from third_party import tba
 
 from .arena_notifiers import ArenaNotifiers, ArenaNotifiersMixin
 from .display import Display, DisplayMixin
@@ -47,12 +46,12 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     access_point: AccessPoint = AccessPoint()
     # network_switch:
     # plc:
-    tba_client: tba
+    # tba_client: tba
     # nexus_client:
     # blackmagic_client:
     alliance_stations: dict[str, AllianceStation]
     team_signs: TeamSigns
-    arena_notifiers: ArenaNotifiers
+    arena_notifiers: ArenaNotifiers = ArenaNotifiers()
     scoring_panel_registry: ScoringPanelRegister
     match_state: MatchState
     last_match_state: MatchState
@@ -61,20 +60,20 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     last_match_time_sec: float
     red_realtime_score: RealtimeScore
     blue_realtime_score: RealtimeScore
-    last_ds_packet_time: datetime
-    last_period_task_time: datetime
+    last_ds_packet_time: datetime = datetime.fromtimestamp(0)
+    last_period_task_time: datetime = datetime.fromtimestamp(0)
     field_reset: bool = False
     audience_display_mode: str = 'blank'
     saved_match: models.MatchOut
     saved_match_result: models.MatchResult
     saved_rankings: game.Rankings
-    alliance_station_display_mode: str
-    alliance_selection_alliances: list[models.Alliance]
-    alliance_selection_ranked_teams: list[models.AllianceSelectionRankedTeam]
-    alliance_selection_show_timer: bool
-    alliance_selection_time_remaining_sec: int
+    alliance_station_display_mode: str = ''
+    alliance_selection_alliances: list[models.Alliance] = []
+    alliance_selection_ranked_teams: list[models.AllianceSelectionRankedTeam] = []
+    alliance_selection_show_timer: bool = False
+    alliance_selection_time_remaining_sec: int = 0
     playoff_tournament: playoff.PlayoffTournament
-    lower_third: models.LowerThird
+    lower_third: models.LowerThird = models.LowerThird()
     show_lower_third: bool = False
     mute_match_sounds: bool = False
     match_aborted: bool = False
@@ -177,7 +176,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.match_state != MatchState.PRE_MATCH
             and self.match_state != MatchState.TIMEOUT_ACTIVE
         ):
-            raise Exception('Cannot load match while match is in progress')
+            raise RuntimeError('Cannot load match while match is in progress')
 
         self.current_match = match
 
@@ -212,8 +211,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         await self.alliance_station_display_mode_notifier.notify()
         await self.scoring_status_notifier.notify()
 
-    def load_test_match(self):
-        return self.load_match(
+    async def load_test_match(self):
+        return await self.load_match(
             models.MatchOut(
                 id=0,
                 type=models.MatchType.TEST,
@@ -223,12 +222,12 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             )
         )
 
-    def load_next_match(self, start_scheduled_break: bool):
+    async def load_next_match(self, start_scheduled_break: bool):
         next_match = self.get_next_match(False)
         if next_match is None:
-            return self.load_test_match()
+            return await self.load_test_match()
 
-        self.load_match(next_match)
+        await self.load_match(next_match)
         if start_scheduled_break:
             scheduled_break = models.read_scheduled_break_by_match_type_order(
                 next_match.type, next_match.type_order
@@ -271,17 +270,17 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         )
         await self.match_load_notifier.notify()
 
-        if self.current_match.type != models.MATCH_TYPE.test:
+        if self.current_match.type != models.MatchType.TEST:
             models.update_match(self.current_match)
 
-    def start_match(self):
+    async def start_match(self):
         can_start = self.check_can_start_match()
         if can_start:
             self.current_match.started_at = datetime.now()
-            if self.current_match.type != models.MATCH_TYPE.test:
+            if self.current_match.type != models.MatchType.TEST:
                 models.update_match(self.current_match)
 
-            self.update_cycle_time(self.current_match.started_at)
+            await self.update_cycle_time(self.current_match.started_at)
 
             for alliance_station in self.alliance_stations.values():
                 if alliance_station.ds_conn is not None:
@@ -301,7 +300,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.match_state = MatchState.START_MATCH
             return
         else:
-            raise Exception('Cannot start match')
+            raise RuntimeError('Cannot start match')
 
     async def abort_match(self):
         if self.match_state in [
@@ -309,7 +308,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             MatchState.POST_MATCH,
             MatchState.POST_TIMEOUT,
         ]:
-            raise Exception('Cannot abort match while match is not in progress')
+            raise RuntimeError('Cannot abort match while match is not in progress')
 
         if self.match_state == MatchState.TIMEOUT_ACTIVE:
             self.match_start_time = datetime.now() - timedelta(
@@ -334,11 +333,11 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         if self.match_state not in [
             MatchState.PRE_MATCH,
             MatchState.POST_MATCH,
-            MatchState.POST_TIMEOUT,
+            MatchState.TIMEOUT_ACTIVE,
         ]:
-            raise Exception('Cannot reset match while match is in progress')
+            raise RuntimeError('Cannot reset match while match is in progress')
 
-        if self.match_state == MatchState.TIMEOUT_ACTIVE:
+        if self.match_state != MatchState.TIMEOUT_ACTIVE:
             self.match_state = MatchState.PRE_MATCH
 
         self.match_aborted = False
@@ -353,7 +352,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     async def start_timeout(self, description: str, duration_sec: int):
         if self.match_state != MatchState.PRE_MATCH:
-            raise Exception(
+            raise RuntimeError(
                 'Cannot start timeout while match is in progress or with results pending'
             )
 
@@ -560,7 +559,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     def assign_team(self, team_id: int, station: str):
         if station not in self.alliance_stations:
-            raise Exception(f'Invalid alliance station {station}')
+            raise ValueError(f'Invalid alliance station {station}')
 
         # Force A-Stop reset if it is already pressed
         self.alliance_stations[station].a_stop_reset = True
@@ -586,7 +585,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         return
 
     def get_next_match(self, exclude_current: bool):
-        if self.current_match.type == models.MATCH_TYPE.test:
+        if self.current_match.type == models.MatchType.TEST:
             return None
 
         matches = models.read_matches_by_type(self.current_match.type, False)
@@ -631,7 +630,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         if self.event.network_security_enabled:
             try:
                 self.access_point.configure_team_wifi(teams)
-            except Exception as e:
+            except RuntimeError as e:
                 logging.error(f'Failed to configure team wifi: {e}')
                 return
 
@@ -733,5 +732,5 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         )
 
     async def run_periodic_task(self):
-        self.update_early_late_message()
+        await self.update_early_late_message()
         self.purge_disconnected_displays()

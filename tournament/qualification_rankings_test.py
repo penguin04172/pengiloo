@@ -6,11 +6,7 @@ import models
 from models.base import db
 from models.test_helper import build_test_match_result
 
-from .qualification_rankings import (
-    add_match_result_to_rankings,
-    calculate_rankings,
-    calculate_team_cards,
-)
+from .qualification_rankings import add_match_result_to_rankings, calculate_rankings
 
 
 class TestQualificationRankings(unittest.TestCase):
@@ -170,7 +166,7 @@ def setup_match_results_for_testing():
     models.create_match_result(match_result3)
 
     match4 = models.Match(
-        type=models.MatchType.PRATICE,
+        type=models.MatchType.PRACTICE,
         type_order=1,
         red1=1,
         red2=2,

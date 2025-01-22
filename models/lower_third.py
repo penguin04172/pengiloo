@@ -5,11 +5,11 @@ from .base import db
 
 
 class LowerThird(BaseModel):
-    id: int | None = None
-    top_text: str | None = None
-    bottom_text: str | None = None
+    id: int = 0
+    top_text: str = ''
+    bottom_text: str = ''
     display_order: int = 0
-    award_id: int | None = None
+    award_id: int = 0
 
 
 class LowerThirdDB(db.Entity):
