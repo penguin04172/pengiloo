@@ -13,13 +13,13 @@ KEY_CHARS = string.ascii_letters + string.digits
 
 
 @router.get('/')
-async def get_teams():
+async def get_teams() -> list[models.Team]:
     teams = models.read_all_teams()
     return teams
 
 
 @router.post('/')
-async def create_team(team_numbers: list[int]):
+async def create_team(team_numbers: list[int]) -> dict:
     if not can_modify_team_list():
         raise HTTPException(
             status_code=400, detail='Cannot modify team list while matches are scheduled.'
@@ -32,7 +32,7 @@ async def create_team(team_numbers: list[int]):
 
 
 @router.delete('/clear')
-async def clear_teams():
+async def clear_teams() -> dict:
     if not can_modify_team_list():
         raise HTTPException(
             status_code=400, detail='Cannot modify team list while matches are scheduled.'
@@ -44,7 +44,7 @@ async def clear_teams():
 
 
 @router.get('/wpa')
-async def generate_wpa_keys(all: bool = False):
+async def generate_wpa_keys(all: bool = False) -> dict:
     teams = models.read_all_teams()
     for team in teams:
         if len(team.wpakey) == 0 or all:
@@ -55,7 +55,7 @@ async def generate_wpa_keys(all: bool = False):
 
 
 @router.get('/{team_number}')
-async def get_team(team_number: int):
+async def get_team(team_number: int) -> models.Team:
     team = models.read_team_by_id(team_number)
     if team is None:
         raise HTTPException(status_code=404, detail='Team not found')
@@ -64,7 +64,7 @@ async def get_team(team_number: int):
 
 
 @router.post('/{team_number}')
-async def update_team(team_number: int, new_team: models.Team):
+async def update_team(team_number: int, new_team: models.Team) -> dict:
     team = models.read_team_by_id(team_number)
     if team is None:
         raise HTTPException(status_code=404, detail='Team not found')
@@ -93,7 +93,7 @@ async def update_team(team_number: int, new_team: models.Team):
 
 
 @router.delete('/{team_number}')
-async def delete_team(team_number: int):
+async def delete_team(team_number: int) -> dict:
     if not can_modify_team_list():
         raise HTTPException(
             status_code=400, detail='Cannot modify team list while matches are scheduled.'

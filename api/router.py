@@ -12,7 +12,7 @@ from . import (
     setup_teams,
 )
 
-api_router = APIRouter(prefix='/api', tags=['api'])
+api_router = APIRouter(prefix='/api')
 
 api_router.include_router(setup_awards.router)
 api_router.include_router(setup_displays.router)

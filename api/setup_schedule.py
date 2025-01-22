@@ -1,10 +1,13 @@
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import models
 import tournament
+
+from .arena import api_arena
 
 router = APIRouter(prefix='/setup/schedule', tags=['schedule'])
 
@@ -13,7 +16,7 @@ cached_team_first_match = dict[models.MatchType, dict[int, str]]()
 
 
 @router.get('/')
-async def get_schedule(match_type: models.MatchType):
+async def get_schedule(match_type: models.MatchType) -> dict[str, Any]:
     if match_type not in [
         models.MatchType.PRACTICE,
         models.MatchType.QUALIFICATION,
@@ -22,7 +25,7 @@ async def get_schedule(match_type: models.MatchType):
     teams = models.read_all_teams()
     schedule_blocks = models.read_schedule_blocks_by_match_type(match_type)
     return {
-        'event_settings': models.read_event_settings(),
+        'event_settings': api_arena.event,
         'match_type': match_type,
         'schedule_blocks': schedule_blocks,
         'num_teams': len(teams),
@@ -40,7 +43,7 @@ class GenerateScheduleRequest(BaseModel):
 
 
 @router.post('/generate')
-async def generate_schedule(schedule_request: GenerateScheduleRequest):
+async def generate_schedule(schedule_request: GenerateScheduleRequest) -> list[models.MatchOut]:
     if schedule_request.match_type not in [
         models.MatchType.PRACTICE,
         models.MatchType.QUALIFICATION,
@@ -91,7 +94,7 @@ async def generate_schedule(schedule_request: GenerateScheduleRequest):
 
 
 @router.post('/save')
-async def save_schedule(match_type: models.MatchType):
+async def save_schedule(match_type: models.MatchType) -> dict:
     existing_matches = models.read_matches_by_type(match_type)
     if len(existing_matches) > 0:
         raise HTTPException(status_code=400, detail='Matches already exist for this match type')
@@ -99,6 +102,6 @@ async def save_schedule(match_type: models.MatchType):
     for match in cached_matches.get(match_type, []):
         models.create_match(match)
 
-    models.backup_db(models.read_event_settings().name, 'schedule')
+    models.backup_db(api_arena.event.name, 'schedule')
 
     return {'status': 'success'}

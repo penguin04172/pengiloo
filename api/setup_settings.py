@@ -12,12 +12,12 @@ db_router = APIRouter(prefix='/setup/db', tags=['db'])
 
 
 @router.get('/')
-async def get_settings():
-    return models.read_event_settings()
+async def get_settings() -> models.Event:
+    return api_arena.event
 
 
 @router.post('/')
-async def update_settings(new_settings: models.Event):
+async def update_settings(new_settings: models.Event) -> dict:
     event_settings = models.read_event_settings()
     previous_event_name = event_settings.name
     event_settings.name = new_settings.name
@@ -91,7 +91,7 @@ async def update_settings(new_settings: models.Event):
 
 
 @router.get('/publish_alliances')
-async def publish_alliances():
+async def publish_alliances() -> dict:
     if api_arena.event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
@@ -99,7 +99,7 @@ async def publish_alliances():
 
 
 @router.get('/publish_awards')
-async def publish_awards():
+async def publish_awards() -> dict:
     if api_arena.event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
@@ -107,7 +107,7 @@ async def publish_awards():
 
 
 @router.get('/publish_matches')
-async def publish_matches():
+async def publish_matches() -> dict:
     if api_arena.event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
@@ -115,7 +115,7 @@ async def publish_matches():
 
 
 @router.get('/publish_rankings')
-async def publish_rankings():
+async def publish_rankings() -> dict:
     if api_arena.event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
@@ -123,7 +123,7 @@ async def publish_rankings():
 
 
 @router.get('/publish_teams')
-async def publish_teams():
+async def publish_teams() -> dict:
     if api_arena.event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
@@ -131,7 +131,7 @@ async def publish_teams():
 
 
 @db_router.get('/save')
-async def save_db():
+async def save_db() -> FileResponse:
     filename = (
         f'{api_arena.event.name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}.db'
     )
@@ -139,13 +139,13 @@ async def save_db():
 
 
 @db_router.post('/restore')
-async def restore_db():
+async def restore_db() -> dict:
     raise HTTPException(status_code=500, detail='Not Supported')
     # return {'status': 'success'}
 
 
 @db_router.post('/clear/{type}')
-async def clear_db(type: str):
+async def clear_db(type: str) -> dict:
     try:
         match_type = models.MatchType[type.upper()]
     except KeyError as e:
