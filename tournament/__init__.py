@@ -1,1 +1,2 @@
+from .qualification_rankings import calculate_team_cards
 from .schedule import build_random_schedule

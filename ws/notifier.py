@@ -1,8 +1,9 @@
+import asyncio
 import logging
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 
 NOTIFY_QUEUE_SIZE = 5
 
@@ -13,6 +14,7 @@ class Notifier:
     listeners: set[WebSocket]
     message_type: str
     message_producer: Callable[..., Any] | None
+    lock: asyncio.Lock
 
     def __init__(self, message_type: str, message_producer: Callable[..., Any] | None = None):
         """Create a new Notifier instance.
@@ -24,6 +26,7 @@ class Notifier:
         self.listeners = set()
         self.message_type = message_type
         self.message_producer = message_producer
+        self.lock = asyncio.Lock()
 
     class MessageEnvelope:
         """Message envelope class."""
@@ -41,16 +44,25 @@ class Notifier:
         Args:
             websocket (WebSocket): _description_
         """
-        await websocket.accept()
-        self.listeners.add(websocket)
+        async with self.lock:
+            self.listeners.add(websocket)
 
-    def disconnect(self, websocket: WebSocket):
+    async def disconnect(self, websocket: WebSocket):
         """Disconnect a listener.
 
         Args:
             websocket (WebSocket): _description_
         """
-        self.listeners.remove(websocket)
+        async with self.lock:
+            self.listeners.remove(websocket)
+
+    async def listen(self, websocket: WebSocket):
+        """Listen for new listeners."""
+        try:
+            while True:
+                await asyncio.sleep(1)
+        except WebSocketDisconnect:
+            await self.disconnect(websocket)
 
     async def notify(self):
         """Notify all listeners with a message."""
@@ -64,8 +76,9 @@ class Notifier:
             message (Any): _description_
         """
         message = self.MessageEnvelope(type=self.message_type, payload=message)
-        for listener in self.listeners:
-            await self.notify_listener(listener, message)
+        async with self.lock:
+            for listener in self.listeners:
+                await self.notify_listener(listener, message)
 
     async def notify_listener(self, listener: WebSocket, message: MessageEnvelope):
         """Notify a single listener with a message.
@@ -79,3 +92,46 @@ class Notifier:
         except Exception as e:
             logging.warning(f'Failed to send message to listener: {e}')
             self.listeners.remove(listener)
+
+    def get_message_body(self):
+        """Get the message body."""
+        return self.message_producer() if self.message_producer else None
+
+
+async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
+    listeners = []
+    for notifier in notifiers:
+        notifier.connect(websocket)
+        listeners.append(asyncio.create_task(notifier.listen()))
+
+        if notifier.message_producer is not None:
+            await websocket.send_json(
+                vars(
+                    notifier.MessageEnvelope(
+                        type=notifier.message_type, payload=notifier.message_producer()
+                    )
+                )
+            )
+
+    async def heartbeat():
+        while True:
+            await asyncio.sleep(10)
+            try:
+                await websocket.send_json({'type': 'ping', 'payload': None})
+            except WebSocketDisconnect:
+                return
+
+    listeners.append(asyncio.create_task(heartbeat()))
+
+    done, pending = await asyncio.wait(listeners, return_when=asyncio.FIRST_COMPLETED)
+    for task in pending:
+        task.cancel()
+
+    for notifier in notifiers:
+        notifier.disconnect(websocket)
+
+
+async def write_notifier(websocket: WebSocket, notifier: Notifier):
+    await websocket.send_json(
+        {'type': notifier.message_type, 'payload': notifier.get_message_body()}
+    )

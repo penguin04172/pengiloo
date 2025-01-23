@@ -9,7 +9,7 @@ import playoff
 from models.event import Event
 from network.access_point import AccessPoint
 
-from .arena_notifiers import ArenaNotifiers, ArenaNotifiersMixin
+from .arena_notifiers import ArenaNotifiersMixin
 from .display import Display, DisplayMixin
 from .driver_station_connection import DriverStationConnection, DriverStationConnectionMixin
 from .event_status import EventStatusMixin
@@ -51,7 +51,6 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     # blackmagic_client:
     alliance_stations: dict[str, AllianceStation]
     team_signs: TeamSigns
-    arena_notifiers: ArenaNotifiers = ArenaNotifiers()
     scoring_panel_registry: ScoringPanelRegister
     match_state: MatchState
     last_match_state: MatchState
@@ -60,8 +59,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     last_match_time_sec: float
     red_realtime_score: RealtimeScore
     blue_realtime_score: RealtimeScore
-    last_ds_packet_time: datetime = datetime.fromtimestamp(0)
-    last_period_task_time: datetime = datetime.fromtimestamp(0)
+    last_ds_packet_time: datetime = datetime.now()
+    last_period_task_time: datetime = datetime.now()
     field_reset: bool = False
     audience_display_mode: str = 'blank'
     saved_match: models.MatchOut

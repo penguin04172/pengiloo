@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 
-from websocket.notifier import Notifier
+from ws.notifier import Notifier
 
 MIN_DISPLAY_ID = 100
 DISPLAY_PURGE_TTL_MIN = 30

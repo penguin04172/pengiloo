@@ -13,7 +13,7 @@ class AllianceSelectionRankedTeam(BaseModel):
 
 class Alliance(BaseModel):
     id: int
-    team_ids: list[int]
+    team_ids: list[int] = [0] * 3
     line_up: list[int] = [0] * 3
 
 

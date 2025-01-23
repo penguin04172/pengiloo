@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 import game
 import models
-from websocket.notifier import Notifier
+from ws.notifier import Notifier
 
 from .display import Display
 from .realtime_score import RealtimeScore
@@ -20,8 +20,8 @@ class AudienceAllianceScoreFields(BaseModel):
     amplified_time_remaining_sec: int
 
 
-class ArenaNotifiers:
-    alliance_notifier: Notifier
+class ArenaNotifiersMixin:
+    alliance_selection_notifier: Notifier
     alliance_station_display_mode_notifier: Notifier
     arena_status_notifier: Notifier
     audience_display_mode_notifier: Notifier
@@ -37,8 +37,6 @@ class ArenaNotifiers:
     score_posted_notifier: Notifier
     scoring_status_notifier: Notifier
 
-
-class ArenaNotifiersMixin:
     @staticmethod
     def get_audience_alliance_score_fields(
         alliance_score: RealtimeScore, alliance_score_summary: game.ScoreSummary

@@ -5,7 +5,7 @@ from .base import db
 
 
 class LowerThird(BaseModel):
-    id: int = 0
+    id: int = None
     top_text: str = ''
     bottom_text: str = ''
     display_order: int = 0
