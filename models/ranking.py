@@ -1,4 +1,4 @@
-from pony.orm import Json, Optional, PrimaryKey, db_session
+from pony.orm import Optional, PrimaryKey, Required, db_session
 
 from game.ranking import Ranking
 
@@ -9,7 +9,18 @@ class RankingDB(db.Entity):
     team_id = PrimaryKey(int, auto=False)
     rank = Optional(int)
     previous_rank = Optional(int)
-    fields = Optional(Json)
+
+    ranking_points = Required(int, default=0)
+    coopertition_points = Required(int, default=0)
+    match_points = Required(int, default=0)
+    auto_points = Required(int, default=0)
+    barge_points = Required(int, default=0)
+    rand = Required(float, default=0)
+    wins = Required(int, default=0)
+    losses = Required(int, default=0)
+    ties = Required(int, default=0)
+    disqualifications = Required(int, default=0)
+    played = Required(int, default=0)
 
 
 @db_session

@@ -33,19 +33,19 @@ class TeamTest(unittest.TestCase):
             team_id=7641,
             rank=1,
             previous_rank=0,
-            ranking_field=RankingField(
+            **RankingField(
                 ranking_points=20,
                 coopertition_points=625,
                 match_points=90,
                 auto_points=554,
-                stage_points=12,
-                random=0.7641,
+                barge_points=12,
+                rand=0.7641,
                 wins=3,
                 losses=2,
                 ties=1,
                 disqualifications=0,
                 played=10,
-            ),
+            ).model_dump(),
         )
 
     def ranking_2(self):
@@ -53,19 +53,19 @@ class TeamTest(unittest.TestCase):
             team_id=6998,
             rank=2,
             previous_rank=1,
-            ranking_field=RankingField(
+            **RankingField(
                 ranking_points=18,
                 coopertition_points=700,
                 match_points=625,
                 auto_points=90,
-                stage_points=23,
-                random=0.6998,
+                barge_points=23,
+                rand=0.6998,
                 wins=1,
                 losses=3,
                 ties=2,
                 disqualifications=0,
                 played=10,
-            ),
+            ).model_dump(),
         )
 
     def test_read_nonexistent_ranking(self):
@@ -78,7 +78,7 @@ class TeamTest(unittest.TestCase):
         ranking_2 = read_ranking_for_team(7641)
         self.assertEqual(ranking_1, ranking_2)
 
-        ranking_1.fields.random = 0.1234
+        ranking_1.rand = 0.1234
         update_ranking(ranking_1)
         ranking_2 = read_ranking_for_team(7641)
         self.assertEqual(ranking_1, ranking_2)

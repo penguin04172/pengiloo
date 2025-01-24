@@ -4,7 +4,7 @@ from enum import IntEnum
 from pony.orm import Json, Optional, PrimaryKey, Required, db_session
 from pydantic import BaseModel
 
-from game.match_status import MatchStatus
+from game.score_summary import MatchStatus
 
 from .base import db
 

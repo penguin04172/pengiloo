@@ -6,27 +6,31 @@ from pydantic import BaseModel
 class ScoreSummary(BaseModel):
     leave_points: int = 0
     auto_points: int = 0
-    amp_points: int = 0
-    speaker_points: int = 0
-    stage_points: int = 0
+    coral_points: int = 0
+    algae_points: int = 0
+    cage_points: int = 0
+    barge_points: int = 0
     match_points: int = 0
     foul_points: int = 0
     score: int = 0
     coopertition_criteria_met: bool = False
     coopertition_bonus: bool = False
-    num_notes: int = 0
-    num_notes_goal: int = 0
-    melody_bonus_ranking_point: bool = False
-    ensemble_bonus_ranking_point: bool = False
+    num_coral_each_level: list[int] = [0] * 4
+    num_coral_levels_goal: int = 0
+    auto_bonus_ranking_point: bool = False
+    coral_bonus_ranking_point: bool = False
+    barge_bonus_ranking_point: bool = False
     bonus_ranking_points: int = 0
-    num_opponent_tech_fouls: int = 0
+    num_opponent_major_fouls: int = 0
 
     # TBA Field
     park_points: int = 0
-    onstage_points: int = 0
-    harmony_points: int = 0
-    spotlight_points: int = 0
-    trap_points: int = 0
+    processor_points: int = 0
+    net_points: int = 0
+    level_1_points: int = 0
+    level_2_points: int = 0
+    level_3_points: int = 0
+    level_4_points: int = 0
 
 
 class MatchStatus(IntEnum):
@@ -58,7 +62,7 @@ def determine_match_status(
 
     if apply_playoff_tiebreakers:
         status = compare_points(
-            red_score_summary.num_opponent_tech_fouls, blue_score_summary.num_opponent_tech_fouls
+            red_score_summary.num_opponent_major_fouls, blue_score_summary.num_opponent_major_fouls
         )
         if status != MatchStatus.TIE_MATCH:
             return status
@@ -67,7 +71,7 @@ def determine_match_status(
         if status != MatchStatus.TIE_MATCH:
             return status
 
-        status = compare_points(red_score_summary.stage_points, blue_score_summary.stage_points)
+        status = compare_points(red_score_summary.barge_points, blue_score_summary.barge_points)
         if status != MatchStatus.TIE_MATCH:
             return status
 

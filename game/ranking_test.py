@@ -1,8 +1,8 @@
 import random
 import unittest
 
-from .match_status import ScoreSummary
 from .ranking import Ranking, RankingField, Rankings
+from .score_summary import ScoreSummary
 
 
 class TestRanking(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestRanking(unittest.TestCase):
         red_summary = ScoreSummary(
             leave_points=4,
             auto_points=30,
-            stage_points=19,
+            barge_points=19,
             match_points=67,
             score=67,
             coopertition_bonus=False,

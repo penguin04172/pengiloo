@@ -41,7 +41,7 @@ class MatchResultTest(unittest.TestCase):
         match_result.blue_score.endgame_statuses = [
             EndgameStatus.PARK,
             EndgameStatus.NONE,
-            EndgameStatus.STAGE_RIGHT,
+            EndgameStatus.CAGE_RIGHT,
         ]
         update_match_result(match_result)
         match_result_2 = read_match_result_for_match(7641)

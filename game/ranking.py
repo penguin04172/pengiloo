@@ -2,7 +2,7 @@ import random
 
 from pydantic import BaseModel
 
-from .match_status import ScoreSummary
+from .score_summary import ScoreSummary
 
 
 class RankingField(BaseModel):
@@ -10,8 +10,8 @@ class RankingField(BaseModel):
     coopertition_points: int = 0
     match_points: int = 0
     auto_points: int = 0
-    stage_points: int = 0
-    random: float = random.random()
+    barge_points: int = 0
+    rand: float = random.random()
     wins: int = 0
     losses: int = 0
     ties: int = 0
@@ -22,7 +22,7 @@ class RankingField(BaseModel):
         self, own_score: ScoreSummary, opponent_score: ScoreSummary, disqualfied: bool
     ):
         self.played += 1
-        self.random = random.random()
+        self.rand = random.random()
 
         if disqualfied:
             self.disqualifications += 1
@@ -30,7 +30,7 @@ class RankingField(BaseModel):
 
         # Check rp
         if own_score.score > opponent_score.score:
-            self.ranking_points += 2
+            self.ranking_points += 3
             self.wins += 1
         elif own_score.score == opponent_score.score:
             self.ranking_points += 1
@@ -44,60 +44,29 @@ class RankingField(BaseModel):
             self.coopertition_points += 1
         self.match_points += own_score.match_points
         self.auto_points += own_score.auto_points
-        self.stage_points += own_score.stage_points
+        self.barge_points += own_score.barge_points
 
 
-class Ranking(BaseModel):
+class Ranking(RankingField):
     team_id: int
     rank: int = 0
     previous_rank: int = 0
-    fields: RankingField = RankingField()
 
     class Config:
         from_attributes = True
 
     def __lt__(self, other: 'Ranking'):
-        if (
-            self.fields.ranking_points * other.fields.played
-            == other.fields.ranking_points * self.fields.played
-        ):
-            if (
-                self.fields.coopertition_points * other.fields.played
-                == other.fields.coopertition_points * self.fields.played
-            ):
-                if (
-                    self.fields.match_points * other.fields.played
-                    == other.fields.match_points * self.fields.played
-                ):
-                    if (
-                        self.fields.auto_points * other.fields.played
-                        == other.fields.auto_points * self.fields.played
-                    ):
-                        if (
-                            self.fields.stage_points * other.fields.played
-                            == other.fields.stage_points * self.fields.played
-                        ):
-                            return self.fields.random > other.fields.random
-                        return (
-                            self.fields.stage_points * other.fields.played
-                            > other.fields.stage_points * self.fields.played
-                        )
-                    return (
-                        self.fields.auto_points * other.fields.played
-                        > other.fields.auto_points * self.fields.played
-                    )
-                return (
-                    self.fields.match_points * other.fields.played
-                    > other.fields.match_points * self.fields.played
-                )
-            return (
-                self.fields.coopertition_points * other.fields.played
-                > other.fields.coopertition_points * self.fields.played
-            )
-        return (
-            self.fields.ranking_points * other.fields.played
-            > other.fields.ranking_points * self.fields.played
-        )
+        if self.ranking_points * other.played == other.ranking_points * self.played:
+            if self.coopertition_points * other.played == other.coopertition_points * self.played:
+                if self.match_points * other.played == other.match_points * self.played:
+                    if self.auto_points * other.played == other.auto_points * self.played:
+                        if self.barge_points * other.played == other.barge_points * self.played:
+                            return self.rand > other.rand
+                        return self.barge_points * other.played > other.barge_points * self.played
+                    return self.auto_points * other.played > other.auto_points * self.played
+                return self.match_points * other.played > other.match_points * self.played
+            return self.coopertition_points * other.played > other.coopertition_points * self.played
+        return self.ranking_points * other.played > other.ranking_points * self.played
 
 
 class Rankings(list[Ranking]):

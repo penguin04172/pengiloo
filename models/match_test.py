@@ -90,7 +90,7 @@ class MatchTest(unittest.TestCase):
         self.assertIsNone(match_2)
 
     def test_read_by_type_order(self):
-        match_ex = Match(type=MatchType.PRATICE, type_order=2, short_name='P2')
+        match_ex = Match(type=MatchType.PRACTICE, type_order=2, short_name='P2')
         match_ex1 = create_match(match_ex)
 
         match_ex = Match(type=MatchType.QUALIFICATION, type_order=2, short_name='Q2')
@@ -102,26 +102,26 @@ class MatchTest(unittest.TestCase):
         match = read_match_by_type_order(MatchType.QUALIFICATION, 2)
         self.assertEqual(match, match_ex2)
 
-        match = read_match_by_type_order(MatchType.PRATICE, 2)
+        match = read_match_by_type_order(MatchType.PRACTICE, 2)
         self.assertEqual(match, match_ex1)
 
     def test_read_matches_by_type(self):
         match_ex = Match(type=MatchType.QUALIFICATION, type_order=1, short_name='Q1')
         match_1 = create_match(match_ex)
 
-        match_ex = Match(type=MatchType.PRATICE, type_order=2, short_name='P2')
+        match_ex = Match(type=MatchType.PRACTICE, type_order=2, short_name='P2')
         match_2 = create_match(match_ex)
 
-        match_ex = Match(type=MatchType.PRATICE, type_order=1, short_name='P1')
+        match_ex = Match(type=MatchType.PRACTICE, type_order=1, short_name='P1')
         match_3 = create_match(match_ex)
 
         matches = read_matches_by_type(MatchType.TEST)
         self.assertEqual(matches, [])
 
-        matches = read_matches_by_type(MatchType.PRATICE)
+        matches = read_matches_by_type(MatchType.PRACTICE)
         self.assertEqual(2, len(matches))
-        self.assertEqual(match_2, matches[0])
-        self.assertEqual(match_3, matches[1])
+        self.assertEqual(match_2, matches[1])
+        self.assertEqual(match_3, matches[0])
 
         matches = read_matches_by_type(MatchType.QUALIFICATION)
         self.assertEqual(1, len(matches))
@@ -129,14 +129,14 @@ class MatchTest(unittest.TestCase):
 
         match_3.status = MatchStatus.MATCH_HIDDEN
         update_match(match_3)
-        matches = read_matches_by_type(MatchType.PRATICE)
+        matches = read_matches_by_type(MatchType.PRACTICE)
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0], match_2)
 
-        matches = read_matches_by_type(MatchType.PRATICE, True)
+        matches = read_matches_by_type(MatchType.PRACTICE, True)
         self.assertEqual(len(matches), 2)
-        self.assertEqual(match_2, matches[0])
-        self.assertEqual(match_3, matches[1])
+        self.assertEqual(match_2, matches[1])
+        self.assertEqual(match_3, matches[0])
 
     def test_tba_match_key(self):
         key = TbaMatchKey(comp_level='p', set_number=0, match_number=3)

@@ -2,32 +2,43 @@ from enum import IntEnum
 
 from pydantic import BaseModel
 
-from .amp_speaker import AmpSpeaker
 from .foul import Foul
 from .game_specific import specific
-from .match_status import ScoreSummary
+from .score_elements import BranchLevel, ScoreElements
+from .score_summary import ScoreSummary
 
 
 class EndgameStatus(IntEnum):
     NONE = 0
     PARK = 1
-    STAGE_LEFT = 2
-    STAGE_CENTER = 3
-    STAGE_RIGHT = 4
+    CAGE_LEFT = 2
+    CAGE_CENTER = 3
+    CAGE_RIGHT = 4
 
 
-class StagePosition(IntEnum):
+class CageStatus(IntEnum):
+    SHALLOW = 0
+    DEEP = 1
+
+
+class CagePosition(IntEnum):
     LEFT = 0
     CENTER = 1
     RIGHT = 2
 
 
+cage_points = {
+    CageStatus.SHALLOW: 6,
+    CageStatus.DEEP: 12,
+}
+
+
 class Score(BaseModel):
     leave_statuses: list[bool] = [False] * 3
-    amp_speaker: AmpSpeaker = AmpSpeaker()
+    bypass_statuses: list[bool] = [False] * 3
+    score_elements: ScoreElements = ScoreElements()
+    cage_statuses: list[CageStatus] = [CageStatus.SHALLOW] * 3
     endgame_statuses: list[EndgameStatus] = [EndgameStatus.NONE] * 3
-    microphone_statuses: list[bool] = [False] * 3
-    trap_statuses: list[bool] = [False] * 3
     fouls: list[Foul] = []
     playoff_dq: bool = False
 
@@ -38,58 +49,33 @@ class Score(BaseModel):
             return summary
 
         # Auto Points Summary
-        summary.leave_points = self.leave_statuses.count(True) * 2
-        auto_note_points = self.amp_speaker.auto_note_points()
-        summary.auto_points = summary.leave_points + auto_note_points
+        summary.leave_points = self.leave_statuses.count(True) * 3
+        auto_coral_points = self.score_elements.auto_coral_points()
+        auto_algae_points = self.score_elements.auto_algae_points()
+        summary.auto_points = summary.leave_points + auto_algae_points + auto_coral_points
 
-        # Amp and Speaker points
-        summary.amp_points = self.amp_speaker.amp_points()
-        summary.speaker_points = self.amp_speaker.speaker_points()
+        # Coral and Algae points
+        summary.coral_points = self.score_elements.total_coral_points()
+        summary.algae_points = self.score_elements.total_algae_points()
 
         # Endgame points
-        robots_by_position = {
-            StagePosition.LEFT: 0,
-            StagePosition.CENTER: 0,
-            StagePosition.RIGHT: 0,
-        }
         for status in self.endgame_statuses:
             match status:
                 case EndgameStatus.PARK:
-                    summary.park_points += 1
-                case EndgameStatus.STAGE_LEFT:
-                    summary.onstage_points += 3
-                    robots_by_position[StagePosition.LEFT] += 1
-                case EndgameStatus.STAGE_CENTER:
-                    summary.onstage_points += 3
-                    robots_by_position[StagePosition.CENTER] += 1
-                case EndgameStatus.STAGE_RIGHT:
-                    summary.onstage_points += 3
-                    robots_by_position[StagePosition.RIGHT] += 1
+                    summary.park_points += 2
+                case EndgameStatus.CAGE_LEFT:
+                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.LEFT]]
+                case EndgameStatus.CAGE_CENTER:
+                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.CENTER]]
+                case EndgameStatus.CAGE_RIGHT:
+                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.RIGHT]]
 
-        total_onstage_robots = 0
-        for position, onstage_robots in robots_by_position.items():
-            total_onstage_robots += onstage_robots
-            if onstage_robots > 1:
-                summary.harmony_points += 2 * (onstage_robots - 1)
-
-            if self.microphone_statuses[position] and onstage_robots > 0:
-                summary.spotlight_points += onstage_robots
-
-            if self.trap_statuses[position]:
-                summary.trap_points += 5
-
-        summary.stage_points = (
-            summary.park_points
-            + summary.onstage_points
-            + summary.harmony_points
-            + summary.spotlight_points
-            + summary.trap_points
-        )
+        summary.barge_points = summary.park_points + summary.cage_points
         summary.match_points = (
             summary.leave_points
-            + summary.amp_points
-            + summary.speaker_points
-            + summary.stage_points
+            + summary.coral_points
+            + summary.algae_points
+            + summary.barge_points
         )
 
         # Calculate penalty points
@@ -97,39 +83,61 @@ class Score(BaseModel):
             summary.foul_points += foul.point_value()
 
             # Store techfoul count to break ties
-            if foul.is_technical:
-                summary.num_opponent_tech_fouls += 1
+            if foul.is_major:
+                summary.num_opponent_major_fouls += 1
 
             rule = foul.rule()
             if rule is not None:
-                summary.ensemble_bonus_ranking_point = rule.is_ranking_point
+                summary.barge_bonus_ranking_point = rule.is_ranking_point
 
         summary.score = summary.match_points + summary.foul_points
 
         # Calculate bonus ranking points
-        summary.num_notes = self.amp_speaker.total_notes_scored()
-        summary.num_notes_goal = specific.melody_bonus_threshold_without_coop
-        if specific.melody_bonus_threshold_with_coop > 0:
-            summary.coopertition_criteria_met = self.amp_speaker.coop_activated
-            summary.coopertition_bonus = (
-                summary.coopertition_criteria_met and opponent_score.amp_speaker.coop_activated
+        summary.auto_bonus_ranking_point = False
+        if self.score_elements.auto_coral_points() >= specific.auto_bonus_coral_threshold:
+            summary.auto_bonus_ranking_point = (
+                True
+                if self.leave_statuses.count(True) + self.bypass_statuses.count(True) == 3
+                else False
+            )
+
+        summary.num_coral_each_level = [
+            self.score_elements.num_coral_each_level_scored(level)
+            for level in range(BranchLevel.COUNT)
+        ]
+        summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_without_coop
+        if specific.coral_bonus_level_threshold_with_coop > 0:
+            summary.coopertition_criteria_met = (
+                self.score_elements.num_processor_algae_scored()
+                >= specific.coop_bonus_algae_threshold
+            )
+            summary.coopertition_bonus = summary.coopertition_criteria_met and (
+                opponent_score.score_elements.num_processor_algae_scored()
+                >= specific.coop_bonus_algae_threshold
             )
             if summary.coopertition_bonus:
-                summary.num_notes_goal = specific.melody_bonus_threshold_with_coop
-
-        if summary.num_notes >= summary.num_notes_goal:
-            summary.melody_bonus_ranking_point = True
+                summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_with_coop
 
         if (
-            summary.stage_points >= specific.ENSEMBLE_BONUS_POINT_THRESHOLD
-            and total_onstage_robots >= specific.ENSEMBLE_BONUS_ROBOT_THRESHOLD
+            sum(
+                1
+                for num in summary.num_coral_each_level
+                if num >= specific.coral_bonus_num_threshold
+            )
+            >= summary.num_coral_levels_goal
         ):
-            summary.ensemble_bonus_ranking_point = True
+            summary.coral_bonus_ranking_point = True
 
-        if summary.melody_bonus_ranking_point:
+        if summary.barge_points >= specific.barge_bonus_point_threshold:
+            summary.barge_bonus_ranking_point = True
+
+        if summary.auto_bonus_ranking_point:
             summary.bonus_ranking_points += 1
 
-        if summary.ensemble_bonus_ranking_point:
+        if summary.coral_bonus_ranking_point:
+            summary.bonus_ranking_points += 1
+
+        if summary.barge_bonus_ranking_point:
             summary.bonus_ranking_points += 1
 
         return summary
@@ -138,10 +146,8 @@ class Score(BaseModel):
     def equals(self, other: 'Score') -> bool:
         if (
             self.leave_statuses != other.leave_statuses
-            or self.amp_speaker != other.amp_speaker
+            or self.score_elements != other.score_elements
             or self.endgame_statuses != other.endgame_statuses
-            or self.microphone_statuses != other.microphone_statuses
-            or self.trap_statuses != other.trap_statuses
             or self.playoff_dq != other.playoff_dq
             or len(self.fouls) != len(other.fouls)
         ):

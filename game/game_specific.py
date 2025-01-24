@@ -3,23 +3,23 @@ from enum import IntEnum
 from pydantic import BaseModel
 
 
-class TIME_CONSTANT(IntEnum):
-    speaker_auto_grace_period_sec = 3
-    speaker_teleop_grace_period_sec = 5
-    speaker_amplified_grace_period_sec = 3
-    coop_teleop_window_sec = 45
+class TimeConstant(IntEnum):
+    auto_grace_period_sec = 3
+    teleop_grace_period_sec = 3
+    cage_grace_period_sec = 3
 
 
 class GameSpecific(BaseModel):
-    melody_bonus_threshold_without_coop: int = 18
-    melody_bonus_threshold_with_coop: int = 15
-    amplification_note_limit: int = 4
-    amplification_duration_sec: int = 10
+    coral_bonus_num_threshold: int = 5
+    coral_bonus_level_threshold_without_coop: int = 4
+    coral_bonus_level_threshold_with_coop: int = 3
 
-    # constant
-    BANKED_AMP_NOTE_LIMIT: int = 2
-    ENSEMBLE_BONUS_POINT_THRESHOLD: int = 10
-    ENSEMBLE_BONUS_ROBOT_THRESHOLD: int = 2
+    auto_bonus_robot_threshold: int = 3
+    auto_bonus_coral_threshold: int = 1
+
+    barge_bonus_point_threshold: int = 14
+
+    coop_bonus_algae_threshold: int = 2
 
 
 specific = GameSpecific()

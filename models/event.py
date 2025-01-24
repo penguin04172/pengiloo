@@ -14,25 +14,25 @@ class PlayoffType(IntEnum):
 
 
 class Event(BaseModel):
-    name: str | None = None
-    playoff_type: int | None = None
+    name: str = 'Untitled Event'
+    playoff_type: int = PlayoffType.DOUBLE_ELIMINATION
     num_playoff_alliance: int = 8
-    selection_round_2_order: str | None = None
-    selection_round_3_order: str | None = None
-    tba_download_enabled: bool | None = None
-    tba_publishing_enabled: bool | None = None
-    tba_event_code: str | None = None
-    tba_secret_id: str | None = None
-    tba_secret: str | None = None
-    nexus_enabled: bool | None = None
-    network_security_enabled: bool | None = None
-    ap_address: str | None = None
-    ap_password: str | None = None
-    ap_channel: int | None = None
-    switch_address: str | None = None
-    switch_password: str | None = None
-    plc_address: str | None = None
-    admin_password: str | None = None
+    selection_round_2_order: str = 'L'
+    selection_round_3_order: str = ''
+    tba_download_enabled: bool = False
+    tba_publishing_enabled: bool = False
+    tba_event_code: str = ''
+    tba_secret_id: str = ''
+    tba_secret: str = ''
+    nexus_enabled: bool = False
+    network_security_enabled: bool = False
+    ap_address: str = ''
+    ap_password: str = ''
+    ap_channel: int = 36
+    switch_address: str = ''
+    switch_password: str = ''
+    plc_address: str = ''
+    admin_password: str = ''
     team_sign_red_1_id: int = 0
     team_sign_red_2_id: int = 0
     team_sign_red_3_id: int = 0
@@ -41,15 +41,17 @@ class Event(BaseModel):
     team_sign_blue_2_id: int = 0
     team_sign_blue_3_id: int = 0
     team_sign_blue_timer_id: int = 0
-    warmup_duration_sec: int | None = None
-    auto_duration_sec: int | None = None
-    pause_duration_sec: int | None = None
-    teleop_duration_sec: int | None = None
-    warning_remaining_duration_sec: int | None = None
-    melody_bonus_threshold_without_coop: int | None = None
-    melody_bonus_threshold_with_coop: int | None = None
-    amplification_note_limit: int | None = None
-    amplification_duration_sec: int | None = None
+    warmup_duration_sec: int = game.timing.warmup_duration_sec
+    auto_duration_sec: int = game.timing.auto_duration_sec
+    pause_duration_sec: int = game.timing.pause_duration_sec
+    teleop_duration_sec: int = game.timing.teleop_duration_sec
+    warning_remaining_duration_sec: int = game.timing.warning_remaining_duration_sec
+    coral_bonus_num_threshold: int = game.specific.coral_bonus_num_threshold
+    coral_bonus_level_threshold_without_coop: int = (
+        game.specific.coral_bonus_level_threshold_without_coop
+    )
+    coral_bonus_level_threshold_with_coop: int = game.specific.coral_bonus_level_threshold_with_coop
+    barge_bonus_point_threshold: int = game.specific.barge_bonus_point_threshold
 
     class Config:
         from_attributes = True
@@ -91,14 +93,14 @@ class EventDB(db.Entity):
     warning_remaining_duration_sec = Required(
         int, default=game.timing.warning_remaining_duration_sec
     )
-    melody_bonus_threshold_without_coop = Required(
-        int, default=game.specific.melody_bonus_threshold_without_coop
+    coral_bonus_num_threshold = Required(int, default=game.specific.coral_bonus_num_threshold)
+    coral_bonus_level_threshold_without_coop = Required(
+        int, default=game.specific.coral_bonus_level_threshold_without_coop
     )
-    melody_bonus_threshold_with_coop = Required(
-        int, default=game.specific.melody_bonus_threshold_with_coop
+    coral_bonus_level_threshold_with_coop = Required(
+        int, default=game.specific.coral_bonus_level_threshold_with_coop
     )
-    amplification_note_limit = Required(int, default=game.specific.amplification_note_limit)
-    amplification_duration_sec = Required(int, default=game.specific.amplification_duration_sec)
+    barge_bonus_point_threshold = Required(int, default=game.specific.barge_bonus_point_threshold)
 
 
 @db_session
