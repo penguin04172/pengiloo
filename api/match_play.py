@@ -1,10 +1,274 @@
+import asyncio
 from datetime import datetime
 
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+
+import field
 import game
 import models
 import tournament
+import ws
 
 from .arena import api_arena
+
+router = APIRouter(prefix='/match_play', tags=['match_play'])
+
+
+class MatchPlayListItem(BaseModel):
+    id: int
+    short_name: str
+    time: str
+    status: game.MatchStatus
+    color_class: str = ''
+
+    def __lt__(self, other):
+        return (
+            self.status == game.MatchStatus.MATCH_SCHEDULE
+            and other.status != game.MatchStatus.MATCH_SCHEDULE
+        )
+
+
+class MatchLoadResponse(BaseModel):
+    matches_by_type: dict[models.MatchType, list[MatchPlayListItem]]
+    current_match_type: models.MatchType
+
+
+@router.get('/match_load')
+async def load_match():
+    pratice_matches = build_match_play_list(models.MatchType.PRACTICE)
+    qualification_matches = build_match_play_list(models.MatchType.QUALIFICATION)
+    playoff_matches = build_match_play_list(models.MatchType.PLAYOFF)
+
+    matches_by_type = {
+        models.MatchType.PRACTICE: pratice_matches,
+        models.MatchType.QUALIFICATION: qualification_matches,
+        models.MatchType.PLAYOFF: playoff_matches,
+    }
+    current_match_type = api_arena.current_match.type
+    if current_match_type == models.MatchType.TEST:
+        current_match_type = models.MatchType.PRACTICE
+
+    return MatchLoadResponse(matches_by_type=matches_by_type, current_match_type=current_match_type)
+
+
+@router.websocket('/websocket')
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    notifiers_task = asyncio.create_task(
+        ws.handle_notifiers(
+            websocket,
+            api_arena.match_timing_notifier,
+            api_arena.alliance_station_display_mode_notifier,
+            api_arena.arena_status_notifier,
+            api_arena.audience_display_mode_notifier,
+            api_arena.event_status_notifier,
+            api_arena.match_load_notifier,
+            api_arena.match_time_notifier,
+            api_arena.realtime_score_notifier,
+            api_arena.score_posted_notifier,
+            api_arena.scoring_status_notifier,
+        )
+    )
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if 'type' not in data:
+                continue
+            command = data['type']
+
+            if command == 'load_match':
+                if 'match_id' not in data:
+                    websocket.send_json({'type': 'error', 'message': 'Match ID not provided'})
+                    continue
+                try:
+                    api_arena.reset_match()
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+                match_id = int(data['match_id'])
+                try:
+                    if match_id == 0:
+                        api_arena.load_test_match()
+                    else:
+                        match = models.read_match_by_id(match_id)
+                        if match is None:
+                            await websocket.send_json(
+                                {'type': 'error', 'message': 'Match not found'}
+                            )
+                            continue
+                        api_arena.load_match(match)
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'show_result':
+                if 'match_id' not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Match ID not provided'})
+                    continue
+
+                match_id = int(data['match_id'])
+                if match_id == 0:
+                    api_arena.saved_match = models.Match(type=models.MatchType.TEST, type_order=0)
+                    api_arena.saved_match_result = models.MatchResult(
+                        match_id=0, match_type=models.MatchType.TEST
+                    )
+                    await api_arena.score_posted_notifier.notify()
+                    continue
+
+                match = models.read_match_by_id(match_id)
+                if match is None:
+                    await websocket.send_json({'type': 'error', 'message': 'Match not found'})
+                    continue
+
+                match_result = models.read_match_result_for_match(match_id)
+                if match_result is None:
+                    await websocket.send_json(
+                        {'type': 'error', 'message': 'Match result not found'}
+                    )
+                    continue
+
+                if match.should_update_ranking():
+                    api_arena.saved_rankings = models.read_all_rankings()
+                else:
+                    api_arena.saved_rankings = game.Rankings()
+
+                api_arena.saved_match = match
+                api_arena.saved_match_result = match_result
+                await api_arena.score_posted_notifier.notify()
+
+            elif command == 'substitude_teams':
+                if ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'] not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Team IDs not provided'})
+                    continue
+
+                red1 = int(data['red1'])
+                red2 = int(data['red2'])
+                red3 = int(data['red3'])
+                blue1 = int(data['blue1'])
+                blue2 = int(data['blue2'])
+                blue3 = int(data['blue3'])
+
+                try:
+                    await api_arena.substitute_team(red1, red2, red3, blue1, blue2, blue3)
+                except ValueError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'toggle_bypass':
+                if 'station' not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Station not provided'})
+                    continue
+
+                station = data['station']
+                if station not in api_arena.alliance_stations:
+                    await websocket.send_json({'type': 'error', 'message': 'Invalid station'})
+                    continue
+
+                api_arena.alliance_stations[station].bypass = not api_arena.alliance_stations[
+                    station
+                ].bypass
+                ws.write_notifier(websocket, api_arena.arena_status_notifier)
+
+            elif command == 'start_match':
+                mute_match_sounds = data.get('mute_match_sounds', False)
+                api_arena.mute_match_sounds = mute_match_sounds
+                try:
+                    await api_arena.start_match()
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'abort_match':
+                try:
+                    await api_arena.abort_match()
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'signal_reset':
+                if api_arena.match_state not in [
+                    field.MatchState.POST_MATCH,
+                    field.MatchState.PRE_MATCH,
+                ]:
+                    continue
+
+                api_arena.field_reset = True
+                api_arena.alliance_station_display_mode = 'field_reset'
+                await api_arena.alliance_station_display_mode_notifier.notify()
+
+            elif command == 'commit_results':
+                if api_arena.match_state != field.MatchState.POST_MATCH:
+                    await websocket.send_json(
+                        {'type': 'error', 'message': 'Match not in POST_MATCH state'}
+                    )
+                    continue
+
+                try:
+                    await commit_current_match_score()
+                    await api_arena.reset_match()
+                    await api_arena.load_next_match()
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'discard_results':
+                try:
+                    await api_arena.reset_match()
+                    await api_arena.load_next_match()
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'set_audience_display':
+                if 'mode' not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Mode not provided'})
+                    continue
+
+                mode = data['mode']
+                await api_arena.set_audience_display_mode(mode)
+
+            elif command == 'start_timeout':
+                if 'duration_sec' not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Duration not provided'})
+                    continue
+
+                duration_sec = int(data['duration_sec'])
+                try:
+                    await api_arena.start_timeout(duration_sec)
+                except RuntimeError as e:
+                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    continue
+
+            elif command == 'set_test_match_name':
+                if api_arena.current_match.type != models.MatchType.TEST:
+                    await websocket.send_json(
+                        {'type': 'error', 'message': 'Current match is not a test match'}
+                    )
+                    continue
+                if 'name' not in data:
+                    await websocket.send_json({'type': 'error', 'message': 'Name not provided'})
+                    continue
+
+                api_arena.current_match.long_name = data['name']
+                await api_arena.match_load_notifier.notify()
+
+            else:
+                await websocket.send_json({'type': 'error', 'message': 'Invalid command'})
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        notifiers_task.cancel()
+        try:
+            await notifiers_task
+        except asyncio.CancelledError:
+            pass
+
+        await websocket.close()
 
 
 async def commit_match_score(
@@ -80,3 +344,34 @@ def get_current_match_result():
         red_cards=api_arena.red_realtime_score.cards,
         blue_cards=api_arena.blue_realtime_score.cards,
     )
+
+
+async def commit_current_match_score():
+    return await commit_match_score(api_arena.current_match, get_current_match_result(), False)
+
+
+def build_match_play_list(match_type: models.MatchType):
+    matches = models.read_matches_by_type(match_type, False)
+    match_play_list = []
+    for match in matches:
+        list_item = MatchPlayListItem(
+            id=match.id,
+            short_name=match.short_name,
+            time=match.scheduled_time.strftime('%I:%M %p'),
+            status=match.status,
+        )
+        if match.status == game.MatchStatus.RED_WON_MATCH:
+            list_item.color_class = 'red'
+        elif match.status == game.MatchStatus.BLUE_WON_MATCH:
+            list_item.color_class = 'blue'
+        elif match.status == game.MatchStatus.TIE_MATCH:
+            list_item.color_class = 'yellow'
+        else:
+            list_item.color_class = ''
+
+        if api_arena.current_match is not None and api_arena.current_match.id == match.id:
+            list_item.color_class = 'green'
+
+        match_play_list.append(list_item)
+
+    return sorted(match_play_list)
