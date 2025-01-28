@@ -65,7 +65,7 @@ def can_reset_alliance_selection():
 
 
 @router.get('/')
-async def get_alliance_selection():
+async def get_alliance_selection() -> AllianceSelectionResponse:
     next_row, next_col = determine_next_cell()
     return AllianceSelectionResponse(
         alliances=api_arena.alliance_selection_alliances,
@@ -77,7 +77,7 @@ async def get_alliance_selection():
 
 
 @router.post('/')
-async def post_alliance_selection(request: Request):
+async def post_alliance_selection(request: Request) -> dict:
     if not can_modify_alliance_selection():
         raise HTTPException(
             status_code=400, detail='Cannot modify alliance selection during playoffs'
@@ -116,7 +116,7 @@ async def post_alliance_selection(request: Request):
 
 
 @router.post('/start')
-async def start_alliance_selection():
+async def start_alliance_selection() -> dict:
     if len(api_arena.alliance_selection_alliances) > 0:
         raise HTTPException(status_code=400, detail='Alliance selection has already started')
 
@@ -147,7 +147,7 @@ async def start_alliance_selection():
 
 
 @router.post('/reset')
-async def reset_alliance_selection():
+async def reset_alliance_selection() -> dict:
     if not can_reset_alliance_selection():
         raise HTTPException(
             status_code=400, detail='Cannot modify alliance selection during playoffs'
@@ -163,7 +163,7 @@ async def reset_alliance_selection():
 
 
 @router.post('/finalize')
-async def finalize_alliance_selection(start_time: datetime):
+async def finalize_alliance_selection(start_time: datetime) -> dict:
     if not can_modify_alliance_selection():
         raise HTTPException(
             status_code=400, detail='Cannot modify alliance selection during playoffs'

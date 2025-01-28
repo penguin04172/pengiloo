@@ -11,7 +11,7 @@ router = APIRouter(prefix='/displays/rankings', tags=['displays'])
 
 
 @router.get('/')
-async def rankings_display(request: Request, display_id: str = '', nickname=''):
+async def rankings_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(
         request, display_id, nickname, {'scroll_ms_per_row': '1000'}
     )

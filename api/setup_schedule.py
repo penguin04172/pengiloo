@@ -11,7 +11,7 @@ from .arena import api_arena
 
 router = APIRouter(prefix='/setup/schedule', tags=['schedule'])
 
-cached_matches = dict[models.MatchType, list[models.MatchOut]]()
+cached_matches = dict[models.MatchType, list[models.Match]]()
 cached_team_first_match = dict[models.MatchType, dict[int, str]]()
 
 
@@ -43,7 +43,7 @@ class GenerateScheduleRequest(BaseModel):
 
 
 @router.post('/generate')
-async def generate_schedule(schedule_request: GenerateScheduleRequest) -> list[models.MatchOut]:
+async def generate_schedule(schedule_request: GenerateScheduleRequest) -> list[models.Match]:
     if schedule_request.match_type not in [
         models.MatchType.PRACTICE,
         models.MatchType.QUALIFICATION,

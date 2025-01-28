@@ -11,7 +11,7 @@ router = APIRouter(prefix='/displays/audience', tags=['displays'])
 
 
 @router.get('/')
-async def audience_display(request: Request, display_id: str = '', nickname=''):
+async def audience_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(
         request,
         display_id,

@@ -243,7 +243,7 @@ class EventStatusTest(unittest.TestCase):
         self.assertEqual(arena.get_early_late_message(), '')
 
         arena.match_state = MatchState.PRE_MATCH
-        arena.current_match = models.MatchOut(
+        arena.current_match = models.Match(
             id=0,
             type=models.MatchType.PRACTICE,
             type_order=1,
@@ -251,7 +251,7 @@ class EventStatusTest(unittest.TestCase):
         )
         self.assertEqual(arena.get_early_late_message(), 'Event is running 3 minutes late')
 
-        arena.current_match = models.MatchOut(
+        arena.current_match = models.Match(
             id=0,
             type=models.MatchType.PLAYOFF,
             type_order=1,

@@ -14,14 +14,14 @@ router = APIRouter(prefix='/panels/referee', tags=['panels'])
 
 
 class FoulListResponse(BaseModel):
-    match: models.MatchOut
+    match: models.Match
     red_fouls: list[game.Foul]
     blue_fouls: list[game.Foul]
     rules: dict[int, game.Rule]
 
 
 @router.get('/foul_list')
-async def get_foul_list():
+async def get_foul_list() -> FoulListResponse:
     return FoulListResponse(
         match=api_arena.current_match,
         red_fouls=api_arena.red_realtime_score.current_score.fouls,

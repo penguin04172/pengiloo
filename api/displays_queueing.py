@@ -18,7 +18,7 @@ router = APIRouter(prefix='/displays/queueing', tags=['displays'])
 
 
 @router.get('/')
-async def audience_display(request: Request, display_id: str = '', nickname=''):
+async def audience_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(request, display_id, nickname)
     if path is not None:
         return {'status': 'redirect', 'path': path}
@@ -26,20 +26,20 @@ async def audience_display(request: Request, display_id: str = '', nickname=''):
 
 
 class MatchLoadResponse(BaseModel):
-    upcoming_matches: list[models.MatchOut]
+    upcoming_matches: list[models.Match]
     red_off_field_teams_by_match: list[list[int]]
     blue_off_field_teams_by_match: list[list[int]]
 
 
 @router.get('/match_load')
-async def match_load():
+async def match_load() -> MatchLoadResponse:
     matches = models.read_matches_by_type(api_arena.current_match.type, False)
 
     num_matches_to_show = NUM_NON_PLAYOFF_MATCHES_TO_SHOW
     if api_arena.current_match.type == models.MatchType.PLAYOFF:
         num_matches_to_show = NUM_PLAYOFF_MATCHES_TO_SHOW
 
-    upcoming_matches = list[models.MatchOut]()
+    upcoming_matches = list[models.Match]()
     red_off_field_teams_by_match = list[list[int]]()
     blue_off_field_teams_by_match = list[list[int]]()
     for i, match in enumerate(matches):

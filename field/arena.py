@@ -54,7 +54,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     scoring_panel_registry: ScoringPanelRegister
     match_state: MatchState
     last_match_state: MatchState
-    current_match: models.MatchOut
+    current_match: models.Match
     match_start_time: datetime
     last_match_time_sec: float
     red_realtime_score: RealtimeScore
@@ -63,7 +63,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     last_period_task_time: datetime = datetime.now()
     field_reset: bool = False
     audience_display_mode: str = 'blank'
-    saved_match: models.MatchOut
+    saved_match: models.Match
     saved_match_result: models.MatchResult
     saved_rankings: game.Rankings
     alliance_station_display_mode: str = ''
@@ -107,7 +107,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         arena.last_match_state = -1
 
         arena.audience_display_mode = 'blank'
-        arena.saved_match = models.MatchOut(id=0, type=models.MatchType.TEST, type_order=0)
+        arena.saved_match = models.Match(id=0, type=models.MatchType.TEST, type_order=0)
         arena.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
         arena.alliance_station_display_mode = 'Match'
         return arena
@@ -174,7 +174,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         if len(alliances) > 0:
             return self.playoff_tournament.update_matches(alliances)
 
-    async def load_match(self, match: models.MatchOut):
+    async def load_match(self, match: models.Match):
         if (
             self.match_state != MatchState.PRE_MATCH
             and self.match_state != MatchState.TIMEOUT_ACTIVE
@@ -216,7 +216,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     async def load_test_match(self):
         return await self.load_match(
-            models.MatchOut(
+            models.Match(
                 id=0,
                 type=models.MatchType.TEST,
                 type_order=0,

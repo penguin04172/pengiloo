@@ -86,13 +86,10 @@ class Match(BaseModel):
     status: MatchStatus | None = None
     use_tiebreak_criteria: bool | None = None
     tba_match_key: TbaMatchKey = TbaMatchKey()
+    id: int = None
 
     class Config:
         from_attributes = True
-
-
-class MatchOut(Match):
-    id: int = None
 
     def is_complete(self) -> bool:
         return (
@@ -121,13 +118,13 @@ class MatchOut(Match):
 def create_match(match_data: Match):
     match = MatchDB(**match_data.model_dump(exclude_none=True, exclude=['scheduled_time']))
     match.scheduled_time = match_data.scheduled_time
-    return MatchOut(**match.to_dict())
+    return Match(**match.to_dict())
 
 
 @db_session
 def read_match_by_id(id: int):
     match = MatchDB.get(id=id)
-    return None if match is None else MatchOut(**match.to_dict())
+    return None if match is None else Match(**match.to_dict())
 
 
 @db_session
@@ -138,7 +135,7 @@ def update_match(match_data: Match):
 
     target = target.first()
     target.set(**match_data.model_dump(exclude_none=True))
-    return MatchOut(**target.to_dict())
+    return Match(**target.to_dict())
 
 
 @db_session
@@ -153,7 +150,7 @@ def truncate_matches():
 
 @db_session
 def read_all_matches():
-    return [MatchOut(**m.to_dict()) for m in MatchDB.select()]
+    return [Match(**m.to_dict()) for m in MatchDB.select()]
 
 
 @db_session
@@ -161,7 +158,7 @@ def read_matches_by_type(match_type: MatchType, include_hidden: bool = False):
     matches = MatchDB.select()
     return sorted(
         [
-            MatchOut(**m.to_dict())
+            Match(**m.to_dict())
             for m in matches
             if m.type == match_type and (include_hidden or m.status != MatchStatus.MATCH_HIDDEN)
         ],
@@ -175,4 +172,4 @@ def read_match_by_type_order(match_type: MatchType, type_order: int):
     if len(match) == 0:
         return None
 
-    return MatchOut(**match.first().to_dict())
+    return Match(**match.first().to_dict())

@@ -207,11 +207,11 @@ class ArenaNotifiersMixin:
         blue_ranking_points = blue_score_summary.bonus_ranking_points
 
         match self.saved_match.status:
-            case game.MATCH_STATUS.red_won_match:
+            case game.MatchStatus.RED_WON_MATCH:
                 red_ranking_points += 2
-            case game.MATCH_STATUS.blue_won_match:
+            case game.MatchStatus.BLUE_WON_MATCH:
                 blue_ranking_points += 2
-            case game.MATCH_STATUS.tie_match:
+            case game.MatchStatus.TIE_MATCH:
                 red_ranking_points += 1
                 blue_ranking_points += 1
 
@@ -220,7 +220,7 @@ class ArenaNotifiersMixin:
         blue_wins = 0
         red_off_field_team_ids = []
         blue_off_field_team_ids = []
-        if self.saved_match.type == models.MATCH_TYPE.playoff:
+        if self.saved_match.type == models.MatchType.PLAYOFF:
             matchup = self.playoff_tournament.MatchGroups()[self.saved_match.playoff_match_group_id]
             red_wins = matchup.red_alliance_wins
             blue_wins = matchup.blue_alliance_wins
@@ -264,8 +264,8 @@ class ArenaNotifiersMixin:
             'blue_rankings': blue_rankings,
             'red_off_field_team_ids': red_off_field_team_ids,
             'blue_off_field_team_ids': blue_off_field_team_ids,
-            'red_won': self.saved_match.status == game.MATCH_STATUS.red_won_match,
-            'blue_won': self.saved_match.status == game.MATCH_STATUS.blue_won_match,
+            'red_won': self.saved_match.status == game.MatchStatus.RED_WON_MATCH,
+            'blue_won': self.saved_match.status == game.MatchStatus.BLUE_WON_MATCH,
             'red_wins': red_wins,
             'blue_wins': blue_wins,
             'red_destination': red_destination,

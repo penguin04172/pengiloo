@@ -11,7 +11,7 @@ router = APIRouter(prefix='/displays/webpage', tags=['displays'])
 
 
 @router.get('/')
-async def placeholder_display(request: Request, display_id: str = '', nickname=''):
+async def placeholder_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(request, display_id, nickname, {'url': ''})
     if path is not None:
         return {'status': 'redirect', 'path': path}

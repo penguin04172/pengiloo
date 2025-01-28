@@ -11,7 +11,7 @@ router = APIRouter(prefix='/displays/field_monitor', tags=['displays'])
 
 
 @router.get('/')
-async def field_monitor_display(request: Request, display_id: str = '', nickname=''):
+async def field_monitor_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(request, display_id, nickname)
     if path is not None:
         return {'status': 'redirect', 'path': path}

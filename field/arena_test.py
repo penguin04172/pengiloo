@@ -211,13 +211,13 @@ class TestArena(unittest.TestCase):
         arena.alliance_stations['B2'].bypass = True
         arena.alliance_stations['B3'].bypass = True
 
-        asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+        asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.abort_match())
 
         asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
-            asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+            asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
@@ -225,7 +225,7 @@ class TestArena(unittest.TestCase):
 
         arena.match_state = MatchState.AUTO_PERIOD
         with self.assertRaises(RuntimeError):
-            asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+            asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
@@ -233,7 +233,7 @@ class TestArena(unittest.TestCase):
 
         arena.match_state = MatchState.PAUSE_PERIOD
         with self.assertRaises(RuntimeError):
-            asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+            asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
@@ -241,7 +241,7 @@ class TestArena(unittest.TestCase):
 
         arena.match_state = MatchState.TELEOP_PERIOD
         with self.assertRaises(RuntimeError):
-            asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+            asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
@@ -249,7 +249,7 @@ class TestArena(unittest.TestCase):
 
         arena.match_state = MatchState.POST_MATCH
         with self.assertRaises(RuntimeError):
-            asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+            asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         with self.assertRaises(RuntimeError):
@@ -258,7 +258,7 @@ class TestArena(unittest.TestCase):
         arena.reset_match()
         self.assertEqual(arena.match_state, MatchState.PRE_MATCH)
         arena.reset_match()
-        asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+        asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
 
     def test_match_start_robot_link_enforcement(self):
         arena = setup_test_arena_with_parameter(self)
@@ -269,7 +269,7 @@ class TestArena(unittest.TestCase):
         models.create_team(models.Team(id=104))
         models.create_team(models.Team(id=105))
         models.create_team(models.Team(id=106))
-        match = models.MatchOut(
+        match = models.Match(
             type=models.MatchType.TEST,
             type_order=0,
             red1=101,
@@ -322,7 +322,7 @@ class TestArena(unittest.TestCase):
         asyncio.run(arena.start_match())
         arena.match_state = MatchState.PRE_MATCH
 
-        asyncio.run(arena.load_match(models.MatchOut(type=models.MatchType.TEST, type_order=0)))
+        asyncio.run(arena.load_match(models.Match(type=models.MatchType.TEST, type_order=0)))
         with self.assertRaises(RuntimeError):
             asyncio.run(arena.start_match())
         arena.alliance_stations['R1'].bypass = True
@@ -341,20 +341,20 @@ class TestArena(unittest.TestCase):
         arena = setup_test_arena_with_parameter(self)
 
         models.create_team(models.Team(id=123))
-        pratice_match1 = models.MatchOut(type=models.MatchType.PRACTICE, type_order=1)
-        pratice_match2 = models.MatchOut(
+        pratice_match1 = models.Match(type=models.MatchType.PRACTICE, type_order=1)
+        pratice_match2 = models.Match(
             type=models.MatchType.PRACTICE, type_order=2, status=game.MatchStatus.RED_WON_MATCH
         )
-        pratice_match3 = models.MatchOut(type=models.MatchType.PRACTICE, type_order=3)
+        pratice_match3 = models.Match(type=models.MatchType.PRACTICE, type_order=3)
         pratice_match1 = models.create_match(pratice_match1)
         pratice_match2 = models.create_match(pratice_match2)
         pratice_match3 = models.create_match(pratice_match3)
-        qual_match1 = models.MatchOut(
+        qual_match1 = models.Match(
             type=models.MatchType.QUALIFICATION,
             type_order=1,
             status=game.MatchStatus.BLUE_WON_MATCH,
         )
-        qual_match2 = models.MatchOut(type=models.MatchType.QUALIFICATION, type_order=2)
+        qual_match2 = models.Match(type=models.MatchType.QUALIFICATION, type_order=2)
         qual_match1 = models.create_match(qual_match1)
         qual_match2 = models.create_match(qual_match2)
 
@@ -516,7 +516,7 @@ class TestArena(unittest.TestCase):
         asyncio.run(arena.load_test_match())
         asyncio.run(arena.start_timeout('Break2', 10))
         self.assertEqual(arena.match_state, MatchState.TIMEOUT_ACTIVE)
-        match = models.MatchOut(
+        match = models.Match(
             type=models.MatchType.PLAYOFF,
             type_order=1,
             short_name='F1',

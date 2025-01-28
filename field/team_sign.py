@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import dataclasses
 
 import game
-from models import MatchOut
+from models import Match
 
 from .realtime_score import RealtimeScore
 from .specs import MatchState
@@ -365,7 +365,7 @@ class TeamSigns:
         )
         self.blue_timer.update(arena, None, False, countdown, blue_in_match_rear_text)
 
-    def set_next_match_teams(self, match: 'MatchOut'):
+    def set_next_match_teams(self, match: 'Match'):
         self.red_1.next_match_team_id = match.red1
         self.red_2.next_match_team_id = match.red2
         self.red_3.next_match_team_id = match.red3

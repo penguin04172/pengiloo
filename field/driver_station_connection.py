@@ -80,7 +80,7 @@ class DriverStationConnection:
         if self.tcp_conn is not None:
             self.tcp_conn.close()
 
-    def signal_match_start(self, match: models.MatchOut, wifi_status: network.TeamWifiStatus):
+    def signal_match_start(self, match: models.Match, wifi_status: network.TeamWifiStatus):
         self.missed_packet_offset = self.missed_packet_count
         # self.log =
 

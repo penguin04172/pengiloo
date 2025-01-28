@@ -11,11 +11,11 @@ LOGS_DIR = 'static/logs'
 
 
 class TeamMatchLog:
-    def __init__(self, team_id: int, match: models.MatchOut, wifi_status: network.TeamWifiStatus):
+    def __init__(self, team_id: int, match: models.Match, wifi_status: network.TeamWifiStatus):
         os.makedirs(os.path.join(models.BASE_DIR, LOGS_DIR), mode=0o755, exist_ok=True)
 
         filename = f'{os.path.join(models.BASE_DIR, LOGS_DIR)}/'
-        filename += f"{datetime.now().strftime("%Y%m%d%H%M%S")}_{match.type.name.title()}_"
+        filename += f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{match.type.name.title()}_'
         filename += f'Match_{match.short_name}_{team_id}.csv'
 
         self.log_file = open(filename, 'w', newline='')

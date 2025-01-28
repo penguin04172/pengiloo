@@ -11,7 +11,7 @@ import models
 from game.ranking import RankingField
 from game.score import EndgameStatus, Score, ScoreSummary
 from models.event import Event, PlayoffType
-from models.match import MatchOut, MatchType
+from models.match import Match, MatchType
 from models.match_result import MatchResult
 
 TBA_BASE_URL = 'https://www.thebluealliance.com'
@@ -32,7 +32,7 @@ class TbaClient(BaseModel):
 
     @staticmethod
     def create_tba_scoring_breakdown(
-        event_settings: Event, match: MatchOut, match_result: MatchResult, alliance: str
+        event_settings: Event, match: Match, match_result: MatchResult, alliance: str
     ):
         breakdown = TbaScoreBreakdown()
         score = Score()
@@ -245,7 +245,7 @@ class TbaClient(BaseModel):
         json_body = orjson.dumps(tba_matches)
         resp = await self.post_request('matches', 'update', json_body)
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
         return None
 
     async def publish_rankings(self):
@@ -274,7 +274,7 @@ class TbaClient(BaseModel):
 
         resp = await self.post_request('rankings', 'update', json_body)
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
         return None
 
     async def publish_alliances(self):
@@ -289,14 +289,14 @@ class TbaClient(BaseModel):
         json_body = orjson.dumps(tba_alliances)
         resp = await self.post_request('alliance_selections', 'update', json_body)
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
 
         event_settings = models.read_event_settings()
         playoff_type = 10 if event_settings.playoff_type == PlayoffType.DOUBLE_ELIMINATION else 0
 
         resp = await self.post_request('info', 'update', bytes({'playoff_type': playoff_type}))
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
 
         return None
 
@@ -315,14 +315,14 @@ class TbaClient(BaseModel):
         json_body = orjson.dumps(tba_awards)
         resp = await self.post_request('awards', 'update', json_body)
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
 
         return None
 
     async def delete_published_matches(self):
         resp = await self.post_request('matches', 'delete_all', bytes(self.event_code))
         if resp['status'] != 200:
-            return f"Got status code {resp['status']} from TBA: {resp['body']}"
+            return f'Got status code {resp["status"]} from TBA: {resp["body"]}'
 
         return None
 

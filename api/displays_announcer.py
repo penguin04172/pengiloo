@@ -11,7 +11,7 @@ router = APIRouter(prefix='/displays/announcer', tags=['displays'])
 
 
 @router.get('/')
-async def announcer_display(request: Request, display_id: str = '', nickname=''):
+async def announcer_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(request, display_id, nickname, None)
     if path is not None:
         return {'status': 'redirect', 'path': path}
@@ -19,12 +19,12 @@ async def announcer_display(request: Request, display_id: str = '', nickname='')
 
 
 @router.get('/match_load')
-async def announcer_match_load():
+async def announcer_match_load() -> dict:
     return api_arena.generate_match_load_message()
 
 
 @router.get('/score_posted')
-async def announcer_score_posted():
+async def announcer_score_posted() -> dict:
     return api_arena.generate_score_posted_message()
 
 
