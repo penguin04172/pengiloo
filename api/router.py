@@ -13,6 +13,9 @@ from . import (
     displays_twitch,
     displays_wall,
     displays_webpage,
+    match_logs,
+    match_play,
+    match_review,
     panels_referee,
     panels_scoring,
     setup_awards,
@@ -54,6 +57,10 @@ api_router.include_router(displays_webpage.router)
 
 api_router.include_router(panels_referee.router)
 api_router.include_router(panels_scoring.router)
+
+api_router.include_router(match_logs.router)
+api_router.include_router(match_play.router)
+api_router.include_router(match_review.router)
 
 
 @api_router.get('/')
