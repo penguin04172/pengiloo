@@ -279,8 +279,8 @@ async def commit_match_score(
         match_result.correct_playoff_score()
 
     match.score_commit_at = datetime.now()
-    red_score_summary = match_result.red_score_summary()
-    blue_score_summary = match_result.blue_score_summary()
+    red_score_summary = await match_result.red_score_summary()
+    blue_score_summary = await match_result.blue_score_summary()
     match.status = game.determine_match_status(
         red_score_summary, blue_score_summary, match.use_tiebreak_criteria
     )
@@ -302,7 +302,7 @@ async def commit_match_score(
             tournament.calculate_team_cards(match.type)
 
         if match.should_update_ranking():
-            rankings = tournament.calculate_rankings(is_match_review_edit)
+            rankings = await tournament.calculate_rankings(is_match_review_edit)
             updated_rankings = rankings
 
         if match.should_update_playoff_matches():

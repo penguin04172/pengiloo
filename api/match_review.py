@@ -29,9 +29,9 @@ class MatchReviewResponse(BaseModel):
 
 @router.get('/')
 async def get_match_review() -> MatchReviewResponse:
-    pratice_matches = build_match_review_list(models.MatchType.PRACTICE)
-    qualification_matches = build_match_review_list(models.MatchType.QUALIFICATION)
-    playoff_matches = build_match_review_list(models.MatchType.PLAYOFF)
+    pratice_matches = await build_match_review_list(models.MatchType.PRACTICE)
+    qualification_matches = await build_match_review_list(models.MatchType.QUALIFICATION)
+    playoff_matches = await build_match_review_list(models.MatchType.PLAYOFF)
 
     matches_by_type = {
         models.MatchType.PRACTICE: pratice_matches,
@@ -110,7 +110,7 @@ def get_match_result_from_request(match_id: str):
     return match, match_result, False
 
 
-def build_match_review_list(match_type: models.MatchType):
+async def build_match_review_list(match_type: models.MatchType):
     matches = models.read_matches_by_type(match_type, False)
 
     match_review_list = []
@@ -125,8 +125,8 @@ def build_match_review_list(match_type: models.MatchType):
 
         result = models.read_match_result_for_match(match.id)
         if result is not None:
-            list_item.red_score = result.red_score_summary().score
-            list_item.blue_score = result.blue_score_summary().score
+            list_item.red_score = await result.red_score_summary().score
+            list_item.blue_score = await result.blue_score_summary().score
 
         if match.status == game.MatchStatus.RED_WON_MATCH:
             list_item.color_class = 'red'

@@ -279,31 +279,40 @@ class TeamSigns:
         pass
 
     @staticmethod
-    def generate_in_match_rear_text(
+    def generate_teams_in_match_rear_text(
         is_red: bool,
         countdown: str,
-        realtime_score: 'RealtimeScore',
-        opponent_realtime_score: 'RealtimeScore',
+        realtime_score: RealtimeScore,
+        opponent_realtime_score: RealtimeScore,
     ):
         score_summary = realtime_score.current_score.summarize(
             opponent_realtime_score.current_score
         )
-        score_total = score_summary.score - score_summary.stage_points
+        score_total = score_summary.score - score_summary.barge_points
 
         opponent_score_summary = opponent_realtime_score.current_score.summarize(
             realtime_score.current_score
         )
-        opponent_score_total = opponent_score_summary.score - opponent_score_summary.stage_points
+        opponent_score_total = opponent_score_summary.score - opponent_score_summary.barge_points
 
         if is_red:
-            alliance_scores = f'R{score_total:03d}-B{opponent_score_total:03d}'
+            alliance_scores = f'R{score_total:03}-B{opponent_score_total:03}'
         else:
-            alliance_scores = f'B{score_total:03d}-R{opponent_score_total:03d}'
+            alliance_scores = f'B{score_total:03}-R{opponent_score_total:03}'
 
-        if realtime_score.amplified_time_remaining_sec > 0:
-            alliance_scores = f'Amp:{realtime_score.amplified_time_remaining_sec:2d}'
+        return f'{countdown} {alliance_scores:>9} {score_summary.num_coral_levels_met}/{score_summary.num_coral_levels_goal}'
 
-        return f'{countdown[1:]} {score_summary.num_notes:02}/{score_summary.num_notes_goal:02} {alliance_scores:>9}'
+    @staticmethod
+    def generate_timer_in_match_rear_text(
+        realtime_score: RealtimeScore, opponent_realtime_score: RealtimeScore
+    ):
+        score_summary = realtime_score.current_score.summarize(
+            opponent_realtime_score.current_score
+        )
+        text = ' '.join(
+            [f'{i + 1} {num}' for i, num in enumerate(score_summary.num_coral_each_level)]
+        )
+        return text
 
     def update(self, arena):
         match_time_sec = int(arena.match_time_sec())
@@ -337,11 +346,17 @@ class TeamSigns:
 
         countdown = f'{countdown_sec // 60: 02d}:{countdown_sec % 60: 02d}'
 
-        red_in_match_rear_text = self.generate_in_match_rear_text(
+        red_in_match_rear_text = self.generate_teams_in_match_rear_text(
             True, countdown, arena.red_realtime_score, arena.blue_realtime_score
         )
-        blue_in_match_rear_text = self.generate_in_match_rear_text(
+        red_timer_in_match_rear_text = self.generate_timer_in_match_rear_text(
+            arena.red_realtime_score, arena.blue_realtime_score
+        )
+        blue_in_match_rear_text = self.generate_teams_in_match_rear_text(
             False, countdown, arena.blue_realtime_score, arena.red_realtime_score
+        )
+        blue_timer_in_match_rear_text = self.generate_timer_in_match_rear_text(
+            arena.blue_realtime_score, arena.red_realtime_score
         )
 
         self.red_1.update(
@@ -353,7 +368,7 @@ class TeamSigns:
         self.red_3.update(
             arena, arena.alliance_stations['R3'], True, countdown, red_in_match_rear_text
         )
-        self.red_timer.update(arena, None, True, countdown, red_in_match_rear_text)
+        self.red_timer.update(arena, None, True, countdown, red_timer_in_match_rear_text)
         self.blue_1.update(
             arena, arena.alliance_stations['B1'], False, countdown, blue_in_match_rear_text
         )
@@ -363,7 +378,7 @@ class TeamSigns:
         self.blue_3.update(
             arena, arena.alliance_stations['B3'], False, countdown, blue_in_match_rear_text
         )
-        self.blue_timer.update(arena, None, False, countdown, blue_in_match_rear_text)
+        self.blue_timer.update(arena, None, False, countdown, blue_timer_in_match_rear_text)
 
     def set_next_match_teams(self, match: 'Match'):
         self.red_1.next_match_team_id = match.red1

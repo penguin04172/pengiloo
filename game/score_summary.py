@@ -16,6 +16,7 @@ class ScoreSummary(BaseModel):
     coopertition_criteria_met: bool = False
     coopertition_bonus: bool = False
     num_coral_each_level: list[int] = [0] * 4
+    num_coral_levels_met: int = 0
     num_coral_levels_goal: int = 0
     auto_bonus_ranking_point: bool = False
     coral_bonus_ranking_point: bool = False

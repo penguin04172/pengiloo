@@ -1,5 +1,4 @@
 import asyncio
-import signal
 
 import fastapi
 import uvicorn
@@ -30,7 +29,7 @@ async def main():
     app.include_router(api_router)
     app.include_router(index.router)
 
-    config = uvicorn.Config(app, '0.0.0.0', 8000)
+    config = uvicorn.Config(app, '0.0.0.0', 8000, workers=4)
     server = uvicorn.Server(config)
 
     await server.serve()
@@ -40,9 +39,6 @@ async def main():
 
 
 if __name__ == '__main__':
-    # 設定 Ctrl+C 監聽
-    signal.signal(signal.SIGINT, lambda s, f: shutdown())
-
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

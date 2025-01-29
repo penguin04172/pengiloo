@@ -5,8 +5,6 @@ from datetime import datetime
 import models
 import network
 
-from .driver_station_connection import DriverStationConnection
-
 LOGS_DIR = 'static/logs'
 
 
@@ -45,9 +43,7 @@ class TeamMatchLog:
         )
         self.wifi_status = wifi_status
 
-    def log_ds_packet(
-        self, match_time_sec: float, packet_type: int, ds_conn: DriverStationConnection
-    ):
+    def log_ds_packet(self, match_time_sec: float, packet_type: int, ds_conn):
         self.log_writer.writerow(
             [
                 match_time_sec,

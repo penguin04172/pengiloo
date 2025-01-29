@@ -105,6 +105,9 @@ class Score(BaseModel):
             self.score_elements.num_coral_each_level_scored(level)
             for level in range(BranchLevel.COUNT)
         ]
+        summary.num_coral_levels_met = sum(
+            1 for num in summary.num_coral_each_level if num >= specific.coral_bonus_num_threshold
+        )
         summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_without_coop
         if specific.coral_bonus_level_threshold_with_coop > 0:
             summary.coopertition_criteria_met = (
@@ -118,14 +121,7 @@ class Score(BaseModel):
             if summary.coopertition_bonus:
                 summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_with_coop
 
-        if (
-            sum(
-                1
-                for num in summary.num_coral_each_level
-                if num >= specific.coral_bonus_num_threshold
-            )
-            >= summary.num_coral_levels_goal
-        ):
+        if summary.num_coral_levels_met >= summary.num_coral_levels_goal:
             summary.coral_bonus_ranking_point = True
 
         if summary.barge_points >= specific.barge_bonus_point_threshold:

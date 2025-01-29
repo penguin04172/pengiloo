@@ -37,7 +37,6 @@ from .lower_third import (
 )
 from .match import (
     Match,
-    MatchOut,
     MatchType,
     TbaMatchKey,
     create_match,

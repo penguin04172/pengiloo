@@ -151,12 +151,14 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         game.update_match_sounds()
         await self.match_timing_notifier.notify()
 
-        game.specific.melody_bonus_threshold_with_coop = settings.melody_bonus_threshold_with_coop
-        game.specific.melody_bonus_threshold_without_coop = (
-            settings.melody_bonus_threshold_without_coop
+        game.specific.coral_bonus_level_threshold_with_coop = (
+            settings.coral_bonus_level_threshold_with_coop
         )
-        game.specific.amplification_note_limit = settings.amplification_note_limit
-        game.specific.amplification_duration_sec = settings.amplification_duration_sec
+        game.specific.coral_bonus_level_threshold_without_coop = (
+            settings.coral_bonus_level_threshold_without_coop
+        )
+        game.specific.coral_bonus_num_threshold = settings.coral_bonus_num_threshold
+        game.specific.barge_bonus_point_threshold = settings.barge_bonus_point_threshold
 
         self.create_playoff_tournament()
         self.update_playoff_tournament()
@@ -522,8 +524,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     async def run(self):
         task_list = []
-        # task_list.append(asyncio.create_task(self.listen_for_driver_stations()))
-        # task_list.append(asyncio.create_task(self.listen_for_ds_udp_packets()))
+        task_list.append(asyncio.create_task(self.listen_for_driver_stations()))
+        task_list.append(asyncio.create_task(self.listen_for_ds_udp_packets()))
         # task_list.append(asyncio.create_task(self.access_point.run()))
         # run plc
         self.running = True

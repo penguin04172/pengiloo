@@ -17,7 +17,6 @@ class MatchTimeMessage(BaseModel):
 class AudienceAllianceScoreFields(BaseModel):
     score: game.Score
     score_summary: game.ScoreSummary
-    amplified_time_remaining_sec: int
 
 
 class ArenaNotifiersMixin:
@@ -44,7 +43,6 @@ class ArenaNotifiersMixin:
         fields = AudienceAllianceScoreFields(
             score=alliance_score.current_score,
             score_summary=alliance_score_summary,
-            amplified_time_remaining_sec=alliance_score.amplified_time_remaining_sec,
         )
         return fields
 
