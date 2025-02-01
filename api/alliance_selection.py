@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
+import ws
 import models
 import tournament
 
@@ -10,7 +12,7 @@ from .arena import api_arena
 
 router = APIRouter('/alliance_selection', tags=['alliance_selection'])
 
-aliance_selection_time_limit_sec = 45
+alliance_selection_time_limit_sec = 45
 
 
 class AllianceSelectionResponse(BaseModel):
@@ -72,7 +74,7 @@ async def get_alliance_selection() -> AllianceSelectionResponse:
         ranked_teams=api_arena.alliance_selection_ranked_teams,
         next_row=next_row,
         next_col=next_col,
-        time_limit_sec=aliance_selection_time_limit_sec,
+        time_limit_sec=alliance_selection_time_limit_sec,
     )
 
 
@@ -195,3 +197,50 @@ async def finalize_alliance_selection(start_time: datetime) -> dict:
         api_arena.load_match(matches[0])
 
     return {'status': 'success'}
+
+@router.websocket('/websocket')
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    notifiers_task = asyncio.create_task(
+        ws.handle_notifiers(
+            websocket,
+            api_arena.alliance_selection_notifier
+        )
+    )
+
+    global alliance_selection_time_limit_sec
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if 'type' not in data:
+                continue
+            message_type = data['type']
+
+            if message_type == 'set_timer':
+                if 'time_limit_sec' not in data['data']:
+                    await websocket.send_json({'type': 'error', 'message': 'time_limit_sec not provided'})
+                    continue
+                alliance_selection_time_limit_sec = int(data['data']['time_limit_sec'])
+
+            elif message_type == 'start_timer':
+                if not api_arena.alliance_selection_show_timer:
+                    api_arena.alliance_selection_show_timer = True
+                    api_arena.alliance_selection_time_remaining_sec = alliance_selection_time_limit_sec
+                    await api_arena.alliance_selection_notifier.notify()
+
+            elif message_type == 'stop_timer':
+                api_arena.alliance_selection_show_timer = False
+                api_arena.alliance_selection_time_remaining_sec = 0
+                await api_arena.alliance_selection_notifier.notify()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        notifiers_task.cancel()
+        try:
+            await notifiers_task
+        except asyncio.CancelledError:
+            pass
+
+        await websocket.close()

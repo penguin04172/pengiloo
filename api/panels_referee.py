@@ -53,10 +53,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message_type == 'add_foul':
                 alliance = data['data'].get('alliance')
-                is_technal = data['data'].get('is_technical')
+                is_major = data['data'].get('is_major')
 
                 foul = game.Foul(
-                    is_technical=is_technal,
+                    is_major=is_major,
                 )
                 if alliance == 'red':
                     api_arena.red_realtime_score.current_score.fouls.append(foul)
@@ -108,13 +108,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     if api_arena.current_match.type == models.MatchType.PLAYOFF:
                         if alliance == 'red':
-                            cards[api_arena.current_match.red1] = card
-                            cards[api_arena.current_match.red2] = card
-                            cards[api_arena.current_match.red3] = card
+                            cards[str(api_arena.current_match.red1)] = card
+                            cards[str(api_arena.current_match.red2)] = card
+                            cards[str(api_arena.current_match.red3)] = card
                         else:
-                            cards[api_arena.current_match.blue1] = card
-                            cards[api_arena.current_match.blue2] = card
-                            cards[api_arena.current_match.blue3] = card
+                            cards[str(api_arena.current_match.blue1)] = card
+                            cards[str(api_arena.current_match.blue2)] = card
+                            cards[str(api_arena.current_match.blue3)] = card
                     else:
                         cards[str(team_id)] = card
 

@@ -35,17 +35,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 type = data['data']['type']
                 nickname = data['data']['nickname']
                 configuration = data['data']['configuration']
-                api_arena.update_display(
+                await api_arena.update_display(
                     DisplayConfiguration(
                         id=id, type=type, nickname=nickname, configuration=configuration
                     )
                 )
             elif message_type == 'reload_display':
-                display_id = data['data']
-                api_arena.reload_displays_notifier.notify_with_message(display_id)
+                display_id = data['data']['display_id']
+                await api_arena.reload_displays_notifier.notify_with_message(display_id)
 
             elif message_type == 'reload_all_displays':
-                api_arena.reload_displays_notifier.notify()
+                await api_arena.reload_displays_notifier.notify()
 
             else:
                 await websocket.send_json(

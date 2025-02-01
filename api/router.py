@@ -22,7 +22,7 @@ from . import (
     setup_breaks,
     setup_displays,
     setup_field_testing,
-    setup_lower_third,
+    setup_lower_thirds,
     setup_schedule,
     setup_settings,
     setup_sponsor_slides,
@@ -34,7 +34,7 @@ api_router = APIRouter(prefix='/api')
 api_router.include_router(setup_awards.router)
 api_router.include_router(setup_displays.router)
 api_router.include_router(setup_field_testing.router)
-api_router.include_router(setup_lower_third.router)
+api_router.include_router(setup_lower_thirds.router)
 api_router.include_router(setup_breaks.router)
 api_router.include_router(setup_sponsor_slides.router)
 api_router.include_router(setup_teams.router)
