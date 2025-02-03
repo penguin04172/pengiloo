@@ -8,7 +8,7 @@ import field
 import models
 import ws
 
-from .arena import api_arena
+from .arena import get_arena
 from .display_util import enforce_display_configuration, register_display
 
 NUM_NON_PLAYOFF_MATCHES_TO_SHOW = 5
@@ -33,17 +33,17 @@ class MatchLoadResponse(BaseModel):
 
 @router.get('/match_load')
 async def match_load() -> MatchLoadResponse:
-    matches = models.read_matches_by_type(api_arena.current_match.type, False)
+    matches = models.read_matches_by_type(get_arena().current_match.type, False)
 
     num_matches_to_show = NUM_NON_PLAYOFF_MATCHES_TO_SHOW
-    if api_arena.current_match.type == models.MatchType.PLAYOFF:
+    if get_arena().current_match.type == models.MatchType.PLAYOFF:
         num_matches_to_show = NUM_PLAYOFF_MATCHES_TO_SHOW
 
     upcoming_matches = list[models.Match]()
     red_off_field_teams_by_match = list[list[int]]()
     blue_off_field_teams_by_match = list[list[int]]()
     for i, match in enumerate(matches):
-        if match.is_complete() or api_arena.current_match.type_order > match.type_order:
+        if match.is_complete() or get_arena().current_match.type_order > match.type_order:
             continue
         upcoming_matches.append(match)
         red_off_field_teams, blue_off_field_teams = models.read_off_field_team_ids(match)
@@ -78,11 +78,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ws.handle_notifiers(
             websocket,
             display.notifier,
-            api_arena.match_timing_notifier,
-            api_arena.match_load_notifier,
-            api_arena.match_time_notifier,
-            api_arena.event_status_notifier,
-            api_arena.reload_displays_notifier,
+            get_arena().match_timing_notifier,
+            get_arena().match_load_notifier,
+            get_arena().match_time_notifier,
+            get_arena().event_status_notifier,
+            get_arena().reload_displays_notifier,
         )
     )
 
@@ -97,5 +97,5 @@ async def websocket_endpoint(websocket: WebSocket):
         except asyncio.CancelledError:
             pass
 
-        await api_arena.mark_display_disconnect(display.display_configuration.id)
+        await get_arena().mark_display_disconnect(display.display_configuration.id)
         await websocket.close()

@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 
 import models
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/teams', tags=['teams'])
 
@@ -78,7 +78,7 @@ async def update_team(team_number: int, new_team: models.Team) -> dict:
     team.rookie_year = new_team.rookie_year
     team.robot_name = new_team.robot_name
     team.accomplishments = new_team.accomplishments
-    if api_arena.event.network_security_enabled:
+    if get_arena().event.network_security_enabled:
         team.wpakey = new_team.wpakey
         if len(team.wpakey) < 8 or len(team.wpakey) > 63:
             raise HTTPException(

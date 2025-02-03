@@ -8,7 +8,7 @@ import game
 import models
 import ws
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/panels/referee', tags=['panels'])
 
@@ -23,9 +23,9 @@ class FoulListResponse(BaseModel):
 @router.get('/foul_list')
 async def get_foul_list() -> FoulListResponse:
     return FoulListResponse(
-        match=api_arena.current_match,
-        red_fouls=api_arena.red_realtime_score.current_score.fouls,
-        blue_fouls=api_arena.blue_realtime_score.current_score.fouls,
+        match=get_arena().current_match,
+        red_fouls=get_arena().red_realtime_score.current_score.fouls,
+        blue_fouls=get_arena().blue_realtime_score.current_score.fouls,
         rules=game.get_all_rules(),
     )
 
@@ -37,11 +37,11 @@ async def websocket_endpoint(websocket: WebSocket):
     notifiers_task = asyncio.create_task(
         ws.handle_notifiers(
             websocket,
-            api_arena.match_load_notifier,
-            api_arena.match_time_notifier,
-            api_arena.realtime_score_notifier,
-            api_arena.reload_displays_notifier,
-            api_arena.scoring_status_notifier,
+            get_arena().match_load_notifier,
+            get_arena().match_time_notifier,
+            get_arena().realtime_score_notifier,
+            get_arena().reload_displays_notifier,
+            get_arena().scoring_status_notifier,
         )
     )
     try:
@@ -59,11 +59,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     is_major=is_major,
                 )
                 if alliance == 'red':
-                    api_arena.red_realtime_score.current_score.fouls.append(foul)
+                    get_arena().red_realtime_score.current_score.fouls.append(foul)
                 elif alliance == 'blue':
-                    api_arena.blue_realtime_score.current_score.fouls.append(foul)
+                    get_arena().blue_realtime_score.current_score.fouls.append(foul)
 
-                await api_arena.realtime_score_notifier.notify()
+                await get_arena().realtime_score_notifier.notify()
             elif message_type in [
                 'toggle_foul_type',
                 'update_foul_team',
@@ -76,9 +76,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 rule_id = data['data'].get('rule_id')
 
                 if alliance == 'red':
-                    fouls = api_arena.red_realtime_score.current_score.fouls
+                    fouls = get_arena().red_realtime_score.current_score.fouls
                 else:
-                    fouls = api_arena.blue_realtime_score.current_score.fouls
+                    fouls = get_arena().blue_realtime_score.current_score.fouls
 
                 if index is not None and 0 <= index < len(fouls):
                     if message_type == 'toggle_foul_type':
@@ -94,7 +94,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         else:
                             fouls[index].team_id = team_id
 
-                    await api_arena.realtime_score_notifier.notify()
+                    await get_arena().realtime_score_notifier.notify()
 
                 elif message_type == 'card':
                     alliance = data['data'].get('alliance')
@@ -102,42 +102,42 @@ async def websocket_endpoint(websocket: WebSocket):
                     card = data['data'].get('card')
 
                     if alliance == 'red':
-                        cards = api_arena.red_realtime_score.cards
+                        cards = get_arena().red_realtime_score.cards
                     else:
-                        cards = api_arena.blue_realtime_score.cards
+                        cards = get_arena().blue_realtime_score.cards
 
-                    if api_arena.current_match.type == models.MatchType.PLAYOFF:
+                    if get_arena().current_match.type == models.MatchType.PLAYOFF:
                         if alliance == 'red':
-                            cards[str(api_arena.current_match.red1)] = card
-                            cards[str(api_arena.current_match.red2)] = card
-                            cards[str(api_arena.current_match.red3)] = card
+                            cards[str(get_arena().current_match.red1)] = card
+                            cards[str(get_arena().current_match.red2)] = card
+                            cards[str(get_arena().current_match.red3)] = card
                         else:
-                            cards[str(api_arena.current_match.blue1)] = card
-                            cards[str(api_arena.current_match.blue2)] = card
-                            cards[str(api_arena.current_match.blue3)] = card
+                            cards[str(get_arena().current_match.blue1)] = card
+                            cards[str(get_arena().current_match.blue2)] = card
+                            cards[str(get_arena().current_match.blue3)] = card
                     else:
                         cards[str(team_id)] = card
 
-                    await api_arena.alliance_station_display_mode_notifier.notify()
+                    await get_arena().alliance_station_display_mode_notifier.notify()
 
                 elif message_type == 'signal_reset':
-                    if api_arena.match_state != field.MatchState.POST_MATCH:
+                    if get_arena().match_state != field.MatchState.POST_MATCH:
                         continue
 
-                    api_arena.field_reset = True
-                    api_arena.alliance_station_display_mode = 'field_reset'
-                    await api_arena.scoring_status_notifier.notify()
+                    get_arena().field_reset = True
+                    get_arena().alliance_station_display_mode = 'field_reset'
+                    await get_arena().scoring_status_notifier.notify()
 
                 elif message_type == 'commit_match':
-                    if api_arena.match_state != field.MatchState.POST_MATCH:
+                    if get_arena().match_state != field.MatchState.POST_MATCH:
                         continue
 
-                    api_arena.red_realtime_score.fouls_commited = True
-                    api_arena.blue_realtime_score.fouls_commited = True
-                    api_arena.field_reset = True
-                    api_arena.alliance_station_display_mode = 'field_reset'
-                    await api_arena.alliance_station_display_mode_notifier.notify()
-                    await api_arena.scoring_status_notifier.notify()
+                    get_arena().red_realtime_score.fouls_commited = True
+                    get_arena().blue_realtime_score.fouls_commited = True
+                    get_arena().field_reset = True
+                    get_arena().alliance_station_display_mode = 'field_reset'
+                    await get_arena().alliance_station_display_mode_notifier.notify()
+                    await get_arena().scoring_status_notifier.notify()
 
                 else:
                     await websocket.send_json(

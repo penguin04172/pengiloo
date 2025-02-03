@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 
 import models
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/settings', tags=['settings'])
 db_router = APIRouter(prefix='/setup/db', tags=['db'])
@@ -13,7 +13,7 @@ db_router = APIRouter(prefix='/setup/db', tags=['db'])
 
 @router.get('/')
 async def get_settings() -> models.Event:
-    return api_arena.event
+    return get_arena().event
 
 
 @router.post('/')
@@ -82,7 +82,7 @@ async def update_settings(new_settings: models.Event) -> dict:
     event_settings.amplification_duration_sec = new_settings.amplification_duration_sec
 
     models.update_event_settings(event_settings)
-    await api_arena.load_settings()
+    await get_arena().load_settings()
 
     if event_settings.admin_password != previous_admin_password:
         models.truncate_user_sessions()
@@ -92,7 +92,7 @@ async def update_settings(new_settings: models.Event) -> dict:
 
 @router.get('/publish_alliances')
 async def publish_alliances() -> dict:
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
         raise HTTPException(status_code=400, detail='TBA publishing is not enabled')
@@ -100,7 +100,7 @@ async def publish_alliances() -> dict:
 
 @router.get('/publish_awards')
 async def publish_awards() -> dict:
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
         raise HTTPException(status_code=400, detail='TBA publishing is not enabled')
@@ -108,7 +108,7 @@ async def publish_awards() -> dict:
 
 @router.get('/publish_matches')
 async def publish_matches() -> dict:
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
         raise HTTPException(status_code=400, detail='TBA publishing is not enabled')
@@ -116,7 +116,7 @@ async def publish_matches() -> dict:
 
 @router.get('/publish_rankings')
 async def publish_rankings() -> dict:
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
         raise HTTPException(status_code=400, detail='TBA publishing is not enabled')
@@ -124,7 +124,7 @@ async def publish_rankings() -> dict:
 
 @router.get('/publish_teams')
 async def publish_teams() -> dict:
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         return {'status': 'success'}
     else:
         raise HTTPException(status_code=400, detail='TBA publishing is not enabled')
@@ -133,7 +133,7 @@ async def publish_teams() -> dict:
 @db_router.get('/save')
 async def save_db() -> FileResponse:
     filename = (
-        f'{api_arena.event.name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}.db'
+        f'{get_arena().event.name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}.db'
     )
     return FileResponse('./pengiloo.db', filename=filename)
 

@@ -4,11 +4,11 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-import ws
 import models
 import tournament
+import ws
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter('/alliance_selection', tags=['alliance_selection'])
 
@@ -24,27 +24,27 @@ class AllianceSelectionResponse(BaseModel):
 
 
 def determine_next_cell() -> tuple[int, int]:
-    for i, alliance in enumerate(api_arena.alliance_selection_alliances):
+    for i, alliance in enumerate(get_arena().alliance_selection_alliances):
         if alliance.team_ids[0] == 0:
             return i, 0
         if alliance.team_ids[1] == 0:
             return i, 1
 
-    if api_arena.event.selection_round_2_order == 'F':
-        for i, alliance in enumerate(api_arena.alliance_selection_alliances):
+    if get_arena().event.selection_round_2_order == 'F':
+        for i, alliance in enumerate(get_arena().alliance_selection_alliances):
             if alliance.team_ids[2] == 0:
                 return i, 2
     else:
-        for i, alliance in reversed(list(enumerate(api_arena.alliance_selection_alliances))):
+        for i, alliance in reversed(list(enumerate(get_arena().alliance_selection_alliances))):
             if alliance.team_ids[2] == 0:
                 return i, 2
 
-    if api_arena.event.selection_round_3_order == 'F':
-        for i, alliance in enumerate(api_arena.alliance_selection_alliances):
+    if get_arena().event.selection_round_3_order == 'F':
+        for i, alliance in enumerate(get_arena().alliance_selection_alliances):
             if alliance.team_ids[3] == 0:
                 return i, 3
     else:
-        for i, alliance in reversed(list(enumerate(api_arena.alliance_selection_alliances))):
+        for i, alliance in reversed(list(enumerate(get_arena().alliance_selection_alliances))):
             if alliance.team_ids[3] == 0:
                 return i, 3
 
@@ -70,8 +70,8 @@ def can_reset_alliance_selection():
 async def get_alliance_selection() -> AllianceSelectionResponse:
     next_row, next_col = determine_next_cell()
     return AllianceSelectionResponse(
-        alliances=api_arena.alliance_selection_alliances,
-        ranked_teams=api_arena.alliance_selection_ranked_teams,
+        alliances=get_arena().alliance_selection_alliances,
+        ranked_teams=get_arena().alliance_selection_ranked_teams,
         next_row=next_row,
         next_col=next_col,
         time_limit_sec=alliance_selection_time_limit_sec,
@@ -86,14 +86,14 @@ async def post_alliance_selection(request: Request) -> dict:
         )
 
     body = await request.json()
-    for i, alliance in enumerate(api_arena.alliance_selection_alliances):
+    for i, alliance in enumerate(get_arena().alliance_selection_alliances):
         for j in range(len(alliance.team_ids)):
             team_id = body.get(f'selection{i}_{j}', 0)
             if team_id == 0:
-                api_arena.alliance_selection_alliances[i].team_ids[j] = 0
+                get_arena().alliance_selection_alliances[i].team_ids[j] = 0
             else:
                 found = False
-                for k, team in enumerate(api_arena.alliance_selection_ranked_teams):
+                for k, team in enumerate(get_arena().alliance_selection_ranked_teams):
                     if team.team_id == team_id:
                         if team.picked:
                             raise HTTPException(
@@ -102,8 +102,8 @@ async def post_alliance_selection(request: Request) -> dict:
                             )
 
                         found = True
-                        api_arena.alliance_selection_alliances[i].team_ids[j] = team_id
-                        api_arena.alliance_selection_ranked_teams[k].picked = True
+                        get_arena().alliance_selection_alliances[i].team_ids[j] = team_id
+                        get_arena().alliance_selection_ranked_teams[k].picked = True
                         break
 
                 if not found:
@@ -113,13 +113,13 @@ async def post_alliance_selection(request: Request) -> dict:
 
     # if ticker
 
-    await api_arena.alliance_selection_notifier.notify()
+    await get_arena().alliance_selection_notifier.notify()
     return {'status': 'success'}
 
 
 @router.post('/start')
 async def start_alliance_selection() -> dict:
-    if len(api_arena.alliance_selection_alliances) > 0:
+    if len(get_arena().alliance_selection_alliances) > 0:
         raise HTTPException(status_code=400, detail='Alliance selection has already started')
 
     if not can_modify_alliance_selection():
@@ -127,24 +127,24 @@ async def start_alliance_selection() -> dict:
             status_code=400, detail='Cannot modify alliance selection during playoffs'
         )
 
-    api_arena.alliance_selection_alliances = []
+    get_arena().alliance_selection_alliances = []
     teams_per_alliance = 3
 
-    if api_arena.event.selection_round_3_order != '':
+    if get_arena().event.selection_round_3_order != '':
         teams_per_alliance = 4
 
-    for i in range(api_arena.event.num_playoff_alliance):
-        api_arena.alliance_selection_alliances.append(
+    for i in range(get_arena().event.num_playoff_alliance):
+        get_arena().alliance_selection_alliances.append(
             models.Alliance(id=i + 1, team_ids=[0] * teams_per_alliance)
         )
 
     rankings = models.read_all_rankings()
-    api_arena.alliance_selection_ranked_teams = [
+    get_arena().alliance_selection_ranked_teams = [
         models.AllianceSelectionRankedTeam(team_id=ranking.team_id, rank=ranking.rank, picked=False)
         for ranking in rankings
     ]
 
-    await api_arena.alliance_selection_notifier.notify()
+    await get_arena().alliance_selection_notifier.notify()
     return {'status': 'success'}
 
 
@@ -157,10 +157,10 @@ async def reset_alliance_selection() -> dict:
 
     models.truncate_alliance()
 
-    api_arena.alliance_selection_alliances = []
-    api_arena.alliance_selection_ranked_teams = []
+    get_arena().alliance_selection_alliances = []
+    get_arena().alliance_selection_ranked_teams = []
 
-    await api_arena.alliance_selection_notifier.notify()
+    await get_arena().alliance_selection_notifier.notify()
     return {'status': 'success'}
 
 
@@ -171,42 +171,40 @@ async def finalize_alliance_selection(start_time: datetime) -> dict:
             status_code=400, detail='Cannot modify alliance selection during playoffs'
         )
 
-    for alliance in api_arena.alliance_selection_alliances:
+    for alliance in get_arena().alliance_selection_alliances:
         for team_id in alliance.team_ids:
             if team_id <= 0:
                 raise HTTPException(status_code=400, detail='Alliance selection not complete')
 
-    for alliance in api_arena.alliance_selection_alliances:
+    for alliance in get_arena().alliance_selection_alliances:
         alliance.line_up[0] = alliance.team_ids[1]
         alliance.line_up[1] = alliance.team_ids[0]
         alliance.line_up[2] = alliance.team_ids[2]
 
         models.create_alliance(alliance)
 
-    api_arena.create_playoff_matches(start_time)
+    get_arena().create_playoff_matches(start_time)
     tournament.calculate_team_cards(models.MatchType.PLAYOFF)
-    models.backup_db(api_arena.event.name, 'alliace_selection')
+    models.backup_db(get_arena().event.name, 'alliace_selection')
 
-    if api_arena.event.tba_publishing_enabled:
+    if get_arena().event.tba_publishing_enabled:
         pass
 
-    await api_arena.score_posted_notifier.notify()
+    await get_arena().score_posted_notifier.notify()
 
     matches = models.read_matches_by_type(models.MatchType.PLAYOFF, False)
     if len(matches) > 0:
-        api_arena.load_match(matches[0])
+        get_arena().load_match(matches[0])
 
     return {'status': 'success'}
+
 
 @router.websocket('/websocket')
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     notifiers_task = asyncio.create_task(
-        ws.handle_notifiers(
-            websocket,
-            api_arena.alliance_selection_notifier
-        )
+        ws.handle_notifiers(websocket, get_arena().alliance_selection_notifier)
     )
 
     global alliance_selection_time_limit_sec
@@ -220,20 +218,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message_type == 'set_timer':
                 if 'time_limit_sec' not in data['data']:
-                    await websocket.send_json({'type': 'error', 'message': 'time_limit_sec not provided'})
+                    await websocket.send_json(
+                        {'type': 'error', 'message': 'time_limit_sec not provided'}
+                    )
                     continue
                 alliance_selection_time_limit_sec = int(data['data']['time_limit_sec'])
 
             elif message_type == 'start_timer':
-                if not api_arena.alliance_selection_show_timer:
-                    api_arena.alliance_selection_show_timer = True
-                    api_arena.alliance_selection_time_remaining_sec = alliance_selection_time_limit_sec
-                    await api_arena.alliance_selection_notifier.notify()
+                if not get_arena().alliance_selection_show_timer:
+                    get_arena().alliance_selection_show_timer = True
+                    get_arena().alliance_selection_time_remaining_sec = (
+                        alliance_selection_time_limit_sec
+                    )
+                    await get_arena().alliance_selection_notifier.notify()
 
             elif message_type == 'stop_timer':
-                api_arena.alliance_selection_show_timer = False
-                api_arena.alliance_selection_time_remaining_sec = 0
-                await api_arena.alliance_selection_notifier.notify()
+                get_arena().alliance_selection_show_timer = False
+                get_arena().alliance_selection_time_remaining_sec = 0
+                await get_arena().alliance_selection_notifier.notify()
     except WebSocketDisconnect:
         pass
     finally:

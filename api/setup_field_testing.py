@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 import game
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/field_testing', tags=['field_testing'])
 
@@ -25,7 +25,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message_type == 'play_sound':
                 sound = data['data']
-                api_arena.play_sound_notifier.notify_with_message(sound)
+                get_arena().play_sound_notifier.notify_with_message(sound)
 
             else:
                 await websocket.send_json(

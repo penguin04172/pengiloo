@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import models
 import tournament
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/schedule', tags=['schedule'])
 
@@ -25,7 +25,7 @@ async def get_schedule(match_type: models.MatchType) -> dict[str, Any]:
     teams = models.read_all_teams()
     schedule_blocks = models.read_schedule_blocks_by_match_type(match_type)
     return {
-        'event_settings': api_arena.event,
+        'event_settings': get_arena().event,
         'match_type': match_type,
         'schedule_blocks': schedule_blocks,
         'num_teams': len(teams),
@@ -102,6 +102,6 @@ async def save_schedule(match_type: models.MatchType) -> dict:
     for match in cached_matches.get(match_type, []):
         models.create_match(match)
 
-    models.backup_db(api_arena.event.name, 'schedule')
+    models.backup_db(get_arena().event.name, 'schedule')
 
     return {'status': 'success'}

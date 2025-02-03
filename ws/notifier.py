@@ -101,7 +101,7 @@ class Notifier:
 async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
     listeners = []
     for notifier in notifiers:
-        notifier.connect(websocket)
+        await notifier.connect(websocket)
         listeners.append(asyncio.create_task(notifier.listen()))
 
         if notifier.message_producer is not None:

@@ -1,9 +1,10 @@
 import asyncio
+import logging
 
 import fastapi
 import uvicorn
 
-import api.arena
+from api.arena import APIArena, get_arena
 from api.router import api_router
 from field.arena import Arena
 from models.base import db
@@ -23,7 +24,8 @@ async def main():
     db.generate_mapping(create_tables=True)
 
     arena = await Arena.new_arena()
-    api.arena.api_arena = arena
+    APIArena.set_instance(arena)
+    print('Arena:', get_arena())
     arena_task = asyncio.create_task(arena.run())
 
     app.include_router(api_router)

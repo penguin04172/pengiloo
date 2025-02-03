@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import ws
 from field import DisplayConfiguration, DisplayType, display_type_names
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/displays', tags=['displays'])
 
@@ -20,7 +20,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     notifiers_task = asyncio.create_task(
-        ws.handle_notifiers(websocket, api_arena.display_configuration_notifier)
+        ws.handle_notifiers(websocket, get_arena().display_configuration_notifier)
     )
 
     try:
@@ -35,17 +35,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 type = data['data']['type']
                 nickname = data['data']['nickname']
                 configuration = data['data']['configuration']
-                await api_arena.update_display(
+                await get_arena().update_display(
                     DisplayConfiguration(
                         id=id, type=type, nickname=nickname, configuration=configuration
                     )
                 )
             elif message_type == 'reload_display':
                 display_id = data['data']['display_id']
-                await api_arena.reload_displays_notifier.notify_with_message(display_id)
+                await get_arena().reload_displays_notifier.notify_with_message(display_id)
 
             elif message_type == 'reload_all_displays':
-                await api_arena.reload_displays_notifier.notify()
+                await get_arena().reload_displays_notifier.notify()
 
             else:
                 await websocket.send_json(

@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import models
 import ws
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/setup/lower_thirds', tags=['lower_thirds'])
 
@@ -21,7 +21,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     notifiers = asyncio.create_task(
-        ws.handle_notifiers(websocket, api_arena.audience_display_mode_notifier)
+        ws.handle_notifiers(websocket, get_arena().audience_display_mode_notifier)
     )
 
     try:
@@ -42,16 +42,16 @@ async def websocket_endpoint(websocket: WebSocket):
             elif message_type == 'show_lower_third':
                 lower_third = models.LowerThird(**data['data'])
                 save_lower_third(lower_third)
-                api_arena.lower_third = lower_third
-                api_arena.show_lower_third = True
-                await api_arena.lower_third_notifier.notify()
+                get_arena().lower_third = lower_third
+                get_arena().show_lower_third = True
+                await get_arena().lower_third_notifier.notify()
                 continue
 
             elif message_type == 'hide_lower_third':
                 lower_third = models.LowerThird(**data['data'])
                 save_lower_third(lower_third)
-                api_arena.show_lower_third = False
-                await api_arena.lower_third_notifier.notify()
+                get_arena().show_lower_third = False
+                await get_arena().lower_third_notifier.notify()
                 continue
 
             elif message_type == 'reorder_lower_thirds':
@@ -66,7 +66,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif message_type == 'set_audience_display':
                 mode = str(data['data'])
-                await api_arena.set_audience_display_mode(mode)
+                await get_arena().set_audience_display_mode(mode)
 
             else:
                 await websocket.send_json(
@@ -74,7 +74,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
                 continue
 
-            await ws.write_notifier(websocket, api_arena.reload_displays_notifier)
+            await ws.write_notifier(websocket, get_arena().reload_displays_notifier)
 
     except WebSocketDisconnect:
         pass

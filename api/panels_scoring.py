@@ -7,7 +7,7 @@ import field
 import game
 import ws
 
-from .arena import api_arena
+from .arena import get_arena
 
 router = APIRouter(prefix='/panels/scoring', tags=['panels'])
 
@@ -21,17 +21,17 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
         return
 
     if alliance == 'red':
-        realtime_score = api_arena.red_realtime_score
+        realtime_score = get_arena().red_realtime_score
     else:
-        realtime_score = api_arena.blue_realtime_score
+        realtime_score = get_arena().blue_realtime_score
 
     notifiers_task = asyncio.create_task(
         ws.handle_notifiers(
             websocket,
-            api_arena.match_load_notifier,
-            api_arena.match_time_notifier,
-            api_arena.realtime_score_notifier,
-            api_arena.reload_displays_notifier,
+            get_arena().match_load_notifier,
+            get_arena().match_time_notifier,
+            get_arena().realtime_score_notifier,
+            get_arena().reload_displays_notifier,
         )
     )
 
@@ -46,14 +46,14 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
             score_changed = False
 
             if command == 'commit_match':
-                if api_arena.match_state != field.MatchState.POST_MATCH:
+                if get_arena().match_state != field.MatchState.POST_MATCH:
                     await websocket.send_json(
                         {'type': 'error', 'message': 'Match not in POST_MATCH state'}
                     )
                     continue
                 else:
-                    api_arena.scoring_panel_registry.set_score_commited(alliance, websocket)
-                    await api_arena.scoring_status_notifier.notify()
+                    get_arena().scoring_panel_registry.set_score_commited(alliance, websocket)
+                    await get_arena().scoring_status_notifier.notify()
             else:
                 payload = data['data']
 
@@ -146,7 +146,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         )
 
                 if score_changed:
-                    await api_arena.realtime_score_notifier.notify()
+                    await get_arena().realtime_score_notifier.notify()
 
     except WebSocketDisconnect:
         pass

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
 import ws
 
-from .arena import api_arena
+from .arena import get_arena
 from .display_util import enforce_display_configuration, register_display
 
 router = APIRouter(prefix='/displays/wall', tags=['displays'])
@@ -37,12 +37,12 @@ async def websocket_endpoint(websocket: WebSocket):
         ws.handle_notifiers(
             websocket,
             display.notifier,
-            api_arena.match_timing_notifier,
-            api_arena.audience_display_mode_notifier,
-            api_arena.match_load_notifier,
-            api_arena.match_time_notifier,
-            api_arena.realtime_score_notifier,
-            api_arena.reload_displays_notifier,
+            get_arena().match_timing_notifier,
+            get_arena().audience_display_mode_notifier,
+            get_arena().match_load_notifier,
+            get_arena().match_time_notifier,
+            get_arena().realtime_score_notifier,
+            get_arena().reload_displays_notifier,
         )
     )
 
@@ -57,5 +57,5 @@ async def websocket_endpoint(websocket: WebSocket):
         except asyncio.CancelledError:
             pass
 
-        await api_arena.mark_display_disconnect(display.display_configuration.id)
+        await get_arena().mark_display_disconnect(display.display_configuration.id)
         await websocket.close()
