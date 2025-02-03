@@ -58,7 +58,9 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
                 if command == 'leave':
                     if 3 >= payload['position'] >= 1:
-                        score_changed = toggle_goal(score.leave_statuses[payload['position'] - 1])
+                        score_changed = set_goal(
+                            score.leave_statuses[payload['position'] - 1], payload['state']
+                        )
 
                 elif command == 'cage':
                     if 3 >= payload['position'] >= 1:
@@ -121,8 +123,8 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         0 <= payload['position'] < game.BranchLocation.COUNT
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
-                        score_changed = toggle_goal(
-                            score.score_elements.auto_scoring[payload['position']][payload['level']]
+                        score_changed = set_goal(
+                            score.leave_statuses[payload['position'] - 1], payload['state']
                         )
 
                 elif command == 'branches':
@@ -130,16 +132,14 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         0 <= payload['position'] < game.BranchLocation.COUNT
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
-                        score_changed = toggle_goal(
-                            score.score_elements.branches[payload['position']][payload['level']]
+                        score_changed = set_goal(
+                            score.leave_statuses[payload['position'] - 1], payload['state']
                         )
 
                 elif command == 'branches_algaes':
                     if 0 <= payload['position'] < 6 and 0 <= payload['level'] < 2:
-                        score_changed = toggle_goal(
-                            score.score_elements.branch_algaes[payload['position']][
-                                payload['level']
-                            ]
+                        score_changed = set_goal(
+                            score.leave_statuses[payload['position'] - 1], payload['state']
                         )
 
                 if score_changed:
@@ -171,3 +171,10 @@ def decrement_goal(goal: object):
 def toggle_goal(goal: object):
     goal = not goal
     return True
+
+
+def set_goal(goal: object, value: object):
+    if goal != value:
+        goal = value
+        return True
+    return False
