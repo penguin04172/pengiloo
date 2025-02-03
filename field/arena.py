@@ -57,8 +57,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     current_match: models.Match
     match_start_time: datetime
     last_match_time_sec: float
-    red_realtime_score: RealtimeScore
-    blue_realtime_score: RealtimeScore
+    red_realtime_score: RealtimeScore = RealtimeScore()
+    blue_realtime_score: RealtimeScore = RealtimeScore()
     last_ds_packet_time: datetime = datetime.now()
     last_period_task_time: datetime = datetime.now()
     field_reset: bool = False
