@@ -13,11 +13,6 @@ from web import index
 app = fastapi.FastAPI()
 
 
-def shutdown():
-    loop = asyncio.get_event_loop()
-    loop.stop()
-
-
 async def main():
     # db.bind(provider='sqlite', filename='event.db', create_db=True)
     db.bind(provider='sqlite', filename=':memory:', create_db=True)

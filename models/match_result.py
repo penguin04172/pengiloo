@@ -20,11 +20,11 @@ class MatchResult(BaseModel):
     class Config:
         from_attributes = True
 
-    async def red_score_summary(self):
-        return await self.red_score.summarize(self.blue_score)
+    def red_score_summary(self):
+        return self.red_score.summarize(self.blue_score)
 
-    async def blue_score_summary(self):
-        return await self.blue_score.summarize(self.red_score)
+    def blue_score_summary(self):
+        return self.blue_score.summarize(self.red_score)
 
     def correct_playoff_score(self):
         self.red_score.playoff_dq = (
