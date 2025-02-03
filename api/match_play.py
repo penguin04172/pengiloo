@@ -268,8 +268,6 @@ async def websocket_endpoint(websocket: WebSocket):
         except asyncio.CancelledError:
             pass
 
-        await websocket.close()
-
 
 async def commit_match_score(
     match: models.Match, match_result: models.MatchResult, is_match_review_edit: bool

@@ -49,4 +49,3 @@ async def websocket_endpoint(websocket: WebSocket):
             pass
 
         await get_arena().mark_display_disconnect(display.display_configuration.id)
-        await websocket.close()

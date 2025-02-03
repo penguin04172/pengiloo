@@ -44,16 +44,16 @@ class ArenaNotifiersMixin:
             score=alliance_score.current_score,
             score_summary=alliance_score_summary,
         )
-        return fields
+        return fields.model_dump()
 
     @staticmethod
     def get_rules_violated(red_fouls: list[game.Foul], blue_fouls: list[game.Foul]):
-        rules = dict[int, game.Rule]()
+        rules = dict[int, dict]()
         for foul in red_fouls:
-            rules[foul.rule_id] = game.get_rule_by_id(foul.rule_id)
+            rules[foul.rule_id] = game.get_rule_by_id(foul.rule_id).model_dump()
 
         for foul in blue_fouls:
-            rules[foul.rule_id] = game.get_rule_by_id(foul.rule_id)
+            rules[foul.rule_id] = game.get_rule_by_id(foul.rule_id).model_dump()
 
         return rules
 
@@ -166,7 +166,7 @@ class ArenaNotifiersMixin:
                 rankings[team_id] = ranking.rank
 
         return {
-            'match': self.current_match,
+            'match': self.current_match.to_dict(),
             'allow_substitution': self.current_match.should_allow_substitution(),
             'is_replay': is_replay,
             'teams': teams,
@@ -180,7 +180,7 @@ class ArenaNotifiersMixin:
     def generate_match_time_message(self):
         return MatchTimeMessage(
             match_state=self.match_state, match_time_sec=int(self.match_time_sec())
-        )
+        ).model_dump()
 
     def generate_match_timing_message(self):
         return game.timing

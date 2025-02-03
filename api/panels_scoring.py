@@ -156,7 +156,6 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
             await notifiers_task
         except asyncio.CancelledError:
             pass
-        await websocket.close()
 
 
 def increment_goal(goal: object):

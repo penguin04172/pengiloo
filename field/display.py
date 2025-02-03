@@ -65,7 +65,7 @@ class DisplayConfiguration:
         id: str,
         nickname: str = '',
         type: DisplayType = DisplayType.INVALID,
-        configuration: dict[str, str] = {},
+        configuration: dict[str, str] = None,
     ):
         self.id = id
         self.nickname = nickname

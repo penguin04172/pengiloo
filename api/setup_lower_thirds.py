@@ -20,7 +20,7 @@ async def get_lower_thirds() -> list[models.LowerThird]:
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    notifiers = asyncio.create_task(
+    notifiers_task = asyncio.create_task(
         ws.handle_notifiers(websocket, get_arena().audience_display_mode_notifier)
     )
 
@@ -79,8 +79,11 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
-        await notifiers
-        await websocket.close()
+        notifiers_task.cancel()
+        try:
+            await notifiers_task
+        except asyncio.CancelledError:
+            pass
 
 
 def save_lower_third(lower_third: models.LowerThird):

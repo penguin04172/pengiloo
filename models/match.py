@@ -113,6 +113,38 @@ class Match(BaseModel):
     def should_update_playoff_matches(self) -> bool:
         return self.type == MatchType.PLAYOFF
 
+    def to_dict(self) -> dict:
+        return {
+            'type': self.type,
+            'type_order': self.type_order,
+            'long_name': self.long_name,
+            'short_name': self.short_name,
+            'scheduled_time': self.scheduled_time.isoformat() if self.scheduled_time else None,
+            'name_detail': self.name_detail,
+            'playoff_match_group_id': self.playoff_match_group_id,
+            'playoff_red_alliance': self.playoff_red_alliance,
+            'playoff_blue_alliance': self.playoff_blue_alliance,
+            'red1': self.red1,
+            'red1_is_surrogate': self.red1_is_surrogate,
+            'red2': self.red2,
+            'red2_is_surrogate': self.red2_is_surrogate,
+            'red3': self.red3,
+            'red3_is_surrogate': self.red3_is_surrogate,
+            'blue1': self.blue1,
+            'blue1_is_surrogate': self.blue1_is_surrogate,
+            'blue2': self.blue2,
+            'blue2_is_surrogate': self.blue2_is_surrogate,
+            'blue3': self.blue3,
+            'blue3_is_surrogate': self.blue3_is_surrogate,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'score_commit_at': self.score_commit_at.isoformat() if self.score_commit_at else None,
+            'field_ready_at': self.field_ready_at.isoformat() if self.field_ready_at else None,
+            'status': self.status,
+            'use_tiebreak_criteria': self.use_tiebreak_criteria,
+            'tba_match_key': self.tba_match_key.model_dump(),
+            'id': self.id,
+        }
+
 
 @db_session
 def create_match(match_data: Match):

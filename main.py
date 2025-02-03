@@ -25,7 +25,6 @@ async def main():
 
     arena = await Arena.new_arena()
     APIArena.set_instance(arena)
-    print('Arena:', get_arena())
     arena_task = asyncio.create_task(arena.run())
 
     app.include_router(api_router)

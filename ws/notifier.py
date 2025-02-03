@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -62,11 +61,15 @@ class Notifier:
             while True:
                 await asyncio.sleep(1)
         except WebSocketDisconnect:
+            pass
+        except Exception:
+            pass
+        finally:
             await self.disconnect(websocket)
 
     async def notify(self):
         """Notify all listeners with a message."""
-        message_body = self.message_producer() if self.message_producer else None
+        message_body = self.get_message_body()
         await self.notify_with_message(message_body)
 
     async def notify_with_message(self, message: Any):
@@ -87,11 +90,7 @@ class Notifier:
             listener (WebSocket): _description_
             message (MessageEnvelope): _description_
         """
-        try:
-            await listener.send_json(vars(message))
-        except Exception as e:
-            logging.warning(f'Failed to send message to listener: {e}')
-            self.listeners.remove(listener)
+        await listener.send_json(vars(message))
 
     def get_message_body(self):
         """Get the message body."""
@@ -102,16 +101,10 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
     listeners = []
     for notifier in notifiers:
         await notifier.connect(websocket)
-        listeners.append(asyncio.create_task(notifier.listen()))
+        listeners.append(asyncio.create_task(notifier.listen(websocket)))
 
         if notifier.message_producer is not None:
-            await websocket.send_json(
-                vars(
-                    notifier.MessageEnvelope(
-                        type=notifier.message_type, payload=notifier.message_producer()
-                    )
-                )
-            )
+            await write_notifier(websocket, notifier)
 
     async def heartbeat():
         while True:
@@ -119,6 +112,8 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
             try:
                 await websocket.send_json({'type': 'ping', 'payload': None})
             except WebSocketDisconnect:
+                return
+            except Exception:
                 return
 
     listeners.append(asyncio.create_task(heartbeat()))
@@ -128,10 +123,14 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
         task.cancel()
 
     for notifier in notifiers:
-        notifier.disconnect(websocket)
+        await notifier.disconnect(websocket)
 
 
 async def write_notifier(websocket: WebSocket, notifier: Notifier):
     await websocket.send_json(
-        {'type': notifier.message_type, 'payload': notifier.get_message_body()}
+        vars(
+            notifier.MessageEnvelope(
+                type=notifier.message_type, payload=notifier.get_message_body()
+            )
+        )
     )
