@@ -88,7 +88,10 @@ class Notifier:
             listener (WebSocket): _description_
             message (MessageEnvelope): _description_
         """
-        await listener.send_json(vars(message))
+        try:
+            await listener.send_json(vars(message))
+        except Exception:
+            await self.disconnect(listener)
 
     def get_message_body(self):
         """Get the message body."""
