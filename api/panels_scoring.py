@@ -156,7 +156,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                             payload['state'],
                         )
                         (
-                            score_changed,
+                            _,
                             score.score_elements.branches[payload['position']][payload['level']],
                         ) = set_goal(
                             score.score_elements.branches[payload['position']][payload['level']],
