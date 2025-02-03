@@ -109,8 +109,8 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
 
     async def heartbeat():
         while True:
-            await asyncio.sleep(10)
             try:
+                await asyncio.sleep(10)
                 await websocket.send_json({'type': 'ping', 'data': {}})
             except WebSocketDisconnect:
                 return
