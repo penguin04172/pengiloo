@@ -31,11 +31,11 @@ class Notifier:
         """Message envelope class."""
 
         type: str
-        payload: Any
+        data: Any
 
-        def __init__(self, type: str, payload: Any):
+        def __init__(self, type: str, data: Any):
             self.type = type
-            self.payload = payload
+            self.data = data
 
     async def connect(self, websocket: WebSocket):
         """Connect a new listener.
@@ -61,8 +61,6 @@ class Notifier:
             while True:
                 await asyncio.sleep(1)
         except WebSocketDisconnect:
-            pass
-        except Exception:
             pass
         finally:
             await self.disconnect(websocket)
@@ -94,7 +92,7 @@ class Notifier:
 
     def get_message_body(self):
         """Get the message body."""
-        return self.message_producer() if self.message_producer else None
+        return self.message_producer() if self.message_producer else {}
 
 
 async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
@@ -112,8 +110,6 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
             try:
                 await websocket.send_json({'type': 'ping', 'payload': None})
             except WebSocketDisconnect:
-                return
-            except Exception:
                 return
 
     listeners.append(asyncio.create_task(heartbeat()))

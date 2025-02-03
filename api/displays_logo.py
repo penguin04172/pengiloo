@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
@@ -24,6 +25,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         display = await register_display(websocket)
     except ValueError as e:
+        logging.error(f'Error registering display: {e}')
         await websocket.send_text(str(e))
         await websocket.close()
         return

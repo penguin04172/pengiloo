@@ -204,7 +204,7 @@ def display_from_url(path: str, query: dict[str, list[str]]):
     )
 
     for display_type, display_path in display_type_paths.items():
-        if path == f'{display_path}/websocket':
+        if path == f'/api{display_path}/websocket':
             display_configuration.type = display_type
             break
 
