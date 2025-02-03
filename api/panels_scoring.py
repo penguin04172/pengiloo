@@ -163,13 +163,9 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                     ):
                         (
                             score_changed,
-                            score.score_elements.auto_scoring[payload['position']][
-                                payload['level']
-                            ],
+                            score.score_elements.branches[payload['position']][payload['level']],
                         ) = set_goal(
-                            score.score_elements.auto_scoring[payload['position']][
-                                payload['level']
-                            ],
+                            score.score_elements.branches[payload['position']][payload['level']],
                             payload['state'],
                         )
 
@@ -177,11 +173,11 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                     if 0 <= payload['position'] < 6 and 0 <= payload['level'] < 2:
                         (
                             score_changed,
-                            score.score_elements.auto_scoring[payload['position']][
+                            score.score_elements.branch_algaes[payload['position']][
                                 payload['level']
                             ],
                         ) = set_goal(
-                            score.score_elements.auto_scoring[payload['position']][
+                            score.score_elements.branch_algaes[payload['position']][
                                 payload['level']
                             ],
                             payload['state'],
