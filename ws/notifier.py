@@ -10,10 +10,9 @@ NOTIFY_QUEUE_SIZE = 5
 class Notifier:
     """Notifier class."""
 
-    listeners: set[WebSocket]
+    listeners: list[WebSocket]
     message_type: str
     message_producer: Callable[..., Any] | None
-    lock: asyncio.Lock
 
     def __init__(self, message_type: str, message_producer: Callable[..., Any] | None = None):
         """Create a new Notifier instance.
@@ -22,7 +21,7 @@ class Notifier:
             message_type (str): _description_
             message_producer (Callable[..., Any] | None, optional): _description_. Defaults to None.
         """
-        self.listeners = set()
+        self.listeners = []
         self.message_type = message_type
         self.message_producer = message_producer
         self.lock = asyncio.Lock()
@@ -43,8 +42,7 @@ class Notifier:
         Args:
             websocket (WebSocket): _description_
         """
-        async with self.lock:
-            self.listeners.add(websocket)
+        self.listeners.append(websocket)
 
     async def disconnect(self, websocket: WebSocket):
         """Disconnect a listener.
@@ -52,8 +50,7 @@ class Notifier:
         Args:
             websocket (WebSocket): _description_
         """
-        async with self.lock:
-            self.listeners.remove(websocket)
+        self.listeners.remove(websocket)
 
     async def listen(self, websocket: WebSocket):
         """Listen for new listeners."""
@@ -77,9 +74,8 @@ class Notifier:
             message (Any): _description_
         """
         message = self.MessageEnvelope(type=self.message_type, data=message)
-        async with self.lock:
-            for listener in self.listeners:
-                await self.notify_listener(listener, message)
+        for listener in self.listeners:
+            await self.notify_listener(listener, message)
 
     async def notify_listener(self, listener: WebSocket, message: MessageEnvelope):
         """Notify a single listener with a message.
@@ -88,10 +84,7 @@ class Notifier:
             listener (WebSocket): _description_
             message (MessageEnvelope): _description_
         """
-        try:
-            await listener.send_json(vars(message))
-        except Exception:
-            await self.disconnect(listener)
+        await listener.send_json(vars(message))
 
     def get_message_body(self):
         """Get the message body."""
@@ -99,32 +92,45 @@ class Notifier:
 
 
 async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
-    listeners = []
-    for notifier in notifiers:
-        await notifier.connect(websocket)
-        listeners.append(asyncio.create_task(notifier.listen(websocket)))
+    listen_tasks = []
 
-        if notifier.message_producer is not None:
-            await write_notifier(websocket, notifier)
+    try:
+        for notifier in notifiers:
+            await notifier.connect(websocket)
+            listen_tasks.append(asyncio.create_task(notifier.listen(websocket)))
 
-    async def heartbeat():
-        while True:
-            try:
-                await asyncio.sleep(10)
-                await websocket.send_json({'type': 'ping', 'data': {}})
-            except WebSocketDisconnect:
-                return
-            except RuntimeError:
-                return
+            if notifier.message_producer is not None:
+                await write_notifier(websocket, notifier)
 
-    listeners.append(asyncio.create_task(heartbeat()))
+        async def heartbeat():
+            while True:
+                try:
+                    await asyncio.sleep(10)
+                    await websocket.send_json({'type': 'ping', 'data': {}})
+                except WebSocketDisconnect:
+                    return  # 這樣外部可以捕捉到 WebSocketDisconnect
+                except RuntimeError:
+                    return  # 避免 asyncio 被關閉時出錯
 
-    done, pending = await asyncio.wait(listeners, return_when=asyncio.FIRST_COMPLETED)
-    for task in pending:
-        task.cancel()
+        listen_tasks.append(asyncio.create_task(heartbeat()))
 
-    for notifier in notifiers:
-        await notifier.disconnect(websocket)
+        # 等待 WebSocket 斷線
+        await asyncio.wait(listen_tasks, return_when=asyncio.FIRST_COMPLETED)
+
+    except (WebSocketDisconnect, asyncio.CancelledError):
+        pass
+
+    finally:
+        # 取消所有未完成的 listener 任務
+        for task in listen_tasks:
+            task.cancel()
+
+        await asyncio.gather(*listen_tasks, return_exceptions=True)
+
+        # 確保所有 notifier 也都會斷線
+        for notifier in notifiers:
+            if websocket in notifier.listeners:
+                await notifier.disconnect(websocket)
 
 
 async def write_notifier(websocket: WebSocket, notifier: Notifier):
