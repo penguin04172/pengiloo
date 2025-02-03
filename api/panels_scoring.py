@@ -58,29 +58,25 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                 payload = data['data']
 
                 if command == 'leave':
-                    if 3 >= payload['position'] >= 1:
+                    if 2 >= payload['position'] >= 0:
                         score_changed = set_goal(
-                            score.leave_statuses[payload['position'] - 1], payload['state']
+                            score.leave_statuses[payload['position']], payload['state']
                         )
 
                 elif command == 'cage':
-                    if 3 >= payload['position'] >= 1:
-                        if score.cage_statuses[payload['position'] - 1] == max(game.CageStatus):
-                            score.cage_statuses[payload['position'] - 1] = min(game.CageStatus)
+                    if 2 >= payload['position'] >= 0:
+                        if score.cage_statuses[payload['position']] == max(game.CageStatus):
+                            score.cage_statuses[payload['position']] = min(game.CageStatus)
                         else:
-                            score.cage_statuses[payload['position'] - 1] += 1
+                            score.cage_statuses[payload['position']] += 1
                         score_changed = True
 
                 elif command == 'endgame':
-                    if 3 >= payload['position'] >= 1:
-                        if score.endgame_statuses[payload['position'] - 1] == max(
-                            game.EndgameStatus
-                        ):
-                            score.endgame_statuses[payload['position'] - 1] = min(
-                                game.EndgameStatus
-                            )
+                    if 2 >= payload['position'] >= 0:
+                        if score.endgame_statuses[payload['position']] == max(game.EndgameStatus):
+                            score.endgame_statuses[payload['position']] = min(game.EndgameStatus)
                         else:
-                            score.endgame_statuses[payload['position'] - 1] += 1
+                            score.endgame_statuses[payload['position']] += 1
                         score_changed = True
 
                 elif command == 'trough_auto':
@@ -125,7 +121,9 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
                         score_changed = set_goal(
-                            score.score_elements.auto_scoring[payload['position'] - 1],
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
                             payload['state'],
                         )
 
@@ -135,13 +133,18 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
                         score_changed = set_goal(
-                            score.score_elements.branches[payload['position'] - 1], payload['state']
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
+                            payload['state'],
                         )
 
                 elif command == 'branches_algaes':
                     if 0 <= payload['position'] < 6 and 0 <= payload['level'] < 2:
                         score_changed = set_goal(
-                            score.score_elements.branch_algaes[payload['position'] - 1],
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
                             payload['state'],
                         )
 

@@ -111,6 +111,8 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
                 await websocket.send_json({'type': 'ping', 'data': {}})
             except WebSocketDisconnect:
                 return
+            except RuntimeError:
+                return
 
     listeners.append(asyncio.create_task(heartbeat()))
 
