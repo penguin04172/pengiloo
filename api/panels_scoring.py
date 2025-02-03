@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -173,7 +174,7 @@ def toggle_goal(goal: object):
     return True
 
 
-def set_goal(goal: object, value: object):
+def set_goal(goal: object, value: Any):
     if goal != value:
         goal = value
         return True
