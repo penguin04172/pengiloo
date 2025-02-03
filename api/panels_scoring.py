@@ -59,7 +59,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
                 if command == 'leave':
                     if 2 >= payload['position'] >= 0:
-                        score_changed = set_goal(
+                        score_changed, score.leave_statuses[payload['position']] = set_goal(
                             score.leave_statuses[payload['position']], payload['state']
                         )
 
@@ -81,46 +81,75 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
                 elif command == 'trough_auto':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.auto_trough_coral)
+                        score_changed, score.score_elements.auto_trough_coral = increment_goal(
+                            score.score_elements.auto_trough_coral
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.auto_trough_coral)
+                        score_changed, score.score_elements.auto_trough_coral = decrement_goal(
+                            score.score_elements.auto_trough_coral
+                        )
 
                 elif command == 'trough_teleop':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.teleop_trough_coral)
+                        score_changed, score.score_elements.teleop_trough_coral = increment_goal(
+                            score.score_elements.teleop_trough_coral
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.teleop_trough_coral)
+                        score_changed, score.score_elements.teleop_trough_coral = decrement_goal(
+                            score.score_elements.teleop_trough_coral
+                        )
 
                 elif command == 'processor_auto':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.auto_processor_algae)
+                        score_changed, score.score_elements.auto_processor_algae = increment_goal(
+                            score.score_elements.auto_processor_algae
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.auto_processor_algae)
+                        score_changed, score.score_elements.auto_processor_algae = decrement_goal(
+                            score.score_elements.auto_processor_algae
+                        )
 
                 elif command == 'processor_teleop':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.teleop_processor_algae)
+                        score_changed, score.score_elements.teleop_processor_algae = increment_goal(
+                            score.score_elements.teleop_processor_algae
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.teleop_processor_algae)
+                        score_changed, score.score_elements.teleop_processor_algae = decrement_goal(
+                            score.score_elements.teleop_processor_algae
+                        )
 
                 elif command == 'net_auto':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.auto_net_algae)
+                        score_changed, score.score_elements.auto_net_algae = increment_goal(
+                            score.score_elements.auto_net_algae
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.auto_net_algae)
+                        score_changed, score.score_elements.auto_net_algae = decrement_goal(
+                            score.score_elements.auto_net_algae
+                        )
 
                 elif command == 'net_teleop':
                     if payload['action'] == 'plus':
-                        score_changed = increment_goal(score.score_elements.teleop_net_algae)
+                        score_changed, score.score_elements.teleop_net_algae = increment_goal(
+                            score.score_elements.teleop_net_algae
+                        )
                     elif payload['action'] == 'minus':
-                        score_changed = decrement_goal(score.score_elements.teleop_net_algae)
+                        score_changed, score.score_elements.teleop_net_algae = decrement_goal(
+                            score.score_elements.teleop_net_algae
+                        )
 
                 elif command == 'branches_auto':
                     if (
                         0 <= payload['position'] < game.BranchLocation.COUNT
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
-                        score_changed = set_goal(
+                        (
+                            score_changed,
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
+                        ) = set_goal(
                             score.score_elements.auto_scoring[payload['position']][
                                 payload['level']
                             ],
@@ -132,7 +161,12 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         0 <= payload['position'] < game.BranchLocation.COUNT
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
-                        score_changed = set_goal(
+                        (
+                            score_changed,
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
+                        ) = set_goal(
                             score.score_elements.auto_scoring[payload['position']][
                                 payload['level']
                             ],
@@ -141,7 +175,12 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
                 elif command == 'branches_algaes':
                     if 0 <= payload['position'] < 6 and 0 <= payload['level'] < 2:
-                        score_changed = set_goal(
+                        (
+                            score_changed,
+                            score.score_elements.auto_scoring[payload['position']][
+                                payload['level']
+                            ],
+                        ) = set_goal(
                             score.score_elements.auto_scoring[payload['position']][
                                 payload['level']
                             ],
@@ -163,23 +202,23 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
 def increment_goal(goal: object):
     goal += 1
-    return True
+    return True, goal
 
 
 def decrement_goal(goal: object):
     if goal > 0:
         goal -= 1
-        return True
-    return False
+        return True, goal
+    return False, goal
 
 
 def toggle_goal(goal: object):
     goal = not goal
-    return True
+    return True, goal
 
 
 def set_goal(goal: object, value: Any):
     if goal != value:
         goal = value
-        return True
-    return False
+        return True, goal
+    return False, goal
