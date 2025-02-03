@@ -125,7 +125,8 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
                         score_changed = set_goal(
-                            score.leave_statuses[payload['position'] - 1], payload['state']
+                            score.score_elements.auto_scoring[payload['position'] - 1],
+                            payload['state'],
                         )
 
                 elif command == 'branches':
@@ -134,13 +135,14 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         and 0 <= payload['level'] < game.BranchLevel.COUNT
                     ):
                         score_changed = set_goal(
-                            score.leave_statuses[payload['position'] - 1], payload['state']
+                            score.score_elements.branches[payload['position'] - 1], payload['state']
                         )
 
                 elif command == 'branches_algaes':
                     if 0 <= payload['position'] < 6 and 0 <= payload['level'] < 2:
                         score_changed = set_goal(
-                            score.leave_statuses[payload['position'] - 1], payload['state']
+                            score.score_elements.branch_algaes[payload['position'] - 1],
+                            payload['state'],
                         )
 
                 if score_changed:
