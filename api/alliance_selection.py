@@ -219,7 +219,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if message_type == 'set_timer':
                 if 'time_limit_sec' not in data['data']:
                     await websocket.send_json(
-                        {'type': 'error', 'message': 'time_limit_sec not provided'}
+                        {'type': 'error', 'data': {'message': 'time_limit_sec not provided'}}
                     )
                     continue
                 alliance_selection_time_limit_sec = int(data['data']['time_limit_sec'])

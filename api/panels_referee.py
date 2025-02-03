@@ -141,7 +141,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 else:
                     await websocket.send_json(
-                        {'type': 'error', 'message': f'Invalid message type{message_type}'}
+                        {
+                            'type': 'error',
+                            'data': {'message': f'Invalid message type{message_type}'},
+                        }
                     )
 
     except WebSocketDisconnect:

@@ -61,7 +61,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     reorder_lower_third(id, move_up)
                 except ValueError as e:
-                    await websocket.send_json({'type': 'error', 'message': str(e)})
+                    await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue
 
             elif message_type == 'set_audience_display':
@@ -70,7 +70,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             else:
                 await websocket.send_json(
-                    {'type': 'error', 'message': f'Invalid message type{message_type}'}
+                    {'type': 'error', 'data': {'message': f'Invalid data type{message_type}'}}
                 )
                 continue
 

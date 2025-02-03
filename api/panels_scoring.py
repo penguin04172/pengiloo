@@ -48,7 +48,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
             if command == 'commit_match':
                 if get_arena().match_state != field.MatchState.POST_MATCH:
                     await websocket.send_json(
-                        {'type': 'error', 'message': 'Match not in POST_MATCH state'}
+                        {'type': 'error', 'data': {'message': 'Match not in POST_MATCH state'}}
                     )
                     continue
                 else:
@@ -153,6 +153,13 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                             score.score_elements.auto_scoring[payload['position']][
                                 payload['level']
                             ],
+                            payload['state'],
+                        )
+                        (
+                            score_changed,
+                            score.score_elements.branches[payload['position']][payload['level']],
+                        ) = set_goal(
+                            score.score_elements.branches[payload['position']][payload['level']],
                             payload['state'],
                         )
 

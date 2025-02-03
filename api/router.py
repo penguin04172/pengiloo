@@ -65,4 +65,4 @@ api_router.include_router(match_review.router)
 
 @api_router.get('/')
 async def api_root():
-    return {'message': 'Hello API'}
+    return {'data': 'Hello API'}
