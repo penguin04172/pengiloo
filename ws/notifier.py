@@ -76,7 +76,7 @@ class Notifier:
         Args:
             message (Any): _description_
         """
-        message = self.MessageEnvelope(type=self.message_type, payload=message)
+        message = self.MessageEnvelope(type=self.message_type, data=message)
         async with self.lock:
             for listener in self.listeners:
                 await self.notify_listener(listener, message)
@@ -108,7 +108,7 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
         while True:
             await asyncio.sleep(10)
             try:
-                await websocket.send_json({'type': 'ping', 'payload': None})
+                await websocket.send_json({'type': 'ping', 'data': {}})
             except WebSocketDisconnect:
                 return
 
@@ -124,9 +124,5 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
 
 async def write_notifier(websocket: WebSocket, notifier: Notifier):
     await websocket.send_json(
-        vars(
-            notifier.MessageEnvelope(
-                type=notifier.message_type, payload=notifier.get_message_body()
-            )
-        )
+        vars(notifier.MessageEnvelope(type=notifier.message_type, data=notifier.get_message_body()))
     )
