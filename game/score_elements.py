@@ -1,13 +1,14 @@
 from enum import IntEnum
 
+import numpy as np
 from pydantic import BaseModel
 
 
 class BranchLevel(IntEnum):
-    LEVEL_TROUGH = 0
-    LEVEL_2 = 1
-    LEVEL_3 = 2
-    LEVEL_4 = 3
+    LEVEL_2 = 0
+    LEVEL_3 = 1
+    LEVEL_4 = 2
+    LEVEL_TROUGH = 3
     COUNT = 4
 
 
@@ -28,18 +29,21 @@ class BranchLocation(IntEnum):
 
 
 auto_reef_points = {
-    BranchLevel.LEVEL_TROUGH: 3,
     BranchLevel.LEVEL_2: 4,
     BranchLevel.LEVEL_3: 6,
     BranchLevel.LEVEL_4: 7,
+    BranchLevel.LEVEL_TROUGH: 3,
 }
 
 teleop_reef_points = {
-    BranchLevel.LEVEL_TROUGH: 2,
     BranchLevel.LEVEL_2: 3,
     BranchLevel.LEVEL_3: 4,
     BranchLevel.LEVEL_4: 5,
+    BranchLevel.LEVEL_TROUGH: 2,
 }
+
+auto_reef_points_arr = np.array(list(auto_reef_points.values())[:3])
+teleop_reef_points_arr = np.array(list(teleop_reef_points.values())[:3])
 
 
 class Coral(BaseModel):
@@ -53,72 +57,57 @@ class Coral(BaseModel):
     ]
     branch_algaes: list[list[bool]] = [[False] * 2 for _ in range(BranchLocation.COUNT)]
 
-    def num_auto_teleop_coral_scored(
-        self, location: BranchLocation, level: BranchLevel
-    ) -> tuple[int, int]:
-        if (
-            location < BranchLocation.BRANCH_A
-            or location > BranchLocation.BRANCH_L
-            or level < BranchLevel.LEVEL_2
-            or level > BranchLevel.LEVEL_4
-        ):
-            return 0, 0
+    def coral_statuses(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        計算：
+        1. 每個 Level 的總 Coral 數量
+        2. Auto Coral 得分
+        3. Teleop Coral 得分
+        """
+        # 轉換為 NumPy 陣列以加速計算
+        branches_arr = np.array(self.branches, dtype=bool)  # 分支上是否有 Coral
+        auto_arr = np.array(self.auto_scoring, dtype=bool)  # 自動得分的 Coral
+        algae_arr = np.zeros_like(branches_arr, dtype=bool)  # 預設所有位置沒有 Algae
 
-        level -= BranchLevel.LEVEL_2
+        # 設定 Algae 影響 (每兩個 Branch 共享 Algae 狀態)
+        for loc in range(BranchLocation.COUNT):
+            algae_arr[loc, :2] = self.branch_algaes[loc // 2]  # 只影響 LEVEL_2 和 LEVEL_3
 
-        branch = self.branches[location][level]
-        auto = self.auto_scoring[location][level]
+        # 計算總 Coral 數量（沒有 Algae 才算）
+        total_corals = branches_arr & ~algae_arr
+        auto_corals = auto_arr & total_corals  # 只有同時是 auto_scoring 且 valid coral 才算 Auto
+        teleop_corals = total_corals ^ auto_corals  # Teleop = 總 coral - Auto coral
 
-        algae_state = self.branch_algaes[int(location / 2)][level] if 0 <= level < 2 else False
+        return auto_corals, teleop_corals
 
-        total_corals = 1 if branch and not algae_state else 0
-        auto_corals = 1 if auto and total_corals > 0 and not algae_state else 0
+    def num_coral_each_level_scored(
+        self, auto_corals: np.ndarray, teleop_corals: np.ndarray
+    ) -> np.ndarray:
+        levels = np.sum(auto_corals | teleop_corals, axis=0)
+        levels = np.hstack((levels, self.auto_trough_coral + self.teleop_trough_coral))
+        return levels
 
-        return auto_corals, total_corals - auto_corals
-
-    def num_coral_scored(self, location: BranchLocation, level: BranchLevel) -> int:
-        auto_corals, teleop_corals = self.num_auto_teleop_coral_scored(location, level)
-        return auto_corals + teleop_corals
-
-    def num_coral_each_level_scored(self, level: BranchLevel) -> int:
-        if level < BranchLevel.LEVEL_TROUGH or level > BranchLevel.LEVEL_4:
-            return 0
-
-        if level == BranchLevel.LEVEL_TROUGH:
-            return self.auto_trough_coral + self.teleop_trough_coral
-        else:
-            return sum(
-                self.num_coral_scored(location, level) for location in range(BranchLocation.COUNT)
-            )
-
-    def total_coral_scored(self) -> int:
-        return sum(
-            self.num_coral_each_level_scored(level)
-            for level in range(BranchLevel.LEVEL_TROUGH, BranchLevel.COUNT)
+    def total_coral_scored(self, auto_corals: np.ndarray, teleop_corals: np.ndarray) -> int:
+        return int(
+            (auto_corals | teleop_corals).sum() + self.auto_trough_coral + self.teleop_trough_coral
         )
 
-    def auto_coral_points(self) -> int:
-        return (
-            sum(
-                (auto_reef_points[level] * self.num_auto_teleop_coral_scored(location, level)[0])
-                for location in range(BranchLocation.COUNT)
-                for level in range(BranchLevel.LEVEL_2, BranchLevel.COUNT)
-            )
+    def coral_points(self, auto_corals: np.ndarray, teleop_corals: np.ndarray) -> tuple[int, int]:
+        # 直接用 NumPy 向量化計算
+        auto_levels_score = np.sum(auto_corals, axis=0) * auto_reef_points_arr
+        teleop_levels_score = np.sum(teleop_corals, axis=0) * teleop_reef_points_arr
+
+        # 總分計算（避免 .item()，直接用 sum()）
+        auto_score = (
+            auto_levels_score.sum()
             + self.auto_trough_coral * auto_reef_points[BranchLevel.LEVEL_TROUGH]
         )
-
-    def teleop_coral_points(self) -> int:
-        return (
-            sum(
-                teleop_reef_points[level] * self.num_auto_teleop_coral_scored(location, level)[1]
-                for location in range(BranchLocation.COUNT)
-                for level in range(BranchLevel.LEVEL_2, BranchLevel.COUNT)
-            )
+        teleop_score = (
+            teleop_levels_score.sum()
             + self.teleop_trough_coral * teleop_reef_points[BranchLevel.LEVEL_TROUGH]
         )
 
-    def total_coral_points(self) -> int:
-        return self.auto_coral_points() + self.teleop_coral_points()
+        return int(auto_score), int(teleop_score)
 
 
 class Algae(BaseModel):
@@ -149,8 +138,3 @@ class Algae(BaseModel):
 class ScoreElements(Algae, Coral):
     def __post_init__(self):
         pass
-        # for i in range(BranchLocation.COUNT):
-        #     if i % 2 == 0:
-        #         self.algaes[i][0] = True
-        #     else:
-        #         self.algaes[i][1] = True

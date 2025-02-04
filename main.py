@@ -1,10 +1,9 @@
 import asyncio
-import logging
 
 import fastapi
 import uvicorn
 
-from api.arena import APIArena, get_arena
+from api.arena import APIArena
 from api.router import api_router
 from field.arena import Arena
 from models.base import db

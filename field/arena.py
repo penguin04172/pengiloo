@@ -523,32 +523,23 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.last_match_state = self.match_state
 
     async def run(self):
-        task_list = []
-        task_list.append(asyncio.create_task(self.listen_for_driver_stations()))
-        task_list.append(asyncio.create_task(self.listen_for_ds_udp_packets()))
-        # task_list.append(asyncio.create_task(self.access_point.run()))
-        # run plc
-        self.running = True
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self.listen_for_driver_stations())
+            tg.create_task(self.listen_for_ds_udp_packets())
+            tg.create_task(self.run_periodic_task())
+            # task_list.append(asyncio.create_task(self.access_point.run()))
+            # run plc
+            self.running = True
 
-        while self.running:
-            loop_start_time = datetime.now()
-            await self.update()
-            if (
-                datetime.now() - self.last_period_task_time
-            ).total_seconds() > PERIODIC_TASK_PERIOD_SEC:
-                self.last_period_task_time = datetime.now()
-                asyncio.create_task(self.run_periodic_task())
+            while self.running:
+                loop_start_time = datetime.now()
+                await self.update()
 
-            loop_run_time = (datetime.now() - loop_start_time).total_seconds() * 1000000
-            if loop_run_time > ARENA_LOOP_WARNING_US:
-                logging.warning(f'Arena loop took a long time: {loop_run_time}us')
+                loop_run_time = int((datetime.now() - loop_start_time).total_seconds() * 1000000)
+                if loop_run_time > ARENA_LOOP_WARNING_US:
+                    logging.warning(f'Arena loop took a long time: {loop_run_time}us')
 
-            await asyncio.sleep(ARENA_LOOP_PERIOD_MS / 1000)
-
-        for task in task_list:
-            task.cancel()
-
-        await asyncio.gather(*task_list, return_exceptions=True)
+                await asyncio.sleep(ARENA_LOOP_PERIOD_MS / 1000)
 
     def red_score_summary(self):
         return self.red_realtime_score.current_score.summarize(
@@ -744,5 +735,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         )
 
     async def run_periodic_task(self):
-        await self.update_early_late_message()
-        await self.purge_disconnected_displays()
+        while True:
+            await self.update_early_late_message()
+            await self.purge_disconnected_displays()
+            await asyncio.sleep(PERIODIC_TASK_PERIOD_SEC)

@@ -92,41 +92,31 @@ class Notifier:
 
 
 async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
-    listen_tasks = []
-
     try:
-        for notifier in notifiers:
-            await notifier.connect(websocket)
-            listen_tasks.append(asyncio.create_task(notifier.listen(websocket)))
+        async with asyncio.TaskGroup() as tg:
+            for notifier in notifiers:
+                await notifier.connect(websocket)
+                tg.create_task(notifier.listen(websocket))
 
-            if notifier.message_producer is not None:
-                await write_notifier(websocket, notifier)
+                if notifier.message_producer is not None:
+                    await write_notifier(websocket, notifier)
 
-        async def heartbeat():
-            while True:
-                try:
-                    await asyncio.sleep(10)
-                    await websocket.send_json({'type': 'ping', 'data': {}})
-                except WebSocketDisconnect:
-                    return  # 這樣外部可以捕捉到 WebSocketDisconnect
-                except RuntimeError:
-                    return  # 避免 asyncio 被關閉時出錯
+            async def heartbeat():
+                while True:
+                    try:
+                        await asyncio.sleep(10)
+                        await websocket.send_json({'type': 'ping', 'data': {}})
+                    except WebSocketDisconnect:
+                        return  # 這樣外部可以捕捉到 WebSocketDisconnect
+                    except RuntimeError:
+                        return  # 避免 asyncio 被關閉時出錯
 
-        listen_tasks.append(asyncio.create_task(heartbeat()))
-
-        # 等待 WebSocket 斷線
-        await asyncio.wait(listen_tasks, return_when=asyncio.FIRST_COMPLETED)
+            tg.create_task(heartbeat())
 
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass
 
     finally:
-        # 取消所有未完成的 listener 任務
-        for task in listen_tasks:
-            task.cancel()
-
-        await asyncio.gather(*listen_tasks, return_exceptions=True)
-
         # 確保所有 notifier 也都會斷線
         for notifier in notifiers:
             if websocket in notifier.listeners:

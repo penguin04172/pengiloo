@@ -1,10 +1,11 @@
 from enum import IntEnum
 
+import numpy as np
 from pydantic import BaseModel
 
 from .foul import Foul
 from .game_specific import specific
-from .score_elements import BranchLevel, ScoreElements
+from .score_elements import ScoreElements
 from .score_summary import ScoreSummary
 
 
@@ -48,27 +49,45 @@ class Score(BaseModel):
         if self.playoff_dq:
             return summary
 
+        # Leave and Bypass
+        leave_arr = np.array(self.leave_statuses, dtype=bool)
+        bypass_arr = np.array(self.bypass_statuses, dtype=bool)
+
+        # Coral status
+        auto_corals, teleop_corals = self.score_elements.coral_statuses()
+        num_coral_each_level = self.score_elements.num_coral_each_level_scored(
+            auto_corals, teleop_corals
+        )
+        auto_coral_points, teleop_coral_points = self.score_elements.coral_points(
+            auto_corals, teleop_corals
+        )
+
         # Auto Points Summary
-        summary.leave_points = self.leave_statuses.count(True) * 3
-        auto_coral_points = self.score_elements.auto_coral_points()
+        summary.leave_points = int(leave_arr.sum()) * 3
         auto_algae_points = self.score_elements.auto_algae_points()
         summary.auto_points = summary.leave_points + auto_algae_points + auto_coral_points
 
         # Coral and Algae points
-        summary.coral_points = self.score_elements.total_coral_points()
+        summary.coral_points = auto_coral_points + teleop_coral_points
         summary.algae_points = self.score_elements.total_algae_points()
 
         # Endgame points
+        cage_points_arr = np.array([cage_points[status] for status in self.cage_statuses])
         for status in self.endgame_statuses:
-            match status:
-                case EndgameStatus.PARK:
-                    summary.park_points += 2
-                case EndgameStatus.CAGE_LEFT:
-                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.LEFT]]
-                case EndgameStatus.CAGE_CENTER:
-                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.CENTER]]
-                case EndgameStatus.CAGE_RIGHT:
-                    summary.cage_points += cage_points[self.cage_statuses[CagePosition.RIGHT]]
+            if status == EndgameStatus.PARK:
+                summary.park_points += 2
+
+            elif status in [
+                EndgameStatus.CAGE_LEFT,
+                EndgameStatus.CAGE_CENTER,
+                EndgameStatus.CAGE_RIGHT,
+            ]:
+                idx = [
+                    EndgameStatus.CAGE_LEFT,
+                    EndgameStatus.CAGE_CENTER,
+                    EndgameStatus.CAGE_RIGHT,
+                ].index(status)
+                summary.cage_points += cage_points_arr[idx].item()
 
         summary.barge_points = summary.park_points + summary.cage_points
         summary.match_points = (
@@ -94,20 +113,16 @@ class Score(BaseModel):
 
         # Calculate bonus ranking points
         summary.auto_bonus_ranking_point = False
-        if self.score_elements.auto_coral_points() >= specific.auto_bonus_coral_threshold:
+        if auto_coral_points >= specific.auto_bonus_coral_threshold:
             summary.auto_bonus_ranking_point = (
-                True
-                if self.leave_statuses.count(True) + self.bypass_statuses.count(True) == 3
-                else False
+                True if np.sum(leave_arr | bypass_arr) == 3 else False
             )
 
-        summary.num_coral_each_level = [
-            self.score_elements.num_coral_each_level_scored(level)
-            for level in range(BranchLevel.COUNT)
-        ]
-        summary.num_coral_levels_met = sum(
-            1 for num in summary.num_coral_each_level if num >= specific.coral_bonus_num_threshold
+        summary.num_coral_each_level = num_coral_each_level.tolist()
+        summary.num_coral_levels_met = int(
+            (num_coral_each_level > specific.coral_bonus_num_threshold).sum()
         )
+
         summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_without_coop
         if specific.coral_bonus_level_threshold_with_coop > 0:
             summary.coopertition_criteria_met = (
@@ -121,20 +136,19 @@ class Score(BaseModel):
             if summary.coopertition_bonus:
                 summary.num_coral_levels_goal = specific.coral_bonus_level_threshold_with_coop
 
-        if summary.num_coral_levels_met >= summary.num_coral_levels_goal:
-            summary.coral_bonus_ranking_point = True
+        summary.coral_bonus_ranking_point = (
+            summary.num_coral_levels_met >= summary.num_coral_levels_goal
+        )
 
-        if summary.barge_points >= specific.barge_bonus_point_threshold:
-            summary.barge_bonus_ranking_point = True
+        summary.barge_bonus_ranking_point = (
+            summary.barge_points >= specific.barge_bonus_point_threshold
+        )
 
-        if summary.auto_bonus_ranking_point:
-            summary.bonus_ranking_points += 1
-
-        if summary.coral_bonus_ranking_point:
-            summary.bonus_ranking_points += 1
-
-        if summary.barge_bonus_ranking_point:
-            summary.bonus_ranking_points += 1
+        summary.bonus_ranking_points = [
+            summary.auto_bonus_ranking_point,
+            summary.coral_bonus_ranking_point,
+            summary.barge_bonus_ranking_point,
+        ].count(True)
 
         return summary
 
