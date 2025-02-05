@@ -333,12 +333,8 @@ class TeamSigns:
                 countdown_sec = 0
 
         countdown = f'{countdown_sec // 60: 02d}:{countdown_sec % 60: 02d}'
-        red_summary = arena.red_realtime_score.current_score.summarize(
-            arena.blue_realtime_score.current_score
-        )
-        blue_summary = arena.blue_realtime_score.current_score.summarize(
-            arena.red_realtime_score.current_score
-        )
+        red_summary = arena.red_score_summary()
+        blue_summary = arena.blue_score_summary()
 
         red_in_match_rear_text = self.generate_teams_in_match_rear_text(
             True, countdown, red_summary, blue_summary

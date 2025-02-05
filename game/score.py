@@ -1,6 +1,8 @@
+import hashlib
 from enum import IntEnum
 
 import numpy as np
+import orjson
 from pydantic import BaseModel
 
 from .foul import Foul
@@ -43,11 +45,31 @@ class Score(BaseModel):
     fouls: list[Foul] = []
     playoff_dq: bool = False
 
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._summary_cache = None
+        self._summarize_hash = ''
+
+    def compute_hash(self, opponent_score: 'Score') -> str:
+        data = (
+            b'('
+            + orjson.dumps(self.model_dump(), option=orjson.OPT_SORT_KEYS)
+            + b','
+            + orjson.dumps(opponent_score.model_dump(), option=orjson.OPT_SORT_KEYS)
+            + b')'
+        )
+        return hashlib.blake2b(data, digest_size=16).hexdigest()
+
     def summarize(self, opponent_score: 'Score') -> ScoreSummary:
         summary = ScoreSummary()
 
         if self.playoff_dq:
             return summary
+
+        # Check cache and hash
+        now_hash = self.compute_hash(opponent_score)
+        if self._summarize_hash == now_hash and self._summary_cache is not None:
+            return self._summary_cache
 
         # Leave and Bypass
         leave_arr = np.array(self.leave_statuses, dtype=bool)
@@ -149,6 +171,9 @@ class Score(BaseModel):
             summary.coral_bonus_ranking_point,
             summary.barge_bonus_ranking_point,
         ].count(True)
+
+        self._summary_cache = summary
+        self._summarize_hash = now_hash
 
         return summary
 

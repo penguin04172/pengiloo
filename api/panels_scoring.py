@@ -20,10 +20,12 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
         await websocket.close(1008, 'Invalid alliance')
         return
 
-    if alliance == 'red':
-        realtime_score = get_arena().red_realtime_score
-    else:
-        realtime_score = get_arena().blue_realtime_score
+    realtime_score = (
+        get_arena().red_realtime_score if alliance == 'red' else get_arena().blue_realtime_score
+    )
+    opponent_realtime_score = (
+        get_arena().blue_realtime_score if alliance == 'red' else get_arena().red_realtime_score
+    )
 
     notifiers_task = asyncio.create_task(
         ws.handle_notifiers(
@@ -43,6 +45,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
             command = data['type']
 
             score = realtime_score.current_score
+            opponent_score = opponent_realtime_score.current_score
             score_changed = False
 
             if command == 'commit_match':
@@ -191,6 +194,7 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         )
 
                 if score_changed:
+                    await asyncio.to_thread(score.summarize, opponent_score)
                     await get_arena().realtime_score_notifier.notify()
 
     except WebSocketDisconnect:

@@ -190,7 +190,7 @@ class DriverStationConnection:
                     packet = await asyncio.wait_for(
                         self.tcp_conn[0].read(38), timeout=DRIVER_STATION_TCP_LINK_TIMEOUT_SEC
                     )
-                except asyncio.TimeoutError:
+                except asyncio.TimeoutError:  # noqa: UP041
                     logging.error(f'TCP connection timeout for Team {self.team_id}')
                     break
                 except Exception as err:
