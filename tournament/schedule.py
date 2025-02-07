@@ -5,10 +5,12 @@ import os
 import random
 from datetime import timedelta
 
+import aiofiles
+
 import models
 
 MATCHMAKER_DIR = 'matchmaker'
-SCHEDULES_DIR = 'schedules'
+SCHEDULES_DIR = 'static/schedules'
 TEAMS_PER_MATCH = 6
 
 
@@ -74,7 +76,7 @@ async def build_random_schedule(
     os.makedirs(os.path.join(models.BASE_DIR, SCHEDULES_DIR), exist_ok=True)
     match_index = 0
     for block in schedule_blocks:
-        with open(
+        async with aiofiles.open(
             os.path.join(models.BASE_DIR, SCHEDULES_DIR, f'schedule_{block.match_type.name}.csv'),
             'w',
         ) as f:
