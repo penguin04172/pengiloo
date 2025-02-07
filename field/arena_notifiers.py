@@ -104,7 +104,7 @@ class ArenaNotifiersMixin:
             'alliance_stations': self.alliance_stations,
             'match_state': self.match_state,
             'can_start_match': self.check_can_start_match(),
-            'access_point_status': self.access_point.status,
+            # 'access_point_status': self.access_point.status,
             # "switch_status": self.network_switch.status,
             # "plc_is_healthy": self.plc.is_healthy(),
             # "field_e_stop": self.plc.get_field_e_stop(),

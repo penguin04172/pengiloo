@@ -87,19 +87,25 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         score_changed, score.score_elements.auto_trough_coral = increment_goal(
                             score.score_elements.auto_trough_coral
                         )
+                        _, score.score_elements.total_trough_coral = increment_goal(
+                            score.score_elements.total_trough_coral
+                        )
                     elif payload['action'] == 'minus':
                         score_changed, score.score_elements.auto_trough_coral = decrement_goal(
                             score.score_elements.auto_trough_coral
                         )
+                        _, score.score_elements.total_trough_coral = decrement_goal(
+                            score.score_elements.total_trough_coral
+                        )
 
-                elif command == 'trough_teleop':
+                elif command == 'trough_total':
                     if payload['action'] == 'plus':
-                        score_changed, score.score_elements.teleop_trough_coral = increment_goal(
-                            score.score_elements.teleop_trough_coral
+                        score_changed, score.score_elements.total_trough_coral = increment_goal(
+                            score.score_elements.total_trough_coral
                         )
                     elif payload['action'] == 'minus':
-                        score_changed, score.score_elements.teleop_trough_coral = decrement_goal(
-                            score.score_elements.teleop_trough_coral
+                        score_changed, score.score_elements.total_trough_coral = decrement_goal(
+                            score.score_elements.total_trough_coral
                         )
 
                 elif command == 'processor_auto':

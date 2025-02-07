@@ -48,7 +48,7 @@ teleop_reef_points_arr = np.array(list(teleop_reef_points.values())[:3])
 
 class Coral(BaseModel):
     auto_trough_coral: int = 0
-    teleop_trough_coral: int = 0
+    total_trough_coral: int = 0
     auto_scoring: list[list[bool]] = [
         [False] * (BranchLevel.COUNT - 1) for _ in range(BranchLocation.COUNT)
     ]
@@ -84,13 +84,11 @@ class Coral(BaseModel):
         self, auto_corals: np.ndarray, teleop_corals: np.ndarray
     ) -> np.ndarray:
         levels = np.sum(auto_corals | teleop_corals, axis=0)
-        levels = np.hstack((levels, self.auto_trough_coral + self.teleop_trough_coral))
+        levels = np.hstack((levels, self.total_trough_coral))
         return levels
 
     def total_coral_scored(self, auto_corals: np.ndarray, teleop_corals: np.ndarray) -> int:
-        return int(
-            (auto_corals | teleop_corals).sum() + self.auto_trough_coral + self.teleop_trough_coral
-        )
+        return int((auto_corals | teleop_corals).sum() + self.total_trough_coral)
 
     def coral_points(self, auto_corals: np.ndarray, teleop_corals: np.ndarray) -> tuple[int, int]:
         # 直接用 NumPy 向量化計算
@@ -100,11 +98,13 @@ class Coral(BaseModel):
         # 總分計算（避免 .item()，直接用 sum()）
         auto_score = (
             auto_levels_score.sum()
-            + self.auto_trough_coral * auto_reef_points[BranchLevel.LEVEL_TROUGH]
+            + min(self.auto_trough_coral, self.total_trough_coral)
+            * auto_reef_points[BranchLevel.LEVEL_TROUGH]
         )
         teleop_score = (
             teleop_levels_score.sum()
-            + self.teleop_trough_coral * teleop_reef_points[BranchLevel.LEVEL_TROUGH]
+            + max(self.total_trough_coral - self.auto_trough_coral, 0)
+            * teleop_reef_points[BranchLevel.LEVEL_TROUGH]
         )
 
         return int(auto_score), int(teleop_score)
