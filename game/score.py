@@ -137,7 +137,9 @@ class Score(BaseModel):
         summary.auto_bonus_ranking_point = False
         if auto_coral_points >= specific.auto_bonus_coral_threshold:
             summary.auto_bonus_ranking_point = (
-                True if np.sum(leave_arr | bypass_arr) == 3 else False
+                True
+                if np.sum(leave_arr | bypass_arr) >= specific.auto_bonus_robot_threshold
+                else False
             )
 
         summary.num_coral_each_level = num_coral_each_level.tolist()

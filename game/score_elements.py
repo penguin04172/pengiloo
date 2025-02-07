@@ -49,7 +49,7 @@ teleop_reef_points_arr = np.array(list(teleop_reef_points.values())[:3])
 class Coral(BaseModel):
     auto_trough_coral: int = 0
     total_trough_coral: int = 0
-    auto_scoring: list[list[bool]] = [
+    branches_auto: list[list[bool]] = [
         [False] * (BranchLevel.COUNT - 1) for _ in range(BranchLocation.COUNT)
     ]
     branches: list[list[bool]] = [
@@ -66,7 +66,7 @@ class Coral(BaseModel):
         """
         # 轉換為 NumPy 陣列以加速計算
         branches_arr = np.array(self.branches, dtype=bool)  # 分支上是否有 Coral
-        auto_arr = np.array(self.auto_scoring, dtype=bool)  # 自動得分的 Coral
+        auto_arr = np.array(self.branches_auto, dtype=bool)  # 自動得分的 Coral
         algae_arr = np.zeros_like(branches_arr, dtype=bool)  # 預設所有位置沒有 Algae
 
         # 設定 Algae 影響 (每兩個 Branch 共享 Algae 狀態)

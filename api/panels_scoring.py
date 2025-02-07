@@ -155,11 +155,11 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                     ):
                         (
                             score_changed,
-                            score.score_elements.auto_scoring[payload['position']][
+                            score.score_elements.branches_auto[payload['position']][
                                 payload['level']
                             ],
                         ) = set_goal(
-                            score.score_elements.auto_scoring[payload['position']][
+                            score.score_elements.branches_auto[payload['position']][
                                 payload['level']
                             ],
                             payload['state'],
@@ -232,6 +232,5 @@ def toggle_goal(goal: object):
 
 def set_goal(goal: object, value: Any):
     if goal != value:
-        goal = value
-        return True, goal
+        return True, value
     return False, goal
