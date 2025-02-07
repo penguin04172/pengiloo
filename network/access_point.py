@@ -30,6 +30,9 @@ class TeamWifiStatus(BaseModel):
     rx_rate: float = 0.0
     tx_rate: float = 0.0
     signal_noise_ratio: int = 0
+    connection_uptime: float = 0.0
+    last_seen: float | None = None
+    connection_quality: int = 0  # 0-100
 
 
 class ConfigurationRequest(BaseModel):
@@ -68,6 +71,14 @@ class StationStatus(BaseModel):
     quality: int = 0
 
 
+class APConfigurationError(Exception):
+    pass
+
+
+class APMonitoringError(Exception):
+    pass
+
+
 class AccessPoint:
     def __init__(self):
         self.ap = None
@@ -75,17 +86,18 @@ class AccessPoint:
         self.network_security_enabled = False
         self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
         self.last_configured_teams: list[Team] = [None] * 6
+        self.max_retries = 3
+        self.retry_delay = 1.0  # seconds
 
     def set_settings(
         self,
         address: str,
-        username: str,
         password: str,
         channel: int,
         network_security_enabled: bool,
         wifi_statuses: list[TeamWifiStatus],
     ):
-        self.ap = openwrt.UbusClient(host=address, username=username, password=password)
+        self.ap = openwrt.UbusClient(host=address, username='root', password=password)
         self.channel = channel
         self.network_security_enabled = network_security_enabled
         self.team_wifi_statuses = wifi_statuses
@@ -100,34 +112,49 @@ class AccessPoint:
 
             if self.status_matches_last_last_configuration():
                 logger_ap.warning(
-                    'Access point is ACTIVE but does not match expected configuration; retrying configuration.'
+                    'Access point does not match expected configuration; retrying configuration.'
                 )
                 try:
-                    self.configure_team_wifi(self.last_configured_teams)
+                    await self.configure_team_wifi(self.last_configured_teams)
                 except Exception as err:
                     logger_ap.error(f'Failed to reconfigure AP: {err}')
 
     async def configure_team_wifi(self, teams: list[Team | None]):
         if not self.network_security_enabled:
-            return None
+            return
 
-        while True:
-            try:
-                await self.update_monitoring()
-                if self.status_correct_configuration(teams):
-                    break
-            except RuntimeError as err:
-                logger_ap.error(f'Failed to update monitoring: {err}')
+        async def attempt_configuration():
+            await self.update_monitoring()
+            if self.status_correct_configuration(teams):
+                return True
 
             await self.ap.set_wifi_ssid_and_password(
                 self.channel,
                 [
-                    {'id': team.id, 'wpakey': team.wpakey} if team is not None else None
+                    {'id': team.id, 'wpakey': team.wpakey}
+                    if team is not None
+                    else {'id': None, 'wpakey': None}
                     for team in teams
                 ],
             )
+            return False
 
-        self.last_configured_teams = teams
+        for retry in range(self.max_retries):
+            try:
+                if await attempt_configuration():
+                    self.last_configured_teams = teams
+                    return
+
+                logger_ap.info(f'配置未成功，正在重試 ({retry + 1}/{self.max_retries})')
+                await asyncio.sleep(self.retry_delay)
+
+            except Exception as err:
+                logger_ap.error(f'第 {retry + 1} 次嘗試失敗: {err}')
+                if retry < self.max_retries - 1:
+                    await asyncio.sleep(self.retry_delay)
+                continue
+
+        raise APConfigurationError('已達最大重試次數，配置失敗')
 
     async def update_monitoring(self):
         if not self.network_security_enabled:
@@ -135,9 +162,10 @@ class AccessPoint:
 
         try:
             await self.ap.login()
-        except (openwrt.UbusLoginError, openwrt.UbusTimeoutError, openwrt.UbusRequestError) as err:
-            logger_ap.error(f'Failed to login to AP: {err}')
-            raise RuntimeError('Failed to login to AP') from err
+        except openwrt.UbusLoginError as err:
+            raise APConfigurationError(f'認證失敗: {err}') from err
+        except openwrt.UbusTimeoutError as err:
+            raise APMonitoringError(f'連線逾時: {err}') from err
 
         for i, interface in enumerate(ACCESS_POINT_INTERFACES):
             station_status = StationStatus()

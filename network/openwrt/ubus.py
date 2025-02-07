@@ -100,7 +100,7 @@ class UbusClient:
         data = await self.call(*config.UBUS_METHODS['WIFI_CLIENTS'](station))
         return data['result'][1]['clients']
 
-    async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict | None]):
+    async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict]):
         session_id = await self.login()
 
         async with aiohttp.ClientSession() as session:
@@ -110,45 +110,52 @@ class UbusClient:
             await session.post(self.base_url, json=channel_payload)
 
             for index, team in enumerate(teams):
-                if team is None:
-                    continue
-                # 2️⃣ 設定 SSID
+                # 啟動 WIFI
+                disable_payload = UbusPayload(
+                    params=[session_id, *config.UBUS_METHODS['WIFI_DISABLE'](index, 0)]
+                ).model_dump()
+                await session.post(self.base_url, json=disable_payload)
+
+                # 設定 SSID
                 ssid_payload = UbusPayload(
                     params=[
                         session_id,
-                        'uci',
-                        'set',
-                        {
-                            'config': 'wireless',
-                            'section': f'@wifi-iface[{index + 1}]',
-                            'values': {'ssid': team['id']},
-                        },
+                        *config.UBUS_METHODS['WIFI_SSID'](
+                            index, team['id'] or f'no-team-{index+1}'
+                        ),
                     ]
                 ).model_dump()
                 await session.post(self.base_url, json=ssid_payload)
 
-                # 3️⃣ 設定 WPA 密碼
+                # 設定 WPA 密碼
                 wpakey_payload = UbusPayload(
                     params=[
                         session_id,
-                        'uci',
-                        'set',
-                        {
-                            'config': 'wireless',
-                            'section': f'@wifi-iface[{index + 1}]',
-                            'values': {'key': team['wpakey']},
-                        },
+                        *config.UBUS_METHODS['WIFI_WPAPSK'](
+                            index, team['wpakey'] or f'no-team-{index+1}'
+                        ),
                     ]
                 ).model_dump()
                 await session.post(self.base_url, json=wpakey_payload)
 
-            # 4️⃣ 提交變更
+                # 設定 SAE
+                sae_payload = UbusPayload(
+                    params=[
+                        session_id,
+                        *config.UBUS_METHODS['WIFI_WPASAE'](
+                            index, team['wpakey'] or f'no-team-{index+1}'
+                        ),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=sae_payload)
+
+            # 提交變更
             commit_payload = UbusPayload(
                 params=[session_id, *config.UBUS_METHODS['UCI_COMMIT_WIFI']]
             )
             await session.post(self.base_url, json=commit_payload)
 
-            # 5️⃣ 重新啟動 Wi-Fi
+            # 重新啟動 Wi-Fi
             reload_payload = UbusPayload(
                 params=[session_id, *config.UBUS_METHODS['RELOAD_NETWORK']]
             )

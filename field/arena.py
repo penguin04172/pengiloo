@@ -131,7 +131,6 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         ]
         self.access_point.set_settings(
             settings.ap_address,
-            'root',
             settings.ap_password,
             settings.ap_channel,
             settings.network_security_enabled,

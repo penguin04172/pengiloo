@@ -11,6 +11,30 @@ UBUS_METHODS = {
         'set',
         {'config': 'wireless', 'section': '@wifi-device[1]', 'values': {'channel': channel}},
     ],
+    'WIFI_DISABLE': lambda index, disable: [
+        'uci',
+        'set',
+        {
+            'config': 'wireless',
+            'type': f'@wifi-iface[{index + 1}]',
+            'values': {'disabled': f'{disable}'},
+        },
+    ],
+    'WIFI_SSID': lambda index, ssid: [
+        'uci',
+        'set',
+        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'ssid': ssid}},
+    ],
+    'WIFI_WPAPSK': lambda index, wpakey: [
+        'uci',
+        'set',
+        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'key': wpakey}},
+    ],
+    'WIFI_WPASAE': lambda index, sae: [
+        'uci',
+        'set',
+        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'sae': sae}},
+    ],
     'RELOAD_NETWORK': ['network', 'reload'],
     'UCI_COMMIT_WIFI': ['uci', 'commit', {'config': 'wireless'}],
 }
