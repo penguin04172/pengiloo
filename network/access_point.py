@@ -1,8 +1,6 @@
 import asyncio
 import logging
 import math
-from enum import IntEnum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -17,13 +15,6 @@ ACCESS_POINT_RETRY_DELAY_SEC = 30
 ACCESS_POINT_INTERFACES = ['phy1-ap0', 'phy1-ap1', 'phy1-ap2', 'phy1-ap3', 'phy1-ap4', 'phy1-ap5']
 
 
-class AccessPointConnection(IntEnum):
-    INACTIVE = 0
-    ACTIVE = 1
-    CONFIGURING = 2
-    ERROR = 3
-
-
 class TeamWifiStatus(BaseModel):
     team_id: int = 0
     radio_linked: bool = False
@@ -31,35 +22,7 @@ class TeamWifiStatus(BaseModel):
     rx_rate: float = 0.0
     tx_rate: float = 0.0
     signal_noise_ratio: int = 0
-    connection_uptime: float = 0.0
-    last_seen: float | None = None
-    connection_quality: int = 0  # 0-100
-
-
-class StationConfiguration(BaseModel):
-    ssid: str
-    wpakey: str
-
-
-class ConfigurationRequest(BaseModel):
-    channel: int = 0
-    station_configurations: dict[str, StationConfiguration] = {}
-
-
-class AccessPointStatus(BaseModel):
-    channel: int
-    status: AccessPointConnection
-    station_statuses: dict[str, Optional['StationStatus']]
-
-    def to_log_string(self):
-        buffer = f'Channel: {self.channel}\n'
-        for station in ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3']:
-            station_status = self.station_statuses[station]
-            ssid = '[empty]'
-            if station_status is not None:
-                ssid = station_status.ssid
-            buffer += f'{station: <6}: {ssid}'
-        return buffer
+    connection_quality: int = 0
 
 
 class StationStatus(BaseModel):
@@ -83,7 +46,6 @@ class APMonitoringError(Exception):
 class AccessPoint:
     def __init__(self):
         self.ap = None
-        self.expected_channel = 0
         self.channel = 0
         self.network_security_enabled = False
         self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
@@ -100,9 +62,13 @@ class AccessPoint:
         wifi_statuses: list[TeamWifiStatus],
     ):
         self.ap = openwrt.UbusClient(host=address, username='root', password=password)
-        self.expected_channel = channel
         self.network_security_enabled = network_security_enabled
         self.team_wifi_statuses = wifi_statuses
+
+        if self.channel != channel and self.network_security_enabled:
+            logger_ap.info(f'設定 AP 頻道至 {channel}')
+            asyncio.create_task(self.ap.set_wifi_channel(channel, 1))
+            self.channel = channel
 
     async def run(self):
         """主要運行迴圈，處理配置請求和監控狀態"""
