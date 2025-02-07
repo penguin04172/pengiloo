@@ -1,15 +1,26 @@
+import asyncio
 import logging
-import time
+import math
+from enum import IntEnum
 from typing import Optional
 
-import aiohttp
 from pydantic import BaseModel
 
 from models.team import Team
 
-logger_ap = logging.getLogger('network.ap')
+from . import openwrt
+
+logger_ap = logging.getLogger(__name__)
 
 ACCESS_POINT_POLL_PERIOD_SEC = 1
+ACCESS_POINT_INTERFACES = ['phy1-ap0', 'phy1-ap1', 'phy1-ap2', 'phy1-ap3', 'phy1-ap4', 'phy1-ap5']
+
+
+class AccessPointConnection(IntEnum):
+    INACTIVE = 0
+    ACTIVE = 1
+    CONFIGURING = 2
+    ERROR = 3
 
 
 class TeamWifiStatus(BaseModel):
@@ -25,28 +36,16 @@ class ConfigurationRequest(BaseModel):
     channel: int = 0
     station_configurations: dict[str, 'StationConfiguration'] = {}
 
-    class Config:
-        alias = {'channel': 'channel', 'station_configurations': 'stationConfigurations'}
-        populate_by_name = True
-
 
 class StationConfiguration(BaseModel):
     ssid: str
     wpakey: str
 
-    class Config:
-        alias = {'ssid': 'ssid', 'wpakey': 'wpaKey'}
-        populate_by_name = True
-
 
 class AccessPointStatus(BaseModel):
     channel: int
-    status: str
+    status: AccessPointConnection
     station_statuses: dict[str, Optional['StationStatus']]
-
-    class Config:
-        alias = {'channel': 'channel', 'status': 'status', 'station_statuses': 'stationStatuses'}
-        populate_by_name = True
 
     def to_log_string(self):
         buffer = f'Channel: {self.channel}\n'
@@ -60,61 +59,46 @@ class AccessPointStatus(BaseModel):
 
 
 class StationStatus(BaseModel):
-    ssid: str
-    hashed_wpakey: str
-    wpa_key_salt: str
-    is_linked: bool
-    rx_rate_mbps: float
-    tx_rate_mbps: float
-    signal_noise_ratio: int
-    bandwidth_used_mbps: float
-
-    class Config:
-        alias = {
-            'ssid': 'ssid',
-            'hashed_wpakey': 'hashedWpaKey',
-            'wpa_key_salt': 'wpaKeySalt',
-            'is_linked': 'isLinked',
-            'rx_rate_mbps': 'rxRateMbps',
-            'tx_rate_mbps': 'txRateMbps',
-            'signal_noise_ratio': 'signalNoiseRatio',
-            'bandwidth_used_mbps': 'bandwidthUsedMbps',
-        }
-        populate_by_name = True
+    ssid: str = ''
+    is_linked: bool = False
+    rx_rate_mbps: float = 0.0
+    tx_rate_mbps: float = 0.0
+    signal_noise_ratio: int = 0
+    bandwidth_used_mbps: float = 0.0
+    quality: int = 0
 
 
-class AccessPoint(BaseModel):
-    api_url: str = ''
-    password: str = ''
-    channel: int = ''
-    network_security_enabled: bool = False
-    status: str = ''
-    team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
-    last_configured_teams: list[Team] = [None] * 6
+class AccessPoint:
+    def __init__(self):
+        self.ap = None
+        self.channel = 0
+        self.network_security_enabled = False
+        self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
+        self.last_configured_teams: list[Team] = [None] * 6
 
     def set_settings(
         self,
         address: str,
+        username: str,
         password: str,
         channel: int,
         network_security_enabled: bool,
         wifi_statuses: list[TeamWifiStatus],
     ):
-        self.api_url = f'http://{address}'
-        self.password = password
+        self.ap = openwrt.UbusClient(host=address, username=username, password=password)
         self.channel = channel
         self.network_security_enabled = network_security_enabled
         self.team_wifi_statuses = wifi_statuses
 
     async def run(self):
         while True:
-            time.sleep(ACCESS_POINT_POLL_PERIOD_SEC)
+            await asyncio.sleep(ACCESS_POINT_POLL_PERIOD_SEC)
             try:
                 await self.update_monitoring()
-            except:  # noqa: E722
-                continue
+            except RuntimeError as err:
+                logger_ap.error(f'Failed to update monitoring: {err}')
 
-            if self.status == 'ACTIVE' and not self.status_matches_last_last_configuration():
+            if self.status_matches_last_last_configuration():
                 logger_ap.warning(
                     'Access point is ACTIVE but does not match expected configuration; retrying configuration.'
                 )
@@ -127,64 +111,54 @@ class AccessPoint(BaseModel):
         if not self.network_security_enabled:
             return None
 
-        self.status = 'CONFIGURING'
+        while True:
+            try:
+                await self.update_monitoring()
+                if self.status_correct_configuration(teams):
+                    break
+            except RuntimeError as err:
+                logger_ap.error(f'Failed to update monitoring: {err}')
+
+            await self.ap.set_wifi_ssid_and_password(
+                self.channel,
+                [
+                    {'id': team.id, 'wpakey': team.wpakey} if team is not None else None
+                    for team in teams
+                ],
+            )
+
         self.last_configured_teams = teams
-        request = ConfigurationRequest(channel=self.channel, station_configurations={})
-        add_station(request.station_configurations, 'red1', teams[0])
-        add_station(request.station_configurations, 'red2', teams[1])
-        add_station(request.station_configurations, 'red3', teams[2])
-        add_station(request.station_configurations, 'blue1', teams[3])
-        add_station(request.station_configurations, 'blue2', teams[4])
-        add_station(request.station_configurations, 'blue3', teams[5])
-
-        url = f'{self.api_url}/configuration'
-        headers = {}
-        if self.password != '':
-            headers = {'Authorization': f'Bearer {self.password}'}
-
-        async with aiohttp.request(
-            'POST', url=url, json=request.model_dump(by_alias=True), headers=headers
-        ) as resp:
-            if int(resp.status / 100) != 2:
-                body = await resp.text()
-                logger_ap.error(f'AP returned status {resp.status}: {body}')
-                return f'AP returned status {resp.status}'
-
-        logger_ap.info(
-            'Access point accepted the new configuration and will apply it asynchronously.'
-        )
-        return None
 
     async def update_monitoring(self):
         if not self.network_security_enabled:
-            return None
+            return
 
-        url = f'{self.api_url}/status'
-        headers = {}
-        if self.password != '':
-            headers = {'Authorization': f'Bearer {self.password}'}
-        async with aiohttp.request('GET', url=url, headers=headers) as resp:
-            if int(resp.status / 100) != 2:
-                self.status = 'ERROR'
-                body = await resp.text()
-                logger_ap.error(f'AP returned status {resp.status}: {body}')
-                return f'AP returned status {resp.status}'
+        try:
+            await self.ap.login()
+        except (openwrt.UbusLoginError, openwrt.UbusTimeoutError, openwrt.UbusRequestError) as err:
+            logger_ap.error(f'Failed to login to AP: {err}')
+            raise RuntimeError('Failed to login to AP') from err
 
-            resp_data = await resp.json()
-            ap_status = AccessPointStatus(**resp_data)
-            if self.status != ap_status.status:
-                logger_ap.info(f'AP status changed from {self.status} to {ap_status.status}')
-                self.status = ap_status.status
-                if self.status == 'ACTIVE':
-                    logger_ap.info(f'AP detailed status:\n{ap_status.to_log_string()}')
+        for i, interface in enumerate(ACCESS_POINT_INTERFACES):
+            station_status = StationStatus()
+            wifi_info = await self.ap.get_wifi_info(interface)
+            station_status.ssid = wifi_info['ssid']
+            station_status.quality = wifi_info.get('quality', 0)
+            wifi_clients = await self.ap.get_wifi_clients(interface)
 
-            update_team_wifi_status(self.team_wifi_statuses[0], ap_status.station_statuses['red1'])
-            update_team_wifi_status(self.team_wifi_statuses[1], ap_status.station_statuses['red2'])
-            update_team_wifi_status(self.team_wifi_statuses[2], ap_status.station_statuses['red3'])
-            update_team_wifi_status(self.team_wifi_statuses[3], ap_status.station_statuses['blue1'])
-            update_team_wifi_status(self.team_wifi_statuses[4], ap_status.station_statuses['blue2'])
-            update_team_wifi_status(self.team_wifi_statuses[5], ap_status.station_statuses['blue3'])
-            return None
+            if len(wifi_clients) > 0:
+                mac = list(wifi_clients.keys())[0]
+                station_status.is_linked = True
+                station_status.rx_rate_mbps = wifi_clients[mac]['rate']['rx'] / 1000000
+                station_status.tx_rate_mbps = wifi_clients[mac]['rate']['tx'] / 1000000
+                station_status.signal_noise_ratio = 20 * math.log10(
+                    wifi_info['signal'] / wifi_info['noise']
+                )
+                station_status.bandwidth_used_mbps = (
+                    wifi_clients[mac]['airtime']['rx'] + wifi_clients[mac]['airtime']['tx']
+                ) / 1000000
+
+            update_team_wifi_status(self.team_wifi_statuses[i], station_status)
 
     def status_matches_last_last_configuration(self):
         for i in range(6):
@@ -198,6 +172,17 @@ class AccessPoint(BaseModel):
 
             if expect_team_id != actual_team_id:
                 return False
+        return True
+
+    def status_correct_configuration(self, teams: list[Team | None]):
+        for i, team in enumerate(teams):
+            expected_team_id = 0
+            if team is not None:
+                expected_team_id = team.id
+
+            if self.team_wifi_statuses[i].team_id != expected_team_id:
+                return False
+
         return True
 
 

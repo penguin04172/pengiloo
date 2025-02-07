@@ -12,15 +12,15 @@ from .exceptions import (
 )
 
 
-class OpenWrtUbusPayload(BaseModel):
+class UbusPayload(BaseModel):
     jsonrpc: str = '2.0'
     id: int = 1
-    method: str
+    method: str = 'call'
     params: list
 
 
-class OpenWrtUbusClient:
-    def __init__(self, host='', username='', password=''):
+class UbusClient:
+    def __init__(self, host='', username='root', password=''):
         self.host = host
         self.username = username
         self.password = password
@@ -29,8 +29,7 @@ class OpenWrtUbusClient:
 
     async def login(self):
         """登入 OpenWrt 並獲取 session ID"""
-        payload = OpenWrtUbusPayload(
-            method='call',
+        payload = UbusPayload(
             params=[
                 config.DEFAULT_SESSION_ID,
                 *config.UBUS_METHODS['LOGIN'],
@@ -62,9 +61,7 @@ class OpenWrtUbusClient:
         if not self.session_id:
             raise UbusUnauthorizedError()
 
-        payload = OpenWrtUbusPayload(
-            method='call', params=[self.session_id, object_name, method, params]
-        ).model_dump()
+        payload = UbusPayload(params=[self.session_id, object_name, method, params]).model_dump()
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -88,10 +85,71 @@ class OpenWrtUbusClient:
         except aiohttp.ClientError as e:
             raise UbusRequestError(f'Client Error: {e}') from e
 
-    async def get_system_info(self):
-        """查詢 OpenWrt 系統資訊"""
-        return await self.call(*config.UBUS_METHODS['SYSTEM_INFO'])
+    async def get_wifi_info(self, station='wlan0') -> dict:
+        """查詢無線網路設定"""
+        data = await self.call(*config.UBUS_METHODS['WIFI_INFO'](station))
+        return data['result'][1]
 
-    async def get_network_status(self, interface='lan'):
-        """查詢網路介面狀態"""
-        return await self.call(*config.UBUS_METHODS['NETWORK_STATUS'](interface))
+    async def get_wifi_assoclist(self, station='wlan0') -> list:
+        """查詢無線網路連線列表"""
+        data = await self.call(*config.UBUS_METHODS['WIFI_ASSOCLIST'](station))
+        return data['result'][1]['results']
+
+    async def get_wifi_clients(self, station='wlan0') -> dict:
+        """查詢無線網路客戶端列表"""
+        data = await self.call(*config.UBUS_METHODS['WIFI_CLIENTS'](station))
+        return data['result'][1]['clients']
+
+    async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict | None]):
+        session_id = await self.login()
+
+        async with aiohttp.ClientSession() as session:
+            channel_payload = UbusPayload(
+                params=[session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
+            ).model_dump()
+            await session.post(self.base_url, json=channel_payload)
+
+            for index, team in enumerate(teams):
+                if team is None:
+                    continue
+                # 2️⃣ 設定 SSID
+                ssid_payload = UbusPayload(
+                    params=[
+                        session_id,
+                        'uci',
+                        'set',
+                        {
+                            'config': 'wireless',
+                            'section': f'@wifi-iface[{index + 1}]',
+                            'values': {'ssid': team['id']},
+                        },
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=ssid_payload)
+
+                # 3️⃣ 設定 WPA 密碼
+                wpakey_payload = UbusPayload(
+                    params=[
+                        session_id,
+                        'uci',
+                        'set',
+                        {
+                            'config': 'wireless',
+                            'section': f'@wifi-iface[{index + 1}]',
+                            'values': {'key': team['wpakey']},
+                        },
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=wpakey_payload)
+
+            # 4️⃣ 提交變更
+            commit_payload = UbusPayload(
+                params=[session_id, *config.UBUS_METHODS['UCI_COMMIT_WIFI']]
+            )
+            await session.post(self.base_url, json=commit_payload)
+
+            # 5️⃣ 重新啟動 Wi-Fi
+            reload_payload = UbusPayload(
+                params=[session_id, *config.UBUS_METHODS['RELOAD_NETWORK']]
+            )
+            await session.post(self.base_url, json=reload_payload)

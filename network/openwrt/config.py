@@ -3,7 +3,14 @@ TIMEOUT = 10
 
 UBUS_METHODS = {
     'LOGIN': ['session', 'login'],
-    'SYSTEM_INFO': ['system', 'board'],
-    'NETWORK_STATUS': lambda interface: [f'network.interface.{interface}', 'status'],
-    'RESTART_NETWORK': ['network', 'restart'],
+    'WIFI_ASSOCLIST': lambda device: ['iwinfo', 'assoclist', {'device': device}],
+    'WIFI_INFO': lambda device: ['iwinfo', 'info', {'device': device}],
+    'WIFI_CLIENTS': lambda device: [f'hostapd.{device}', 'get_clients'],
+    'WIFI_CHANNEL': lambda channel: [
+        'uci',
+        'set',
+        {'config': 'wireless', 'section': '@wifi-device[1]', 'values': {'channel': channel}},
+    ],
+    'RELOAD_NETWORK': ['network', 'reload'],
+    'UCI_COMMIT_WIFI': ['uci', 'commit', {'config': 'wireless'}],
 }
