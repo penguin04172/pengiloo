@@ -6,35 +6,17 @@ UBUS_METHODS = {
     'WIFI_ASSOCLIST': lambda device: ['iwinfo', 'assoclist', {'device': device}],
     'WIFI_INFO': lambda device: ['iwinfo', 'info', {'device': device}],
     'WIFI_CLIENTS': lambda device: [f'hostapd.{device}', 'get_clients'],
-    'WIFI_CHANNEL': lambda channel: [
+    'WIFI_CHANNEL': lambda radio, channel: [
         'uci',
         'set',
-        {'config': 'wireless', 'section': '@wifi-device[1]', 'values': {'channel': channel}},
-    ],
-    'WIFI_DISABLE': lambda index, disable: [
-        'uci',
-        'set',
-        {
-            'config': 'wireless',
-            'type': f'@wifi-iface[{index + 1}]',
-            'values': {'disabled': f'{disable}'},
-        },
-    ],
-    'WIFI_SSID': lambda index, ssid: [
-        'uci',
-        'set',
-        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'ssid': ssid}},
-    ],
-    'WIFI_WPAPSK': lambda index, wpakey: [
-        'uci',
-        'set',
-        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'key': wpakey}},
-    ],
-    'WIFI_WPASAE': lambda index, sae: [
-        'uci',
-        'set',
-        {'config': 'wireless', 'section': f'@wifi-iface[{index + 1}]', 'values': {'sae': sae}},
+        {'config': 'wireless', 'section': f'radio{radio}', 'values': {'channel': channel}},
     ],
     'RELOAD_NETWORK': ['network', 'reload'],
-    'UCI_COMMIT_WIFI': ['uci', 'commit', {'config': 'wireless'}],
+    'RECONF_WIFI': ['network.wireless', 'reconf'],
+    'UCI_SET': lambda config, section, values: [
+        'uci',
+        'set',
+        {'config': config, 'section': section, 'values': values},
+    ],
+    'UCI_COMMIT': lambda config: ['uci', 'commit', {'config': config}],
 }

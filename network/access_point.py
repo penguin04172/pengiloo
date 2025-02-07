@@ -12,7 +12,8 @@ from . import openwrt
 
 logger_ap = logging.getLogger(__name__)
 
-ACCESS_POINT_POLL_PERIOD_SEC = 1
+ACCESS_POINT_POLL_PERIOD_SEC = 3
+ACCESS_POINT_RETRY_DELAY_SEC = 30
 ACCESS_POINT_INTERFACES = ['phy1-ap0', 'phy1-ap1', 'phy1-ap2', 'phy1-ap3', 'phy1-ap4', 'phy1-ap5']
 
 
@@ -35,14 +36,14 @@ class TeamWifiStatus(BaseModel):
     connection_quality: int = 0  # 0-100
 
 
-class ConfigurationRequest(BaseModel):
-    channel: int = 0
-    station_configurations: dict[str, 'StationConfiguration'] = {}
-
-
 class StationConfiguration(BaseModel):
     ssid: str
     wpakey: str
+
+
+class ConfigurationRequest(BaseModel):
+    channel: int = 0
+    station_configurations: dict[str, StationConfiguration] = {}
 
 
 class AccessPointStatus(BaseModel):
@@ -68,7 +69,7 @@ class StationStatus(BaseModel):
     tx_rate_mbps: float = 0.0
     signal_noise_ratio: int = 0
     bandwidth_used_mbps: float = 0.0
-    quality: int = 0
+    connection_quality: int = 0
 
 
 class APConfigurationError(Exception):
@@ -82,12 +83,13 @@ class APMonitoringError(Exception):
 class AccessPoint:
     def __init__(self):
         self.ap = None
+        self.expected_channel = 0
         self.channel = 0
         self.network_security_enabled = False
         self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
         self.last_configured_teams: list[Team] = [None] * 6
-        self.max_retries = 3
-        self.retry_delay = 1.0  # seconds
+        # 新增配置請求佇列
+        self.config_request_queue = asyncio.Queue(10)
 
     def set_settings(
         self,
@@ -98,30 +100,52 @@ class AccessPoint:
         wifi_statuses: list[TeamWifiStatus],
     ):
         self.ap = openwrt.UbusClient(host=address, username='root', password=password)
-        self.channel = channel
+        self.expected_channel = channel
         self.network_security_enabled = network_security_enabled
         self.team_wifi_statuses = wifi_statuses
 
     async def run(self):
+        """主要運行迴圈，處理配置請求和監控狀態"""
         while True:
-            await asyncio.sleep(ACCESS_POINT_POLL_PERIOD_SEC)
             try:
-                await self.update_monitoring()
-            except RuntimeError as err:
-                logger_ap.error(f'Failed to update monitoring: {err}')
-
-            if self.status_matches_last_last_configuration():
-                logger_ap.warning(
-                    'Access point does not match expected configuration; retrying configuration.'
+                # 使用 asyncio.wait_for 設定等待超時
+                config_request = await asyncio.wait_for(
+                    self.config_request_queue.get(), timeout=ACCESS_POINT_POLL_PERIOD_SEC
                 )
+
+                # 清空佇列中的其他請求，只處理最新的
+                while not self.config_request_queue.empty():
+                    config_request = await self.config_request_queue.get()
+
+                # 處理配置請求
                 try:
-                    await self.configure_team_wifi(self.last_configured_teams)
+                    await self.handle_configuration_request(config_request)
                 except Exception as err:
-                    logger_ap.error(f'Failed to reconfigure AP: {err}')
+                    logger_ap.error(f'配置失敗: {err}')
+
+            except asyncio.TimeoutError:  # noqa
+                # 超時時執行定期監控
+                try:
+                    await self.update_monitoring()
+                except Exception as err:
+                    logger_ap.error(f'監控更新失敗: {err}')
 
     async def configure_team_wifi(self, teams: list[Team | None]):
+        """提交新的配置請求"""
+        await self.config_request_queue.put(teams)
+
+    async def handle_configuration_request(self, teams: list[Team | None]):
+        """處理配置請求"""
         if not self.network_security_enabled:
             return
+
+        if self.status_correct_configuration(teams):
+            return
+
+        await self.configure_teams(teams)
+
+    async def configure_teams(self, teams: list[Team | None]):
+        retry = 0
 
         async def attempt_configuration():
             await self.update_monitoring()
@@ -139,22 +163,20 @@ class AccessPoint:
             )
             return False
 
-        for retry in range(self.max_retries):
+        while True:
             try:
                 if await attempt_configuration():
                     self.last_configured_teams = teams
                     return
 
-                logger_ap.info(f'配置未成功，正在重試 ({retry + 1}/{self.max_retries})')
-                await asyncio.sleep(self.retry_delay)
+                logger_ap.info(f'配置未成功，正在重試 ({retry + 1}')
+                await asyncio.sleep()
 
             except Exception as err:
                 logger_ap.error(f'第 {retry + 1} 次嘗試失敗: {err}')
-                if retry < self.max_retries - 1:
-                    await asyncio.sleep(self.retry_delay)
+                retry += 1
+                await asyncio.sleep(ACCESS_POINT_RETRY_DELAY_SEC)
                 continue
-
-        raise APConfigurationError('已達最大重試次數，配置失敗')
 
     async def update_monitoring(self):
         if not self.network_security_enabled:
@@ -170,8 +192,9 @@ class AccessPoint:
         for i, interface in enumerate(ACCESS_POINT_INTERFACES):
             station_status = StationStatus()
             wifi_info = await self.ap.get_wifi_info(interface)
+            self.channel = wifi_info['channel']
             station_status.ssid = wifi_info['ssid']
-            station_status.quality = wifi_info.get('quality', 0)
+            station_status.connection_quality = wifi_info.get('quality', 0)
             wifi_clients = await self.ap.get_wifi_clients(interface)
 
             if len(wifi_clients) > 0:
@@ -188,20 +211,6 @@ class AccessPoint:
 
             update_team_wifi_status(self.team_wifi_statuses[i], station_status)
 
-    def status_matches_last_last_configuration(self):
-        for i in range(6):
-            expect_team_id = 0
-            actual_team_id = 0
-            if self.last_configured_teams[i] is not None:
-                expect_team_id = self.last_configured_teams[i].id
-
-            if self.team_wifi_statuses[i] is not None:
-                actual_team_id = self.team_wifi_statuses[i].team_id
-
-            if expect_team_id != actual_team_id:
-                return False
-        return True
-
     def status_correct_configuration(self, teams: list[Team | None]):
         for i, team in enumerate(teams):
             expected_team_id = 0
@@ -214,13 +223,6 @@ class AccessPoint:
         return True
 
 
-def add_station(stations_configurations: dict[str, StationConfiguration], station: str, team: Team):
-    if team is None:
-        return
-
-    stations_configurations[station] = StationConfiguration(ssid=str(team.id), wpakey=team.wpakey)
-
-
 def update_team_wifi_status(team_wifi_status: TeamWifiStatus, station_status: StationStatus):
     if station_status is None:
         team_wifi_status.team_id = 0
@@ -229,6 +231,7 @@ def update_team_wifi_status(team_wifi_status: TeamWifiStatus, station_status: St
         team_wifi_status.rx_rate = 0
         team_wifi_status.tx_rate = 0
         team_wifi_status.signal_noise_ratio = 0
+        team_wifi_status.connection_quality = 0
     else:
         team_wifi_status.team_id = int(station_status.ssid)
         team_wifi_status.radio_linked = station_status.is_linked
@@ -236,3 +239,4 @@ def update_team_wifi_status(team_wifi_status: TeamWifiStatus, station_status: St
         team_wifi_status.rx_rate = station_status.rx_rate_mbps
         team_wifi_status.tx_rate = station_status.tx_rate_mbps
         team_wifi_status.signal_noise_ratio = station_status.signal_noise_ratio
+        team_wifi_status.connection_quality = station_status.connection_quality

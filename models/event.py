@@ -46,6 +46,7 @@ class Event(BaseModel):
     pause_duration_sec: int = game.timing.pause_duration_sec
     teleop_duration_sec: int = game.timing.teleop_duration_sec
     warning_remaining_duration_sec: int = game.timing.warning_remaining_duration_sec
+    auto_bonus_coral_threshold: int = game.specific.auto_bonus_coral_threshold
     coral_bonus_num_threshold: int = game.specific.coral_bonus_num_threshold
     coral_bonus_level_threshold_without_coop: int = (
         game.specific.coral_bonus_level_threshold_without_coop
@@ -93,6 +94,7 @@ class EventDB(db.Entity):
     warning_remaining_duration_sec = Required(
         int, default=game.timing.warning_remaining_duration_sec
     )
+    auto_bonus_coral_threshold = Required(int, default=game.specific.coral_bonus_num_threshold)
     coral_bonus_num_threshold = Required(int, default=game.specific.coral_bonus_num_threshold)
     coral_bonus_level_threshold_without_coop = Required(
         int, default=game.specific.coral_bonus_level_threshold_without_coop

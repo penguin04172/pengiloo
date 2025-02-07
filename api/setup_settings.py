@@ -74,12 +74,15 @@ async def update_settings(new_settings: models.Event) -> dict:
     event_settings.pause_duration_sec = new_settings.pause_duration_sec
     event_settings.teleop_duration_sec = new_settings.teleop_duration_sec
     event_settings.warning_remaining_duration_sec = new_settings.warning_remaining_duration_sec
-    event_settings.melody_bonus_threshold_without_coop = (
-        new_settings.melody_bonus_threshold_without_coop
+    event_settings.auto_bonus_coral_threshold = new_settings.auto_bonus_coral_threshold
+    event_settings.coral_bonus_level_threshold_without_coop = (
+        new_settings.coral_bonus_level_threshold_without_coop
     )
-    event_settings.melody_bonus_threshold_with_coop = new_settings.melody_bonus_threshold_with_coop
-    event_settings.amplification_note_limit = new_settings.amplification_note_limit
-    event_settings.amplification_duration_sec = new_settings.amplification_duration_sec
+    event_settings.coral_bonus_level_threshold_with_coop = (
+        new_settings.coral_bonus_level_threshold_with_coop
+    )
+    event_settings.coral_bonus_num_threshold = new_settings.coral_bonus_num_threshold
+    event_settings.barge_bonus_point_threshold = new_settings.barge_bonus_point_threshold
 
     models.update_event_settings(event_settings)
     await get_arena().load_settings()

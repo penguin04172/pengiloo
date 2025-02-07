@@ -20,12 +20,13 @@ class UbusPayload(BaseModel):
 
 
 class UbusClient:
-    def __init__(self, host='', username='root', password=''):
+    def __init__(self, host='', username='root', password='', timeout=1):
         self.host = host
         self.username = username
         self.password = password
         self.session_id = None
         self.base_url = f'http://{self.host}/ubus'
+        self.timeout = timeout
 
     async def login(self):
         """登入 OpenWrt 並獲取 session ID"""
@@ -39,9 +40,7 @@ class UbusClient:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.base_url, json=payload, timeout=config.TIMEOUT
-                ) as resp:
+                async with session.post(self.base_url, json=payload, timeout=self.timeout) as resp:
                     data = await resp.json()
 
                     if 'result' in data and data['result'][0] == 0:
@@ -65,9 +64,7 @@ class UbusClient:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.base_url, json=payload, timeout=config.TIMEOUT
-                ) as resp:
+                async with session.post(self.base_url, json=payload, timeout=self.timeout) as resp:
                     if resp.status == 401:
                         raise UbusUnauthorizedError()
                     elif resp.status >= 400:
@@ -100,63 +97,58 @@ class UbusClient:
         data = await self.call(*config.UBUS_METHODS['WIFI_CLIENTS'](station))
         return data['result'][1]['clients']
 
-    async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict]):
-        session_id = await self.login()
+    async def set_wifi_channel(self, channel: int, radio=0):
+        """設定無線網路頻道"""
 
         async with aiohttp.ClientSession() as session:
-            channel_payload = UbusPayload(
-                params=[session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
+            payload = UbusPayload(
+                params=[self.session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](radio, channel)]
             ).model_dump()
-            await session.post(self.base_url, json=channel_payload)
+            await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+            payload = UbusPayload(
+                params=[self.session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
+            ).model_dump()
+            await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+            payload = UbusPayload(
+                params=[self.session_id, *config.UBUS_METHODS['RECONE_WIFI']]
+            ).model_dump()
+            await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+    async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict]):
+        async with aiohttp.ClientSession() as session:
+            channel_payload = UbusPayload(
+                params=[self.session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
+            ).model_dump()
+            await session.post(self.base_url, json=channel_payload, timeout=self.timeout)
 
             for index, team in enumerate(teams):
-                # 啟動 WIFI
-                disable_payload = UbusPayload(
-                    params=[session_id, *config.UBUS_METHODS['WIFI_DISABLE'](index, 0)]
-                ).model_dump()
-                await session.post(self.base_url, json=disable_payload)
-
-                # 設定 SSID
-                ssid_payload = UbusPayload(
+                setup_payload = UbusPayload(
                     params=[
-                        session_id,
-                        *config.UBUS_METHODS['WIFI_SSID'](
-                            index, team['id'] or f'no-team-{index+1}'
+                        self.session_id,
+                        *config.UBUS_METHODS['UCI_SET'](
+                            'wireless',
+                            f'@wifi-iface[{index+1}]',
+                            {
+                                'disabled': '0',
+                                'ssid': team['id'] or f'no-team-{index+1}',
+                                'key': team['wpakey'] or f'no-team-{index+1}',
+                                'sae': team['wpakey'] or f'no-team-{index+1}',
+                            },
                         ),
                     ]
                 ).model_dump()
-                await session.post(self.base_url, json=ssid_payload)
-
-                # 設定 WPA 密碼
-                wpakey_payload = UbusPayload(
-                    params=[
-                        session_id,
-                        *config.UBUS_METHODS['WIFI_WPAPSK'](
-                            index, team['wpakey'] or f'no-team-{index+1}'
-                        ),
-                    ]
-                ).model_dump()
-                await session.post(self.base_url, json=wpakey_payload)
-
-                # 設定 SAE
-                sae_payload = UbusPayload(
-                    params=[
-                        session_id,
-                        *config.UBUS_METHODS['WIFI_WPASAE'](
-                            index, team['wpakey'] or f'no-team-{index+1}'
-                        ),
-                    ]
-                ).model_dump()
-                await session.post(self.base_url, json=sae_payload)
+                await session.post(self.base_url, json=setup_payload, timeout=self.timeout)
 
             # 提交變更
             commit_payload = UbusPayload(
-                params=[session_id, *config.UBUS_METHODS['UCI_COMMIT_WIFI']]
+                params=[self.session_id, *config.UBUS_METHODS['UCI_COMMIT_WIFI']]
             )
-            await session.post(self.base_url, json=commit_payload)
+            await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
 
             # 重新啟動 Wi-Fi
             reload_payload = UbusPayload(
-                params=[session_id, *config.UBUS_METHODS['RELOAD_NETWORK']]
+                params=[self.session_id, *config.UBUS_METHODS['RECONF_WIFI']]
             )
-            await session.post(self.base_url, json=reload_payload)
+            await session.post(self.base_url, json=reload_payload, timeout=self.timeout)

@@ -29,6 +29,8 @@ from .specs import (
 )
 from .team_sign import TeamSigns
 
+logger = logging.getLogger('arena')
+
 
 class AllianceStation:
     ds_conn: DriverStationConnection = None
@@ -511,7 +513,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 ms_since_last_ds_packet >= DS_PACKET_WARNING_MS
                 and self.last_ds_packet_time > datetime.min
             ):
-                logging.warning(f'Last DS packet was {ms_since_last_ds_packet}ms ago')
+                logger.warning(f'Last DS packet was {ms_since_last_ds_packet}ms ago')
             self.send_ds_packet(auto, enabled)
             await self.arena_status_notifier.notify()
 
@@ -527,7 +529,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             tg.create_task(self.listen_for_driver_stations())
             tg.create_task(self.listen_for_ds_udp_packets())
             tg.create_task(self.run_periodic_task())
-            # task_list.append(asyncio.create_task(self.access_point.run()))
+            tg.create_task(self.access_point.run())
             # run plc
             self.running = True
 
@@ -537,7 +539,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
                 loop_run_time = int((datetime.now() - loop_start_time).total_seconds() * 1000000)
                 if loop_run_time > ARENA_LOOP_WARNING_US:
-                    logging.warning(f'Arena loop took a long time: {loop_run_time}us')
+                    logger.warning(f'Arena loop took a long time: {loop_run_time}us')
 
                 await asyncio.sleep(ARENA_LOOP_PERIOD_MS / 1000)
 
@@ -634,7 +636,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             try:
                 self.access_point.configure_team_wifi(teams)
             except RuntimeError as e:
-                logging.error(f'Failed to configure team wifi: {e}')
+                logger.error(f'Failed to configure team wifi: {e}')
                 return
 
             # network switch
