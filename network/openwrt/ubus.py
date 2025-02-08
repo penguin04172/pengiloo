@@ -24,7 +24,7 @@ class UbusClient:
         self.host = host
         self.username = username
         self.password = password
-        self.session_id = None
+        self._session_id = None
         self.base_url = f'http://{self.host}/ubus'
         self.timeout = timeout
 
@@ -44,7 +44,7 @@ class UbusClient:
                     data = await resp.json()
 
                     if 'result' in data and data['result'][0] == 0:
-                        self.session_id = data['result'][1]['ubus_rpc_session']
+                        self._session_id = data['result'][1]['ubus_rpc_session']
                     else:
                         raise UbusLoginError('Login Failed')
         except asyncio.TimeoutError:  # noqa
@@ -57,10 +57,10 @@ class UbusClient:
         if params is None:
             params = {}
 
-        if not self.session_id:
+        if not self._session_id:
             raise UbusUnauthorizedError()
 
-        payload = UbusPayload(params=[self.session_id, object_name, method, params]).model_dump()
+        payload = UbusPayload(params=[self._session_id, object_name, method, params]).model_dump()
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -102,31 +102,31 @@ class UbusClient:
 
         async with aiohttp.ClientSession() as session:
             payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](radio, channel)]
+                params=[self._session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](radio, channel)]
             ).model_dump()
             await session.post(self.base_url, json=payload, timeout=self.timeout)
 
             payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
+                params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
             ).model_dump()
             await session.post(self.base_url, json=payload, timeout=self.timeout)
 
             payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['RECONE_WIFI']]
+                params=[self._session_id, *config.UBUS_METHODS['RECONE_WIFI']]
             ).model_dump()
             await session.post(self.base_url, json=payload, timeout=self.timeout)
 
     async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict]):
         async with aiohttp.ClientSession() as session:
             channel_payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
+                params=[self._session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
             ).model_dump()
             await session.post(self.base_url, json=channel_payload, timeout=self.timeout)
 
             for index, team in enumerate(teams):
                 setup_payload = UbusPayload(
                     params=[
-                        self.session_id,
+                        self._session_id,
                         *config.UBUS_METHODS['UCI_SET'](
                             'wireless',
                             f'@wifi-iface[{index+1}]',
@@ -143,12 +143,98 @@ class UbusClient:
 
             # 提交變更
             commit_payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['UCI_COMMIT_WIFI']]
+                params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
             )
             await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
 
             # 重新啟動 Wi-Fi
             reload_payload = UbusPayload(
-                params=[self.session_id, *config.UBUS_METHODS['RECONF_WIFI']]
+                params=[self._session_id, *config.UBUS_METHODS['RECONF_WIFI']]
             )
+            await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
+
+    async def generate_ethernet_configs(self, team_id: int = None, vlan: int = None):
+        if vlan not in [10, 20, 30, 40, 50, 60]:
+            raise ValueError('Invalid VLAN ID')
+
+        async with aiohttp.ClientSession() as session:
+            if team_id:
+                payload = UbusPayload(
+                    params=[
+                        self._session_id,
+                        *config.UBUS_METHODS['UCI_SET'](
+                            'network',
+                            f'vlan{vlan}',
+                            {
+                                'proto': 'static',
+                                'ipaddr': f'10.{team_id//100}.{team_id%100}.4',
+                                'netmask': '255.255.255.0',
+                            },
+                        ),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+                payload = UbusPayload(
+                    params=[
+                        self._session_id,
+                        *config.UBUS_METHODS['UCI_SET']('dhcp', f'vlan{vlan}', {'ignore': '0'}),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+            else:
+                payload = UbusPayload(
+                    params=[
+                        self._session_id,
+                        *config.UBUS_METHODS['UCI_SET'](
+                            'network', f'vlan{vlan}', {'proto': 'none'}
+                        ),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+                payload = UbusPayload(
+                    params=[
+                        self._session_id,
+                        *config.UBUS_METHODS['UCI_DEL'](
+                            'network', f'vlan{vlan}', ['ipaddr', 'netmask']
+                        ),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+                payload = UbusPayload(
+                    params=[
+                        self._session_id,
+                        *config.UBUS_METHODS['UCI_SET']('dhcp', f'vlan{vlan}', {'ignore': '1'}),
+                    ]
+                ).model_dump()
+                await session.post(self.base_url, json=payload, timeout=self.timeout)
+
+    async def commit_ethernet_configs(self):
+        async with aiohttp.ClientSession() as session:
+            commit_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('network')]
+            ).model_dump()
+            await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
+
+            commit_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('dhcp')]
+            ).model_dump()
+            await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
+
+            reload_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['RELOAD_NETWORK']]
+            ).model_dump()
+            await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
+
+            reload_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['RESTART_SERVICE']('dnsmasq')]
+            ).model_dump()
+            await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
+
+            reload_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['RESTART_SERVICE']('odhcpd')]
+            ).model_dump()
             await session.post(self.base_url, json=reload_payload, timeout=self.timeout)

@@ -18,5 +18,16 @@ UBUS_METHODS = {
         'set',
         {'config': config, 'section': section, 'values': values},
     ],
+    'UCI_DEL': lambda config, section, options: [
+        'uci',
+        'del',
+        {'config': config, 'section': section, 'options': options},
+    ],
     'UCI_COMMIT': lambda config: ['uci', 'commit', {'config': config}],
+    'UCI_APPLY': lambda timeout: ['uci', 'apply', {'timeout': timeout}],
+    'SERVICE_RESTART': lambda service: [
+        'service',
+        'event',
+        {'type': 'restart', 'data': {'name': service}},
+    ],
 }

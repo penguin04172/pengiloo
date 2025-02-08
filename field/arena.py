@@ -139,7 +139,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             access_point_wifi_status,
         )
 
-        # self.network_switch
+        self.network_switch = network.Switch(settings.switch_address, settings.switch_password)
         # self.plc
         # self.tba_client
         # self.nexus_client
@@ -640,6 +640,11 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 return
 
             # network switch
+            try:
+                await self.network_switch.configure_team_ethernet(teams)
+            except Exception as e:
+                logger.error(f'Failed to configure team ethernet: {e}')
+                return
 
     def check_can_start_match(self):
         if self.match_state != MatchState.PRE_MATCH:
