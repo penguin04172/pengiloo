@@ -131,7 +131,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.alliance_stations[station].wifi_status
             for station in ['R1', 'R2', 'R3', 'B1', 'B2', 'B3']
         ]
-        self.access_point.set_settings(
+        await self.access_point.set_settings(
             settings.ap_address,
             settings.ap_password,
             settings.ap_channel,
@@ -197,7 +197,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.assign_team(match.blue2, 'B2')
             self.assign_team(match.blue3, 'B3')
 
-            self.setup_network(
+            await self.setup_network(
                 [
                     self.alliance_stations[station].team
                     for station in ['R1', 'R2', 'R3', 'B1', 'B2', 'B3']
@@ -268,7 +268,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.current_match.blue2 = blue2
         self.current_match.blue3 = blue3
 
-        self.setup_network(
+        await self.setup_network(
             [
                 self.alliance_stations[station].team
                 for station in ['R1', 'R2', 'R3', 'B1', 'B2', 'B3']
@@ -481,7 +481,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
                 async def pre_load_next_match_delay():
                     await asyncio.sleep(PRE_LOAD_NEXT_MATCH_DELAY_SEC)
-                    self.pre_load_next_match()
+                    await self.pre_load_next_match()
 
                 asyncio.create_task(pre_load_next_match_delay())
 
@@ -600,7 +600,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             ):
                 return match
 
-    def pre_load_next_match(self):
+    async def pre_load_next_match(self):
         if self.match_state != MatchState.POST_MATCH:
             return
 
@@ -620,10 +620,10 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         # if nexus
 
         teams = [models.read_team_by_id(team_id) for team_id in team_ids]
-        self.setup_network(teams, True)
+        await self.setup_network(teams, True)
         self.team_signs.set_next_match_teams(teams)
 
-    def setup_network(self, teams: list[models.Team], is_preload: bool):
+    async def setup_network(self, teams: list[models.Team], is_preload: bool):
         if is_preload:
             self.preloaded_teams = teams
         elif self.preloaded_teams is not None:
@@ -634,7 +634,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
         if self.event.network_security_enabled:
             try:
-                self.access_point.configure_team_wifi(teams)
+                await self.access_point.configure_team_wifi(teams)
             except RuntimeError as e:
                 logger.error(f'Failed to configure team wifi: {e}')
                 return

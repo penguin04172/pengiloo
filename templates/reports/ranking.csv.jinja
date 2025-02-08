@@ -1,0 +1,3 @@
+Rank,TeamId,RankingPoints,CoopertitionPoints,MatchPoints,AutoPoints,BargePoints,Wins,Losses,Ties,Disqualifications,Played
+{% for ranking in rankings %}{{ ranking.rank }},{{ ranking.team_id }},{{ ranking.ranking_points }},{{ ranking.coopertition_points }},{{ ranking.match_points }},{{ ranking.auto_points }},{{ ranking.stage_points }},{{ ranking.wins }},{{ ranking.losses }},{{ ranking.ties }},{{ ranking.disqualifications }},{{ ranking.played }}
+{% endfor %}

@@ -2,14 +2,15 @@ import asyncio
 
 import fastapi
 import uvicorn
+from fastapi.staticfiles import StaticFiles
 
-from api.arena import APIArena
-from api.router import api_router
+import web
 from field.arena import Arena
 from models.base import db
-from web import index
+from web.arena import APIArena
 
 app = fastapi.FastAPI()
+app.mount('/static', StaticFiles(directory='static'), name='static')
 
 
 async def main():
@@ -21,8 +22,7 @@ async def main():
     APIArena.set_instance(arena)
     arena_task = asyncio.create_task(arena.run())
 
-    app.include_router(api_router)
-    app.include_router(index.router)
+    app.include_router(web.router)
 
     config = uvicorn.Config(app, '0.0.0.0', 8000, workers=4)
     server = uvicorn.Server(config)

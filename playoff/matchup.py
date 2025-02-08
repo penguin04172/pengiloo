@@ -157,6 +157,9 @@ class Matchup:
     def is_complete(self):
         return self.winning_alliance_id() > 0
 
+    def is_losing_alliance_eliminated(self):
+        return self.losing_alliance_destination is None
+
     def is_final(self):
         return self.id == 'F'
 

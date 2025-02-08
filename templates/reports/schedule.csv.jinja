@@ -1,0 +1,3 @@
+Match,Type,Time,Red1,Red1IsSurrogate,Red2,Red2IsSurrogate,Red3,Red3IsSurrogate,Blue1,Blue1IsSurrogate,Blue2,Blue2IsSurrogate,Blue3,Blue3IsSurrogate
+{% for match in matches %}{{ match.short_name }},{{ match.type }},{{ match.schedule_time }},{{ match.red1 }},{{ match.red1_is_surrogate }},{{ match.red2 }},{{ match.red2_is_surrogate }},{{ match.red3 }},{{ match.red3_is_surrogate }},{{ match.blue1 }},{{ match.blue1_is_surrogate }},{{ match.blue2 }},{{ match.blue2_is_surrogate }},{{ match.blue3 }},{{ match.blue3_is_surrogate }}
+{% endfor %}

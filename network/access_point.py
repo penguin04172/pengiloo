@@ -53,7 +53,7 @@ class AccessPoint:
         # 新增配置請求佇列
         self.config_request_queue = asyncio.Queue(10)
 
-    def set_settings(
+    async def set_settings(
         self,
         address: str,
         password: str,
