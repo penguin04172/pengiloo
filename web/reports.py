@@ -1,17 +1,17 @@
 import asyncio
-from datetime import datetime
-from io import BytesIO
+from datetime import datetime, timedelta
+from io import BytesIO, StringIO
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fpdf import FPDF
 from pydantic import BaseModel
 
 import game
 import models
-import playoff
 import tournament
 
+from .api.bracket_svg import generate_bracket_svg
 from .arena import get_arena
 from .template_config import templates
 
@@ -27,8 +27,9 @@ router = APIRouter(prefix='/reports', tags=['reports'])
 
 
 @router.get('/csv/rankings')
-async def get_csv_rankings():
+async def get_csv_rankings(request: Request):
     return templates.TemplateResponse(
+        request,
         'reports/rankings.csv.jinja',
         {'rankings': models.read_all_rankings()},
         media_type='text/plain',
@@ -37,7 +38,7 @@ async def get_csv_rankings():
 
 
 @router.get('/pdf/rankings')
-async def get_pdf_rankings() -> StreamingResponse:
+async def get_pdf_rankings(request: Request) -> StreamingResponse:
     rankings = models.read_all_rankings()
 
     pdf = PDF(orientation='P', unit='mm', format='Letter')
@@ -96,8 +97,7 @@ async def get_pdf_rankings() -> StreamingResponse:
         pdf.ln(row_height)
 
     # **將 PDF 存入記憶體（BytesIO）**
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)  # **將指標移到開始，準備傳輸**
 
     return StreamingResponse(
@@ -138,7 +138,7 @@ class BackupTeam(BaseModel):
 
 
 @router.get('/csv/backup_teams')
-async def get_csv_backup_teams():
+async def get_csv_backup_teams(request: Request):
     rankings = models.read_all_rankings()
 
     rankings, picked_backups = await asyncio.to_thread(find_backup_teams, rankings)
@@ -154,6 +154,7 @@ async def get_csv_backup_teams():
     ]
 
     return templates.TemplateResponse(
+        request,
         'reports/backups.csv.jinja',
         {'backup_teams': backup_teams},
         media_type='text/plain',
@@ -162,7 +163,7 @@ async def get_csv_backup_teams():
 
 
 @router.get('/pdf/backup_teams')
-async def get_pdf_backup_teams() -> StreamingResponse:
+async def get_pdf_backup_teams(request: Request) -> StreamingResponse:
     rankings = models.read_all_rankings()
 
     rankings, picked_backups = await asyncio.to_thread(find_backup_teams, rankings)
@@ -193,8 +194,7 @@ async def get_pdf_backup_teams() -> StreamingResponse:
         pdf.cell(col_widths['RP'], row_height, str(ranking.ranking_points), border=1, align='C')
         pdf.ln(row_height)
 
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)
 
     return StreamingResponse(
@@ -267,7 +267,7 @@ def _draw_timeout_coupon(
 
 
 @router.get('/pdf/coupons')
-async def get_pdf_coupons() -> StreamingResponse:
+async def get_pdf_coupons(request: Request) -> StreamingResponse:
     pdf = FPDF('P', 'mm', 'Letter')
     pdf.set_line_width(1)
 
@@ -304,8 +304,7 @@ async def get_pdf_coupons() -> StreamingResponse:
             height_acc += C_HEIGHT + C_V_PAD
             _draw_backup_coupon(pdf, event_name, backup_x, backup_y, alliance_captain, i + 1)
 
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)
 
     return StreamingResponse(
@@ -316,7 +315,7 @@ async def get_pdf_coupons() -> StreamingResponse:
 
 
 @router.get('/csv/schedule/{type}')
-async def get_csv_schedule(type: str):
+async def get_csv_schedule(request: Request, type: str):
     try:
         match_type = models.MatchType[type.upper()]
     except KeyError as e:
@@ -325,6 +324,7 @@ async def get_csv_schedule(type: str):
     matches = models.read_matches_by_type(match_type, False)
 
     return templates.TemplateResponse(
+        request,
         'reports/schedule.csv.jinja',
         {'matches': matches},
         media_type='text/plain',
@@ -333,7 +333,7 @@ async def get_csv_schedule(type: str):
 
 
 @router.get('/pdf/schedule/{type}')
-async def get_pdf_schedule(type: str) -> StreamingResponse:
+async def get_pdf_schedule(requset: Request, type: str) -> StreamingResponse:
     try:
         match_type = models.MatchType[type.upper()]
     except KeyError as e:
@@ -498,8 +498,7 @@ async def get_pdf_schedule(type: str) -> StreamingResponse:
     if match_type != models.MatchType.PLAYOFF:
         pdf.cell(195, 10, f'Matches per team: {matches_per_team}', ln=True, align='L')
 
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)
 
     return StreamingResponse(
@@ -510,8 +509,9 @@ async def get_pdf_schedule(type: str) -> StreamingResponse:
 
 
 @router.get('/csv/teams')
-async def get_csv_teams():
+async def get_csv_teams(request: Request):
     return templates.TemplateResponse(
+        request,
         'reports/teams.csv.jinja',
         {'teams': models.read_all_teams()},
         media_type='text/plain',
@@ -520,7 +520,7 @@ async def get_csv_teams():
 
 
 @router.get('/pdf/teams')
-async def get_pdf_teams(show_has_connected: bool) -> StreamingResponse:
+async def get_pdf_teams(request: Request, show_has_connected: bool) -> StreamingResponse:
     teams = models.read_all_teams()
 
     col_widths = {'Id': 12, 'Name': 80, 'Location': 80, 'RookieYear': 23}
@@ -591,8 +591,7 @@ async def get_pdf_teams(show_has_connected: bool) -> StreamingResponse:
             )
         pdf.ln(team_row_height)
 
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)
 
     return StreamingResponse(
@@ -603,7 +602,7 @@ async def get_pdf_teams(show_has_connected: bool) -> StreamingResponse:
 
 
 @router.get('/csv/wpakeys')
-async def get_csv_wpakeys():
+async def get_csv_wpakeys(request: Request):
     return StreamingResponse(
         'Team,WPAPassword\n'
         + '\n'.join(f'{team.id},{team.wpakey}' for team in models.read_all_teams()),
@@ -613,7 +612,7 @@ async def get_csv_wpakeys():
 
 
 @router.get('/pdf/alliances')
-async def get_pdf_alliances() -> StreamingResponse:
+async def get_pdf_alliances(request: Request) -> StreamingResponse:
     alliances = models.read_all_alliances()
 
     alliance_statuses = {}
@@ -725,8 +724,7 @@ async def get_pdf_alliances() -> StreamingResponse:
         pdf.set_x(start_x)
         pdf.ln(alliance_height)
 
-    pdf_bytes = BytesIO()
-    pdf.output(pdf_bytes)
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
     pdf_bytes.seek(0)
 
     return StreamingResponse(
@@ -737,8 +735,127 @@ async def get_pdf_alliances() -> StreamingResponse:
 
 
 @router.get('/pdf/bracket')
-async def get_pdf_bracket() -> StreamingResponse:
-    pass
+async def get_pdf_bracket(request: Request) -> StreamingResponse:
+    svg = await generate_bracket_svg(None)
+
+    return templates.TemplateResponse(
+        request,
+        'reports/bracket.html.jinja',
+        {'svg': svg},
+    )
+
+
+@router.get('/pdf/cycle/{type}')
+async def get_pdf_cycle(request: Request, type: str):
+    try:
+        cycle_type = models.MatchType[type.upper()]
+    except KeyError as e:
+        raise HTTPException(400, f'Invalid match type: {type.upper()}') from e
+
+    matches = models.read_matches_by_type(cycle_type, False)
+
+    col_widths = {'Time': 30, 'Time2': 22, 'Match': 15, 'Diff': 20}
+    row_height = 6.5
+
+    pdf = PDF('P', 'mm', 'Letter')
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 10)
+    pdf.set_fill_color(220, 220, 220)
+    pdf.cell(
+        195,
+        row_height,
+        f'{cycle_type.name.capitalize()} Cycle Time - {get_arena().event.name}',
+        ln=True,
+        align='C',
+    )
+    pdf.cell(col_widths['Match'], row_height, 'Match', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Time'], row_height, 'Scheduled Time', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Time2'], row_height, 'Ready', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Time2'], row_height, 'Started', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Time2'], row_height, 'Commited', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Diff'], row_height, 'Cycle Time', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Diff'], row_height, 'Delta Time', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Diff'], row_height, 'MC Time', border=1, align='C', fill=True)
+    pdf.cell(col_widths['Diff'], row_height, 'Ref Time', border=1, align='C', fill=True)
+
+    pdf.set_font('Arial', '', 10)
+    last_match = None
+    for match in matches:
+        height = row_height
+        border_str = '1'
+        align_str = 'CM'
+
+        field_ready = (
+            '' if match.field_ready_at is None else match.field_ready_at.strftime('%I:%M %p')
+        )
+
+        started_at = '' if match.started_at is None else match.started_at.strftime('%I:%M %p')
+
+        score_committed = (
+            '' if match.score_commit_at is None else match.score_commit_at.strftime('%I:%M %p')
+        )
+
+        ref_time = ''
+        if match.started_at is not None and match.score_commit_at is not None:
+            temp_ref_time = match.score_commit_at - (
+                match.started_at + timedelta(seconds=game.timing.get_duration_to_teleop_end())
+            )
+            ref_time = str(temp_ref_time.seconds // 60) + ':' + str(temp_ref_time.seconds % 60)
+
+        mc_time = ''
+        if match.started_at is not None and match.field_ready_at is not None:
+            temp_mc_time = match.started_at - match.field_ready_at
+            mc_time = str(temp_mc_time.seconds // 60) + ':' + str(temp_mc_time.seconds % 60)
+
+        delta_time = ''
+        if match.started_at is not None:
+            temp_delta_time = match.started_at - match.scheduled_time
+            delta_time = (
+                str(temp_delta_time.seconds // 60) + ':' + str(temp_delta_time.seconds % 60)
+            )
+
+        cycle_time = ''
+        if last_match is not None and match.started_at is not None:
+            temp_cycle_time = match.started_at - last_match
+            cycle_time = (
+                str(temp_cycle_time.seconds // 60) + ':' + str(temp_cycle_time.seconds % 60)
+            )
+
+        last_match = match.started_at
+
+        pdf.cell(col_widths['Match'], height, match.short_name, border=border_str, align=align_str)
+        pdf.cell(
+            col_widths['Time'], height, match.scheduled_time.strftime('%m/%d %I:%M %p'), border=1
+        )
+        pdf.cell(col_widths['Time2'], height, field_ready, border=1)
+        pdf.cell(col_widths['Time2'], height, started_at, border=1)
+        pdf.cell(col_widths['Time2'], height, score_committed, border=1)
+        pdf.cell(col_widths['Diff'], height, cycle_time, border=1)
+        pdf.cell(col_widths['Diff'], height, delta_time, border=1)
+        pdf.cell(col_widths['Diff'], height, mc_time, border=1)
+        pdf.cell(col_widths['Diff'], height, ref_time, border=1)
+        pdf.ln(height)
+
+    pdf_bytes = BytesIO(pdf.output(dest='S').encode('latin1'))
+    pdf_bytes.seek(0)
+
+    return StreamingResponse(
+        pdf_bytes,
+        media_type='application/pdf',
+        headers={'Content-Disposition': 'inline; filename="cycle.pdf"'},
+    )
+
+
+@router.get('/csv/fta')
+async def get_csv_fta(request: Request):
+    return templates.TemplateResponse(
+        request,
+        'reports/fta.csv.jinja',
+        {'teams': models.read_all_teams()},
+        media_type='text/plain',
+        headers={'Content-Disposition': 'inline; filename="fta.csv"'},
+    )
 
 
 def _draw_multi_line_cell(

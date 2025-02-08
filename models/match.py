@@ -50,9 +50,9 @@ class MatchDB(db.Entity):
     blue2_is_surrogate = Optional(bool)
     blue3 = Optional(int)
     blue3_is_surrogate = Optional(bool)
-    started_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
-    score_commit_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
-    field_ready_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
+    started_at = Optional(datetime, volatile=True)
+    score_commit_at = Optional(datetime, volatile=True)
+    field_ready_at = Optional(datetime, volatile=True)
     status = Required(int, default=MatchStatus.MATCH_SCHEDULE)
     use_tiebreak_criteria = Optional(bool)
     tba_match_key = Optional(Json)
@@ -65,9 +65,9 @@ class Match(BaseModel):
     short_name: str = ''
     scheduled_time: datetime = datetime.fromtimestamp(0)
     name_detail: str = ''
-    playoff_match_group_id: str | None = None
-    playoff_red_alliance: int | None = None
-    playoff_blue_alliance: int | None = None
+    playoff_match_group_id: str = None
+    playoff_red_alliance: int = None
+    playoff_blue_alliance: int = None
     red1: int = 0
     red1_is_surrogate: bool = False
     red2: int = 0
@@ -80,11 +80,11 @@ class Match(BaseModel):
     blue2_is_surrogate: bool = False
     blue3: int = 0
     blue3_is_surrogate: bool = False
-    started_at: datetime | None = None
-    score_commit_at: datetime | None = None
-    field_ready_at: datetime | None = None
-    status: MatchStatus | None = None
-    use_tiebreak_criteria: bool | None = None
+    started_at: datetime = None
+    score_commit_at: datetime = None
+    field_ready_at: datetime = None
+    status: MatchStatus = None
+    use_tiebreak_criteria: bool = None
     tba_match_key: TbaMatchKey = TbaMatchKey()
     id: int = None
 

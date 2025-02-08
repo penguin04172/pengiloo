@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from . import (
+    bracket_svg,
     displays_alliance_station,
     displays_announcer,
     displays_audience,
@@ -30,6 +31,8 @@ from . import (
 )
 
 router = APIRouter(prefix='/api')
+
+router.include_router(bracket_svg.router)
 
 router.include_router(setup_awards.router)
 router.include_router(setup_displays.router)
