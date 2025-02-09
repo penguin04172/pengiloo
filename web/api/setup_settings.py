@@ -137,7 +137,7 @@ async def save_db() -> FileResponse:
     filename = (
         f'{get_arena().event.name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}.db'
     )
-    return FileResponse('./pengiloo.db', filename=filename)
+    return FileResponse('pengiloo.db', filename=filename)
 
 
 @db_router.post('/restore')
@@ -157,18 +157,18 @@ async def clear_db(type: str) -> dict:
 
     models.backup_db(models.read_event_settings().name, 'clear')
     if match_type == models.MatchType.PRACTICE:
-        delete_match_date_for_type(models.MatchType.PRACTICE)
+        delete_match_data_for_type(models.MatchType.PRACTICE)
     elif match_type == models.MatchType.QUALIFICATION:
-        delete_match_date_for_type(models.MatchType.QUALIFICATION)
+        delete_match_data_for_type(models.MatchType.QUALIFICATION)
         models.truncate_ranking()
     elif match_type == models.MatchType.PLAYOFF:
-        delete_match_date_for_type(models.MatchType.PLAYOFF)
+        delete_match_data_for_type(models.MatchType.PLAYOFF)
         models.truncate_alliance()
 
     return {'status': 'success'}
 
 
-def delete_match_date_for_type(match_type: models.MatchType):
+def delete_match_data_for_type(match_type: models.MatchType):
     matches = models.read_matches_by_type(match_type, True)
     for match in matches:
         match_result = models.read_match_result_for_match(match.id)

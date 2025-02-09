@@ -42,7 +42,7 @@ async def clear_teams() -> dict:
     return {'status': 'success'}
 
 
-@router.get('/wpa')
+@router.get('/generate_wpa_keys')
 async def generate_wpa_keys(all: bool = False) -> dict:
     teams = models.read_all_teams()
     for team in teams:

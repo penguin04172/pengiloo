@@ -29,7 +29,7 @@ from .specs import (
 )
 from .team_sign import TeamSigns
 
-logger = logging.getLogger('arena')
+logger = logging.getLogger(__name__)
 
 
 class AllianceStation:
@@ -519,7 +519,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
         self.handle_sounds(match_time_sec)
         # self.handle_plc_io()
-        self.team_signs.update(self)
+        # self.team_signs.update(self)
 
         self.last_match_time_sec = match_time_sec
         self.last_match_state = self.match_state

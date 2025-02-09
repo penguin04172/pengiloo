@@ -9,6 +9,8 @@ import network
 
 from .specs import MatchState
 
+logger = logging.getLogger(__name__)
+
 DRIVER_STATION_TCP_LISTEN_PORT = 1750
 DRIVER_STATION_UDP_SEND_PORT = 1121
 DRIVER_STATION_UDP_RECEIVE_PORT = 1160
@@ -56,7 +58,7 @@ class DriverStationConnection:
         ds_conn.tcp_conn = tcp_conn
         if ds_conn.tcp_conn is not None:
             ip_address, _ = ds_conn.tcp_conn[1].get_extra_info('peername')
-            logging.info(f'Driver station for Team {ds_conn.team_id} connected from {ip_address}')
+            logger.info(f'Driver station for Team {ds_conn.team_id} connected from {ip_address}')
             loop = asyncio.get_running_loop()
             ds_conn.udp_conn, _ = await loop.create_datagram_endpoint(
                 lambda: asyncio.DatagramProtocol(),
@@ -191,10 +193,10 @@ class DriverStationConnection:
                         self.tcp_conn[0].read(38), timeout=DRIVER_STATION_TCP_LINK_TIMEOUT_SEC
                     )
                 except asyncio.TimeoutError:  # noqa: UP041
-                    logging.error(f'TCP connection timeout for Team {self.team_id}')
+                    logger.error(f'TCP connection timeout for Team {self.team_id}')
                     break
                 except Exception as err:
-                    logging.error(f'Error reading from connection for Team {self.team_id}: {err}')
+                    logger.error(f'Error reading from connection for Team {self.team_id}: {err}')
                     break
 
                 packet_type = int(packet[2])
@@ -211,7 +213,7 @@ class DriverStationConnection:
                         if match_time_sec > 0 and self.log is not None:
                             pass
                     case _:
-                        logging.info(
+                        logger.info(
                             f'Received unknown packet type {packet_type} from Team {self.team_id}'
                         )
         finally:
@@ -272,13 +274,17 @@ class DriverStationConnectionMixin:
         super().__init__(*args, **kwargs)
 
     async def listen_for_ds_udp_packets(self):
-        loop = asyncio.get_running_loop()
-        transport, _ = await loop.create_datagram_endpoint(
-            lambda: AsyncUDPServerProtocol(self.alliance_stations),
-            local_addr=('0.0.0.0', DRIVER_STATION_UDP_RECEIVE_PORT),
-        )
+        try:
+            loop = asyncio.get_running_loop()
+            transport, _ = await loop.create_datagram_endpoint(
+                lambda: AsyncUDPServerProtocol(self.alliance_stations),
+                local_addr=('0.0.0.0', DRIVER_STATION_UDP_RECEIVE_PORT),
+            )
+        except OSError as err:
+            logger.error(f'Error starting driver station UDP listener: {err}')
+            return
 
-        logging.info(f'Listening for driver stations on UDP port {DRIVER_STATION_UDP_RECEIVE_PORT}')
+        logger.info(f'Listening for driver stations on UDP port {DRIVER_STATION_UDP_RECEIVE_PORT}')
         try:
             while True:
                 await asyncio.sleep(60)
@@ -295,20 +301,20 @@ class DriverStationConnectionMixin:
                 DRIVER_STATION_TCP_LISTEN_PORT,
             )
         except OSError as err:
-            logging.error(f'Error starting driver station listener: {err}')
+            logger.error(f'Error starting driver station listener: {err}')
             return
-        logging.info(f'Listening for ds on TCP port {DRIVER_STATION_TCP_LISTEN_PORT}')
+        logger.info(f'Listening for ds on TCP port {DRIVER_STATION_TCP_LISTEN_PORT}')
         async with listener:
             await listener.serve_forever()
 
     async def handle_rejected_connection(team_id, writer: asyncio.StreamWriter):
-        logging.warning(
+        logger.warning(
             f'Rejecting connection from Team {team_id}, who is not in the current match.'
         )
         await asyncio.sleep(1)  # 等待 1 秒
         writer.close()  # 關閉連接
         await writer.wait_closed()  # 等待連接關閉
-        logging.info(f'Closed connection for Team {team_id}.')
+        logger.info(f'Closed connection for Team {team_id}.')
 
     async def handle_ds_tcp_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -318,7 +324,7 @@ class DriverStationConnectionMixin:
             packet = await reader.read(5)
 
             if not (packet[0] == 0 and packet[1] == 3 and packet[2] == 24):
-                logging.info(f'Invalid initial packet received: {packet}')
+                logger.info(f'Invalid initial packet received: {packet}')
                 writer.close()
                 await writer.wait_closed()
                 return
@@ -327,7 +333,7 @@ class DriverStationConnectionMixin:
 
             assigned_station = self.get_assigned_alliance_station(team_id)
             if assigned_station == '':
-                logging.info(
+                logger.info(
                     f'Rejecting connection from Team {team_id}, is not in current match, soon.'
                 )
                 asyncio.create_task(self.handle_rejected_connection(team_id, writer))
@@ -343,13 +349,13 @@ class DriverStationConnectionMixin:
             if station_team_id != team_id:
                 wrong_assigned_station = self.get_assigned_alliance_station(station_team_id)
                 if wrong_assigned_station != '':
-                    logging.info(f'Team {team_id} is in incorrect station {wrong_assigned_station}')
+                    logger.info(f'Team {team_id} is in incorrect station {wrong_assigned_station}')
                     station_status = 1
 
             assignment_packet = bytearray(
                 [0, 3, 25, alliance_station_position_map[assigned_station], station_status]
             )
-            logging.info(f'Accepting connection from Team {team_id} in station {assigned_station}')
+            logger.info(f'Accepting connection from Team {team_id} in station {assigned_station}')
             writer.write(assignment_packet)
             await writer.drain()
 
@@ -364,7 +370,7 @@ class DriverStationConnectionMixin:
             await ds_conn.handle_tcp_connection(self)
 
         except Exception as err:
-            logging.error(f'Error handling connection from {ip_address}: {err}')
+            logger.error(f'Error handling connection from {ip_address}: {err}')
         finally:
             writer.close()
             await writer.wait_closed()

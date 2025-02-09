@@ -1,0 +1,103 @@
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container">
+        <a class="navbar-brand" href="/">Pengiloo</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Settings
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+                        <li><a class="dropdown-item" href="/setup/settings">Event</a></li>
+                        <li><a class="dropdown-item" href="/setup/teams">Teams</a></li>
+                        <li><a class="dropdown-item" href="/setup/schedule">Schedule</a></li>
+                        <li><a class="dropdown-item" href="/setup/award">Awards</a></li>
+                        <li><a class="dropdown-item" href="/setup/lower_third">Lower Thirds</a></li>
+                        <li><a class="dropdown-item" href="/setup/sponsor_slide">Sponsors</a></li>
+                        <li><a class="dropdown-item" href="/setup/display">Displays</a></li>
+                        <li><a class="dropdown-item" href="/setup/field">Field</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="runDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Run
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="runDropdown">
+                        <li><a class="dropdown-item" href="/match_play">Match Control</a></li>
+                        <li><a class="dropdown-item" href="/match_review">Match Review</a></li>
+                        <li><a class="dropdown-item" href="/match_logs">Match Logs</a></li>
+                        <li><a class="dropdown-item" href="/alliance_selection">Alliance Selection</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/panels">Panels</a>
+                    </li>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Reports
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                        <li><a class="dropdown-item disabled">PDFs</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/teams">Teams</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/schedule/practice">Practice Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/schedule/qualification">Qualification Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/schedule/playoff">Playoff Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/rankings">Ranking</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/alliances">Playoff Alliances</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/bracket">Playoff Brackets</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/backups">Playoff Backups</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/coupons">Playoff Coupons</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/teams?show_has_connected=true">Team Connections</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/cycle/practice">Practice Cycle</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/cycle/qualification">Qualification Cycle</a></li>
+                        <li><a class="dropdown-item" href="/reports/pdf/cycle/playoff">Playoff Cycle</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item disabled">CSVs</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/teams">Teams</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/fta">FTA</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/schedule/practice">Practice Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/schedule/qualification">Qualification Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/schedule/playoff">Playoff Schedule</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/rankings">Ranking</a></li>
+                        <li><a class="dropdown-item" href="/reports/csv/backups">Backups</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="displaysDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Displays
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="displaysDropdown">
+                        <li><a class="dropdown-item" href="/display">Placeholder</a></li>
+                        <li><a class="dropdown-item" href="/displays/announcer">Announcer</a></li>
+                        <li><a class="dropdown-item" href="/displays/audience">Audience</a></li>
+                        <li><a class="dropdown-item" href="/displays/bracket">Bracket</a></li>
+                        <li><a class="dropdown-item" href="/displays/field_monitor">Field Monitor</a></li>
+                        <li><a class="dropdown-item" href="/displays/field_monitor?fta=true">Field Monitor (FTA)</a></li>
+                        <li><a class="dropdown-item" href="/displays/field_monitor?ds=true&reversed=true">Field Monitor (Blue DS)</a></li>
+                        <li><a class="dropdown-item" href="/displays/field_monitor?ds=true&reversed=false">Field Monitor (Red DS)</a></li>
+                        <li><a class="dropdown-item" href="/displays/queueing">Queueing</a></li>
+                        <li><a class="dropdown-item" href="/displays/rankings">Ranking</a></li>
+                        <li><a class="dropdown-item" href="/displays/wall">Wall</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item disabled">Alliance Station</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=R1">Red 1</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=R2">Red 2</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=R3">Red 3</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=B1">Blue 1</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=B2">Blue 2</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=B3">Blue 3</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item disabled">Other Station</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=N1">Blue Score</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=N2">Clock</a></li>
+                        <li><a class="dropdown-item" href="/displays/alliance_station?station=N3">Red Score</a></li>
+                    </ul>
+                </li>
+            </ul>
+    </div>
+</nav>

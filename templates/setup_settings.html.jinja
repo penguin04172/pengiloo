@@ -1,0 +1,461 @@
+{% extends "base.html.jinja" %}
+{% block title %}Pengloo{% endblock %}
+{% block navbar %}{% include "navbar.html.jinja" %}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-8">
+            <div class="card bg-body-tertiary">
+                <h4 class="card-header">Settings</h4>
+                <div class="card-body">
+                    {# Event #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Event</legend>
+                        <div class="row mb-3">
+                            <label for="eventName" class="col-lg-6 col-form-label">Event Name</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="name" id="eventName">
+                            </div>
+                        </div>
+                        <fieldset class="row mb-3">
+                            <legend class="col-form-label col-lg-6 pt-0">Playoff Type</legend>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios1" value="DoubleEliminationPlayoff" checked>
+                                    <label class="form-check-label" for="playoffRadios1">Double-Elimination (8)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios2" value="SingleEliminationPlayoff">
+                                    <label class="form-check-label" for="playoffRadios2">Single-Elimination (2-16)</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="row mb-3">
+                            <label for="numPlayoffAlliances" class="col-lg-6 col-form-label">Alliances Count</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="numPlayoffAlliances" id="numPlayoffAlliances">
+                            </div>
+                        </div>
+                        <fieldset class="row mb-3">
+                            <legend class="col-form-label col-lg-6 pt-0">Round 2 Selection Order</legend>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectionRound2Order" id="round2Radios1" value="F" checked>
+                                    <label class="form-check-label" for="round2Radios1">First to Last</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectionRound2Order" id="round2Radios2" value="L">
+                                    <label class="form-check-label" for="round2Radios2">Last to First</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="row mb-3">
+                            <legend class="col-form-label col-lg-6 pt-0">Round 3 Selection Order</legend>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectionRound3Order" id="round3Radios1" value="F" checked>
+                                    <label class="form-check-label" for="round3Radios1">First to Last</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectionRound3Order" id="round3Radios2" value="L">
+                                    <label class="form-check-label" for="round3Radios2">Last to First</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectionRound3Order" id="round3Radios3" value="">
+                                    <label class="form-check-label" for="round3Radios3">None</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="row mb-3">
+                            <label class="form-check-label col-lg-6" for="selectionShowUnpickedTeams">
+                                Show Unpicked Teams On Overlay
+                            </label>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectionShowUnpickedTeams" name="selectionShowUnpickedTeams">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# TBA #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">TBA</legend>
+                        <p>Contact The Blue Alliance to obtain an event code and credentials.</p>
+                        <div class="row mb-3">
+                            <label class="form-check-label col-lg-6" for="tbaDownloadEnabled">
+                                Enabled Download Team from TBA
+                            </label>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="tbaDownloadEnabled" name="tbaDownloadEnabled">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-check-label col-lg-6" for="tbaPublishingEnabled">
+                                Enabled Upload Match to TBA
+                            </label>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="tbaPublishingEnabled" name="tbaPublishingEnabled">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="tbaEventCode" class="col-lg-6 col-form-label">TBA Event Code</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="tbaEventCode" id="tbaEventCode">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="tbaSecretId" class="col-lg-6 col-form-label">TBA Auth ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="tbaSecretId" id="tbaSecretId">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="tbaSecret" class="col-lg-6 col-form-label">TBA Secret</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="tbaSecret" id="tbaSecret">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Nexus #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Nexus</legend>
+                        <p>Automatically populates practice and playoff match lineups from Nexus.
+                            Uses the same event code as TBA; configure it above if enabling.</p>
+                        <div class="row mb-3">
+                            <label class="form-check-label col-lg-6" for="nexusEnabled">
+                                Enabled Pulling Lineup from Nexus
+                            </label>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="nexusEnabled" name="nexusEnabled">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Authentication #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Authentication</legend>
+                        <p>Configure password to enable, or just leave blank.</p>
+                        <div class="row mb-3">
+                            <label for="adminPassword" class="col-lg-6 col-form-label">Admin Password</label>
+                            <div class="col-lg-6">
+                                <input type="password" class="form-control" name="adminPassword" id="adminPassword">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Network #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Networking</legend>
+                        <p>Enable this if you have openwrt based AP and Switch.</p>
+                        <div class="row mb-3">
+                            <label class="form-check-label col-lg-6" for="networkSecurityEnabled">
+                                Enabled Advanced Network Security
+                            </label>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="networkSecurityEnabled" name="networkSecurityEnabled">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="apAddress" class="col-lg-6 col-form-label">AP Address</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="apAddress" id="apAddress">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="apPassword" class="col-lg-6 col-form-label">AP Password</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="apPassword" id="apPassword">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-lg-6 col-form-label">AP Channel</label>
+                            <div class="col-lg-6">
+                                <select class="form-select" name="apChannel" id="apChannel">
+                                    <option value="36">36 (5GHz)</option>
+                                    <option value="40">40 (5GHz)</option>
+                                    <option value="44">44 (5GHz)</option>
+                                    <option value="48">48 (5GHz)</option>
+                                    <option value="149">149 (5GHz)</option>
+                                    <option value="153">153 (5GHz)</option>
+                                    <option value="157">157 (5GHz)</option>
+                                    <option value="161">161 (5GHz)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="switchAddress" class="col-lg-6 col-form-label">Switch Address</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="switchAddress" id="switchAddress">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="switchPassword" class="col-lg-6 col-form-label">Switch Password</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="switchPassword" id="switchPassword">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# PLC #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">PLC</legend>
+                        <p>Configure the IP address of the PLC to enable.</p>
+                        <div class="row mb-3">
+                            <label for="plcAddress" class="col-lg-6 col-form-label">PLC Address</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="plcAddress" id="plcAddress">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Team Signs #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Team Signs</legend>
+                        <p>Configure the ID of the Team Signs to enable.</p>
+                        <div class="row mb-3">
+                            <label for="teamSignRed1Id" class="col-lg-6 col-form-label">Red 1 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignRed1Id" id="teamSignRed1Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignRed2Id" class="col-lg-6 col-form-label">Red 2 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignRed2Id" id="teamSignRed2Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignRed3Id" class="col-lg-6 col-form-label">Red 3 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignRed3Id" id="teamSignRed3Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignRedTimerId" class="col-lg-6 col-form-label">Red Timer Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignRedTimerId" id="teamSignRedTimerId">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignBlue1Id" class="col-lg-6 col-form-label">Blue 1 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignBlue1Id" id="teamSignBlue1Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignBlue2Id" class="col-lg-6 col-form-label">Blue 2 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignBlue2Id" id="teamSignBlue2Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignBlue3Id" class="col-lg-6 col-form-label">Blue 3 Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignBlue3Id" id="teamSignBlue3Id">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSignBlueTimerId" class="col-lg-6 col-form-label">Blue Timer Sign ID</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teamSignBlueTimerId" id="teamSignBlueTimerId">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# BlackMagic #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">BlackMagic</legend>
+                        <p>Configure the IP address of the BlackMagic to enable.</p>
+                        <div class="row mb-3">
+                            <label for="blackmagicAddress" class="col-lg-6 col-form-label">BlackMagic Address</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="blackmagicAddress" id="blackmagicAddress">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Game Specific #}
+                    <fieldset class="mb-4">
+                        <legend class="card-title">Game Specific</legend>
+                        <div class="row mb-3">
+                            <label for="autoDurationSec" class="col-lg-6 col-form-label">Autonomous Period Duration</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="autoDurationSec" id="autoDurationSec">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="pauseDurationSec" class="col-lg-6 col-form-label">Pause Period Duration</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="pauseDurationSec" id="pauseDurationSec">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teleopDurationSec" class="col-lg-6 col-form-label">Teleop Period Duration</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="teleopDurationSec" id="teleopDurationSec">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="warnDurationSec" class="col-lg-6 col-form-label">Warning Remaining Duration</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="warnDurationSec" id="warnDurationSec">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="autoBonusCoralThreshold" class="col-lg-6 col-form-label">Auto Bonus RP Coral Point Threshold</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="autoBonusCoralThreshold" id="autoBonusCoralThreshold">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="coralBonusNumThreshold" class="col-lg-6 col-form-label">Coral Bonus RP Count Threshold</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="coralBonusNumThreshold" id="coralBonusNumThreshold">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="coralBonusLevelThresholdWithoutCoop" class="col-lg-6 col-form-label">Coral Bonus RP Level Threshold Without Coop</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="coralBonusLevelThresholdWithoutCoop" id="coralBonusLevelThresholdWithoutCoop">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="coralBonusLevelThresholdWithCoop" class="col-lg-6 col-form-label">Coral Bonus RP Level Threshold With Coop</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="coralBonusLevelThresholdWithCoop" id="coralBonusLevelThresholdWithCoop">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="bargeBonusPointThreshold" class="col-lg-6 col-form-label">Barge Bonus RP Point Threshold</label>
+                            <div class="col-lg-6">
+                                <input type="text" class="form-control" name="bargeBonusPointThreshold" id="bargeBonusPointThreshold">
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="row justify-content-center">
+                        <div class="col-2">
+                            <button type="button" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card bg-body-tertiary mb-4">
+                <h4 class="card-header">Database</h4>
+                <div class="card-body">
+                    <p><a href="/api/setup/db/save" class="btn btn-primary">Save Database Copy</a></p>
+                    <p>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadDatabase">
+                            Load Database
+                        </button>
+                    </p>
+                    <p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClearDataPlayoff">
+                            Clear Playoff / Alliances Data
+                        </button>
+                    </p>
+                    <p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClearDataQualification">
+                            Clear Qualification Data
+                        </button>
+                    </p>
+                    <p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClearDataPractice">
+                            Clear Practice Data
+                        </button>
+                    </p>
+                </div>
+            </div>
+            <div class="card bg-body-tertiary">
+                <h4 class="card-header">TBA Publishing</h4>
+                <div class="card-body">
+                    <p><a href="/api/setup/settings/publish_teams" class="btn btn-primary">Publish Teams</a></p>
+                    <p><a href="/api/setup/settings/publish_matches" class="btn btn-primary">Publish Schedule/Results</a></p>
+                    <p><a href="/api/setup/settings/publish_rankings" class="btn btn-primary">Publish Rankings</a></p>
+                    <p><a href="/api/setup/settings/publish_alliances" class="btn btn-primary">Publish Alliances</a></p>
+                    <p><a href="/api/setup/settings/publish_awards" class="btn btn-primary">Publish Awards</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="uploadDatabase" tabindex="-1" aria-labelledby="uploadDatabaseLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="uploadDatabaseLabel">Choose Backup File</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="file" class="form-control" id="uploadDatabaseFile" name="uploadDatabaseFile">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmClearDataPlayoff" tabindex="-1" aria-labelledby="confirmClearDataPlayoffLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="confirmClearDataPlayoffLabel">Confirm</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to clear all playoff and alliance data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger">Clear Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmClearDataQualification" tabindex="-1" aria-labelledby="confirmClearDataQualificationLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="confirmClearDataQualificationLabel">Confirm</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to clear all qualification data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger">Clear Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmClearDataPractice" tabindex="-1" aria-labelledby="confirmClearDataPracticeLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="confirmClearDataPracticeLabel">Confirm</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to clear all practice data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger">Clear Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
