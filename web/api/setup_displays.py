@@ -9,7 +9,7 @@ from web.arena import get_arena
 router = APIRouter(prefix='/setup/displays', tags=['displays'])
 
 
-@router.get('/')
+@router.get('')
 async def get_display_type() -> dict[DisplayType, str]:
     return display_type_names
 

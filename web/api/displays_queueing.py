@@ -17,7 +17,7 @@ NUM_PLAYOFF_MATCHES_TO_SHOW = 4
 router = APIRouter(prefix='/displays/queueing', tags=['displays'])
 
 
-@router.get('/')
+@router.get('')
 async def audience_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(request, display_id, nickname)
     if path is not None:

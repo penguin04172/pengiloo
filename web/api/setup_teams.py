@@ -2,6 +2,7 @@ import random
 import string
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 import models
 from web.arena import get_arena
@@ -11,23 +12,28 @@ router = APIRouter(prefix='/setup/teams', tags=['teams'])
 KEY_CHARS = string.ascii_letters + string.digits
 
 
-@router.get('/')
+@router.get('')
 async def get_teams() -> list[models.Team]:
     teams = models.read_all_teams()
     return teams
 
 
-@router.post('/')
-async def create_team(team_numbers: list[int]) -> dict:
+class TeamsRequest(BaseModel):
+    team_ids: list[int]
+
+
+@router.post('')
+async def create_team(request_body: TeamsRequest) -> list[models.Team | None]:
     if not can_modify_team_list():
         raise HTTPException(
             status_code=400, detail='Cannot modify team list while matches are scheduled.'
         )
 
-    for team_number in team_numbers:
-        models.create_team(team_number)
+    teams = []
+    for team_number in request_body.team_ids:
+        teams.append(models.create_team(models.Team(id=team_number)))
 
-    return {'status': 'success'}
+    return teams
 
 
 @router.delete('/clear')
@@ -102,7 +108,7 @@ async def delete_team(team_number: int) -> dict:
     if team is None:
         raise HTTPException(status_code=404, detail='Team not found')
 
-    models.delete_team(team)
+    models.delete_team(team.id)
 
     return {'status': 'success'}
 

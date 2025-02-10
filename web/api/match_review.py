@@ -27,7 +27,7 @@ class MatchReviewResponse(BaseModel):
     current_match_type: models.MatchType
 
 
-@router.get('/')
+@router.get('')
 async def get_match_review() -> MatchReviewResponse:
     pratice_matches = await build_match_review_list(models.MatchType.PRACTICE)
     qualification_matches = await build_match_review_list(models.MatchType.QUALIFICATION)

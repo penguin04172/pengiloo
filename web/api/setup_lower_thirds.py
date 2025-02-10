@@ -9,7 +9,7 @@ from web.arena import get_arena
 router = APIRouter(prefix='/setup/lower_thirds', tags=['lower_thirds'])
 
 
-@router.get('/')
+@router.get('')
 async def get_lower_thirds() -> list[models.LowerThird]:
     lower_thirds = models.read_all_lower_thirds()
     return lower_thirds

@@ -14,7 +14,7 @@ cached_matches = dict[models.MatchType, list[models.Match]]()
 cached_team_first_match = dict[models.MatchType, dict[int, str]]()
 
 
-@router.get('/')
+@router.get('')
 async def get_schedule(match_type: models.MatchType) -> dict[str, Any]:
     if match_type not in [
         models.MatchType.PRACTICE,

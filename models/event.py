@@ -16,9 +16,10 @@ class PlayoffType(IntEnum):
 class Event(BaseModel):
     name: str = 'Untitled Event'
     playoff_type: int = PlayoffType.DOUBLE_ELIMINATION
-    num_playoff_alliance: int = 8
+    num_playoff_alliances: int = 8
     selection_round_2_order: str = 'L'
     selection_round_3_order: str = ''
+    selection_show_unpicked_teams: bool = True
     tba_download_enabled: bool = False
     tba_publishing_enabled: bool = False
     tba_event_code: str = ''
@@ -41,6 +42,7 @@ class Event(BaseModel):
     team_sign_blue_2_id: int = 0
     team_sign_blue_3_id: int = 0
     team_sign_blue_timer_id: int = 0
+    blackmagic_address: str = ''
     warmup_duration_sec: int = game.timing.warmup_duration_sec
     auto_duration_sec: int = game.timing.auto_duration_sec
     pause_duration_sec: int = game.timing.pause_duration_sec
@@ -62,9 +64,10 @@ class EventDB(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str, default='Untitled Event')
     playoff_type = Required(int, default=PlayoffType.DOUBLE_ELIMINATION)
-    num_playoff_alliance = Required(int, default=8)
+    num_playoff_alliances = Required(int, default=8)
     selection_round_2_order = Required(str, default='L')
     selection_round_3_order = Optional(str)
+    selection_show_unpicked_teams = Required(bool, default=True)
     tba_download_enabled = Required(bool, default=True)
     tba_publishing_enabled = Required(bool, default=False)
     tba_event_code = Optional(str)
@@ -87,6 +90,7 @@ class EventDB(db.Entity):
     team_sign_blue_2_id = Required(int, default=0)
     team_sign_blue_3_id = Required(int, default=0)
     team_sign_blue_timer_id = Required(int, default=0)
+    blackmagic_address = Optional(str)
     warmup_duration_sec = Required(int, default=game.timing.warmup_duration_sec)
     auto_duration_sec = Required(int, default=game.timing.auto_duration_sec)
     pause_duration_sec = Required(int, default=game.timing.pause_duration_sec)

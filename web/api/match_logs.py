@@ -60,7 +60,7 @@ class MatchLogsResponse(BaseModel):
     current_match_type: models.MatchType
 
 
-@router.get('/')
+@router.get('')
 async def get_match_logs() -> MatchLogsResponse:
     pratice_matches = build_match_logs_list(models.MatchType.PRACTICE)
     qualification_matches = build_match_logs_list(models.MatchType.QUALIFICATION)

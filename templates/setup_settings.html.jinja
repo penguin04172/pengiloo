@@ -21,11 +21,11 @@
                             <legend class="col-form-label col-lg-6 pt-0">Playoff Type</legend>
                             <div class="col-lg-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios1" value="DoubleEliminationPlayoff" checked>
+                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios1" value="0" onclick="updateNumAllianceEditable(this.value)">
                                     <label class="form-check-label" for="playoffRadios1">Double-Elimination (8)</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios2" value="SingleEliminationPlayoff">
+                                    <input class="form-check-input" type="radio" name="playoffType" id="playoffRadios2" value="1" onclick="updateNumAllianceEditable(this.value)">
                                     <label class="form-check-label" for="playoffRadios2">Single-Elimination (2-16)</label>
                                 </div>
                             </div>
@@ -40,7 +40,7 @@
                             <legend class="col-form-label col-lg-6 pt-0">Round 2 Selection Order</legend>
                             <div class="col-lg-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="selectionRound2Order" id="round2Radios1" value="F" checked>
+                                    <input class="form-check-input" type="radio" name="selectionRound2Order" id="round2Radios1" value="F">
                                     <label class="form-check-label" for="round2Radios1">First to Last</label>
                                 </div>
                                 <div class="form-check">
@@ -53,7 +53,7 @@
                             <legend class="col-form-label col-lg-6 pt-0">Round 3 Selection Order</legend>
                             <div class="col-lg-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="selectionRound3Order" id="round3Radios1" value="F" checked>
+                                    <input class="form-check-input" type="radio" name="selectionRound3Order" id="round3Radios1" value="F">
                                     <label class="form-check-label" for="round3Radios1">First to Last</label>
                                 </div>
                                 <div class="form-check">
@@ -178,7 +178,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label class="col-lg-6 col-form-label">AP Channel</label>
+                            <legend class="col-lg-6 col-form-label">AP Channel</legend>
                             <div class="col-lg-6">
                                 <select class="form-select" name="apChannel" id="apChannel">
                                     <option value="36">36 (5GHz)</option>
@@ -288,63 +288,63 @@
                     <fieldset class="mb-4">
                         <legend class="card-title">Game Specific</legend>
                         <div class="row mb-3">
-                            <label for="autoDurationSec" class="col-lg-6 col-form-label">Autonomous Period Duration</label>
-                            <div class="col-lg-6">
+                            <label for="autoDurationSec" class="col-lg-8 col-form-label">Autonomous Period Duration</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="autoDurationSec" id="autoDurationSec">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="pauseDurationSec" class="col-lg-6 col-form-label">Pause Period Duration</label>
-                            <div class="col-lg-6">
+                            <label for="pauseDurationSec" class="col-lg-8 col-form-label">Pause Period Duration</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="pauseDurationSec" id="pauseDurationSec">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="teleopDurationSec" class="col-lg-6 col-form-label">Teleop Period Duration</label>
-                            <div class="col-lg-6">
+                            <label for="teleopDurationSec" class="col-lg-8 col-form-label">Teleop Period Duration</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="teleopDurationSec" id="teleopDurationSec">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="warnDurationSec" class="col-lg-6 col-form-label">Warning Remaining Duration</label>
-                            <div class="col-lg-6">
-                                <input type="text" class="form-control" name="warnDurationSec" id="warnDurationSec">
+                            <label for="warningRemainingDurationSec" class="col-lg-8 col-form-label">Warning Remaining Duration</label>
+                            <div class="col-lg-4">
+                                <input type="text" class="form-control" name="warningRemainingDurationSec" id="warningRemainingDurationSec">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="autoBonusCoralThreshold" class="col-lg-6 col-form-label">Auto Bonus RP Coral Point Threshold</label>
-                            <div class="col-lg-6">
+                            <label for="autoBonusCoralThreshold" class="col-lg-8 col-form-label">Auto Bonus RP Coral Point Threshold</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="autoBonusCoralThreshold" id="autoBonusCoralThreshold">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="coralBonusNumThreshold" class="col-lg-6 col-form-label">Coral Bonus RP Count Threshold</label>
-                            <div class="col-lg-6">
+                            <label for="coralBonusNumThreshold" class="col-lg-8 col-form-label">Coral Bonus RP Count Threshold</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="coralBonusNumThreshold" id="coralBonusNumThreshold">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="coralBonusLevelThresholdWithoutCoop" class="col-lg-6 col-form-label">Coral Bonus RP Level Threshold Without Coop</label>
-                            <div class="col-lg-6">
+                            <label for="coralBonusLevelThresholdWithoutCoop" class="col-lg-8 col-form-label">Coral Bonus RP Level Threshold Without Coop</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="coralBonusLevelThresholdWithoutCoop" id="coralBonusLevelThresholdWithoutCoop">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="coralBonusLevelThresholdWithCoop" class="col-lg-6 col-form-label">Coral Bonus RP Level Threshold With Coop</label>
-                            <div class="col-lg-6">
+                            <label for="coralBonusLevelThresholdWithCoop" class="col-lg-8 col-form-label">Coral Bonus RP Level Threshold With Coop</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="coralBonusLevelThresholdWithCoop" id="coralBonusLevelThresholdWithCoop">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="bargeBonusPointThreshold" class="col-lg-6 col-form-label">Barge Bonus RP Point Threshold</label>
-                            <div class="col-lg-6">
+                            <label for="bargeBonusPointThreshold" class="col-lg-8 col-form-label">Barge Bonus RP Point Threshold</label>
+                            <div class="col-lg-4">
                                 <input type="text" class="form-control" name="bargeBonusPointThreshold" id="bargeBonusPointThreshold">
                             </div>
                         </div>
                     </fieldset>
                     <div class="row justify-content-center">
                         <div class="col-2">
-                            <button type="button" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-primary" onclick="uploadSettings()">Save</button>
                         </div>
                     </div>
                 </div>
@@ -377,7 +377,7 @@
                     </p>
                 </div>
             </div>
-            <div class="card bg-body-tertiary">
+            <div class="card bg-body-tertiary" id="tbaPublishingArea">
                 <h4 class="card-header">TBA Publishing</h4>
                 <div class="card-body">
                     <p><a href="/api/setup/settings/publish_teams" class="btn btn-primary">Publish Teams</a></p>
@@ -459,3 +459,15 @@
     </div>
 </div>
 {% endblock %}
+{% block script %}
+<script src="{{ url_for('static', path='js/setup_settings.js') }}"></script>
+<script>
+    
+    getData('/api/setup/settings')
+    .then(settings => parseSettings(settings))
+
+    function updateNumAllianceEditable(playoffType) {
+        $('#numPlayoffAlliances').disabled = playoffType == 0;
+    }
+</script>
+{% endblock script %}

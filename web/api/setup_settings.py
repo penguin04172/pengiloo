@@ -10,13 +10,13 @@ router = APIRouter(prefix='/setup/settings', tags=['settings'])
 db_router = APIRouter(prefix='/setup/db', tags=['db'])
 
 
-@router.get('/')
+@router.get('')
 async def get_settings() -> models.Event:
     return get_arena().event
 
 
-@router.post('/')
-async def update_settings(new_settings: models.Event) -> dict:
+@router.post('')
+async def update_settings(new_settings: models.Event) -> models.Event:
     event_settings = models.read_event_settings()
     previous_event_name = event_settings.name
     event_settings.name = new_settings.name
@@ -28,13 +28,13 @@ async def update_settings(new_settings: models.Event) -> dict:
     num_alliance = 8
     if new_settings.playoff_type == models.PlayoffType.SINGLE_ELIMINATION:
         playoff_type = models.PlayoffType.SINGLE_ELIMINATION
-        num_alliance = new_settings.num_playoff_alliance
+        num_alliance = new_settings.num_playoff_alliances
         if num_alliance < 2 or num_alliance > 16:
             raise HTTPException(status_code=400, detail='Invalid number of alliances')
 
     if (
         event_settings.playoff_type != playoff_type
-        or event_settings.num_playoff_alliance != num_alliance
+        or event_settings.num_playoff_alliances != num_alliance
     ):
         alliances = models.read_all_alliances()
         if len(alliances) > 0:
@@ -43,7 +43,7 @@ async def update_settings(new_settings: models.Event) -> dict:
             )
 
     event_settings.playoff_type = playoff_type
-    event_settings.num_playoff_alliance = num_alliance
+    event_settings.num_playoff_alliances = num_alliance
     event_settings.selection_round_2_order = new_settings.selection_round_2_order
     event_settings.selection_round_3_order = new_settings.selection_round_3_order
     event_settings.tba_download_enabled = new_settings.tba_download_enabled
@@ -89,7 +89,7 @@ async def update_settings(new_settings: models.Event) -> dict:
     if event_settings.admin_password != previous_admin_password:
         models.truncate_user_sessions()
 
-    return {'status': 'success'}
+    return event_settings
 
 
 @router.get('/publish_alliances')
@@ -143,7 +143,6 @@ async def save_db() -> FileResponse:
 @db_router.post('/restore')
 async def restore_db() -> dict:
     raise HTTPException(status_code=500, detail='Not Supported')
-    # return {'status': 'success'}
 
 
 @db_router.post('/clear/{type}')

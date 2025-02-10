@@ -66,6 +66,6 @@ router.include_router(match_play.router)
 router.include_router(match_review.router)
 
 
-@router.get('/')
+@router.get('')
 async def api_root():
     return {'data': 'Hello API'}

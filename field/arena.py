@@ -167,7 +167,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     def create_playoff_tournament(self):
         self.playoff_tournament = playoff.PlayoffTournament(
-            self.event.playoff_type, self.event.num_playoff_alliance
+            self.event.playoff_type, self.event.num_playoff_alliances
         )
 
     def create_playoff_matches(self, start_time: datetime):

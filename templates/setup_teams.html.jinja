@@ -10,14 +10,14 @@
                 <div class="row mb-3">
                     <textarea class="form-control" id="teamNumbers" name="teamNumbers" rows="10" placeholder="One Team per line"></textarea>
                 </div>
-                <p><button type="button" class="btn btn-primary">Add Team</button></p>
+                <p><button type="button" class="btn btn-primary" onclick="uploadTeams()">Add Team</button></p>
                 <p>
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClearTeams">
                         Clear Team List
                     </button>
                 </p>
-                <p><a href="/api/setup/teams/generate_wpa_keys?all=true" class="btn btn-danger">Generate All WPA Keys</a></p>
-                <p><a href="/api/setup/teams/generate_wpa_keys?all=false" class="btn btn-danger">Generate Missing WPA Keys</a></p>
+                <p><a href="/api/setup/teams/generate_wpa_keys?all=true" name="wpakey" class="btn btn-danger d-none">Generate All WPA Keys</a></p>
+                <p><a href="/api/setup/teams/generate_wpa_keys?all=false" name="wpakey" class="btn btn-danger d-none">Generate Missing WPA Keys</a></p>
             </fieldset>
         </div>
         <div class="col-9">
@@ -34,7 +34,7 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
+                <tbody id="tableContainer">
 
                 </tbody>
             </table>
@@ -48,14 +48,25 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to clear all practice data?</p>
+                    <p>Are you sure you want to clear all Teams?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger">Clear Data</button>
+                    <button type="button" class="btn btn-danger" onclick="truncateTeams()" data-bs-dismiss="modal">Clear Data</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+{% block script %}
+<script src="{{ url_for('static', path='js/setup_teams.js') }}"></script>
+<script>
+    getData('/api/setup/settings')
+    .then(settings => parseSettings(settings))
+
+    getData('/api/setup/teams')
+    .then(teams => $('#tableContainer').innerHTML = createRows(teams))
+
+</script>
+{% endblock script %}

@@ -65,7 +65,7 @@ def can_reset_alliance_selection():
     return True
 
 
-@router.get('/')
+@router.get('')
 async def get_alliance_selection() -> AllianceSelectionResponse:
     next_row, next_col = determine_next_cell()
     return AllianceSelectionResponse(
@@ -77,7 +77,7 @@ async def get_alliance_selection() -> AllianceSelectionResponse:
     )
 
 
-@router.post('/')
+@router.post('')
 async def post_alliance_selection(request: Request) -> dict:
     if not can_modify_alliance_selection():
         raise HTTPException(

@@ -11,14 +11,14 @@ class AwardResponse(BaseModel):
     teams: list[models.Team]
 
 
-@router.get('/')
+@router.get('')
 async def get_awards() -> AwardResponse:
     awards = models.read_all_awards()
     teams = models.read_all_teams()
     return AwardResponse(awards=awards, teams=teams)
 
 
-@router.post('/')
+@router.post('')
 async def create_or_update_award(award: models.Award) -> models.Award:
     if award.id is None:
         return models.create_award(award)

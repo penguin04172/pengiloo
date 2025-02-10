@@ -10,7 +10,7 @@ from .display_util import enforce_display_configuration, register_display
 router = APIRouter(prefix='/displays/rankings', tags=['displays'])
 
 
-@router.get('/')
+@router.get('')
 async def rankings_display(request: Request, display_id: str = '', nickname='') -> dict:
     path = await enforce_display_configuration(
         request, display_id, nickname, {'scroll_ms_per_row': '1000'}
