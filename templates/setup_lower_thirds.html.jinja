@@ -1,0 +1,90 @@
+{% extends "base.html.jinja" %}
+{% block title %}Lower Thirds Configuration{% endblock title %}
+{% block navbar %}{% include "navbar.html.jinja" %}{% endblock navbar %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-3">
+            <div class="card bg-body-tertiary">
+                <legend class="card-header">Audience Display</legend>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="blankDisplay" value="blank" />
+                        <label for="blankDisplay" class="form-check-label">Blank</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="introDisplay" value="intro" />
+                        <label for="introDisplay" class="form-check-label">Match Intro</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="matchDisplay" value="match" />
+                        <label for="matchDisplay" class="form-check-label">Match Play</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="scoreDisplay" value="score" />
+                        <label for="scoreDisplay" class="form-check-label">Final Score</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="bracketDisplay" value="bracket" />
+                        <label for="bracketDisplay" class="form-check-label">Bracket</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="logoDisplay" value="logo" />
+                        <label for="logoDisplay" class="form-check-label">Logo With BG</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="logoLumaDisplay" value="logoLuma" />
+                        <label for="logoLumaDisplay" class="form-check-label">Logo Without BG</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="sponsorDisplay" value="sponsor" />
+                        <label for="sponsorDisplay" class="form-check-label">Sponsor Reel</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="allianceSelectionDisplay" value="allianceSelection" />
+                        <label for="allianceSelectionDisplay" class="form-check-label">Alliance Selection</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="audienceDisplay" id="timeoutDisplay" value="timeout" />
+                        <label for="timeoutDisplay" class="form-check-label">Timeout</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card bg-body-tertiary">
+                <legend class="card-header">Lower Third</legend>
+                <div class="card-body">
+                    <div class="row mt-1 mb-3">
+                        <div class="col-6">
+                            <input type="hidden" name="id" value="" />
+                            <input type="text" class="form-control mb-1" name="topText" placeholder="Top Text" />
+                            <input type="text" class="form-control" name="bottomText" placeholder="Bottom Text" />
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-primary mb-1">Save</button>
+                            <button type="button" class="btn btn-success mb-1">Show</button>
+                            <button type="button" class="btn btn-primary mb-1"><i class="bi-arrow-up"></i></button>
+                            <button type="button" class="btn btn-success mb-1">Show Only Thirds</button>
+                            <br />
+                            <button type="button" class="btn btn-danger">Delete</button>
+                            <button type="button" class="btn btn-secondary">Hide</button>
+                            <button type="button" class="btn btn-primary"><i class="bi-arrow-down"></i></button>
+                        </div>
+                    </div>
+                    <div class="row mt-1 mb-3">
+                        <div class="col-6">
+                            <input type="hidden" name="id" value="" />
+                            <input type="text" class="form-control mb-1" name="topText" placeholder="Top Text" />
+                            <input type="text" class="form-control" name="bottomText" placeholder="Bottom Text" />
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-primary mb-1">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

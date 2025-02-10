@@ -1,0 +1,31 @@
+{% extends "base.html.jinja" %}
+{% block title %}
+Breaks Configuration
+{% endblock title %}
+{% block navbar %}
+{% include "navbar.html.jinja" %}
+{% endblock navbar %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-6">
+            <div class="card bg-body-tertiary">
+                <legend class="card-header">Schedule Breaks Configuration</legend>
+                <div class="card-body">
+                    <h5>Break #</h5>
+                    <input type="hidden" name="id" value="" />
+                    <div class="row mb-3">
+                        <label class="col-3 form-label" for="description">Description</label>
+                        <div class="col-6">
+                            <input type="text" name="description" id="description" class="form-control" />
+                        </div>
+                        <div class="col-3">
+                            <button type="button" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,44 @@
+{% extends "base.html.jinja" %}
+{% block title %}Awards Configuration{% endblock title %}
+{% block navbar %}{% include "navbar.html.jinja" %}{% endblock navbar %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-8">
+            <div class="card bg-body-tertiary">
+                <legend class="card-header">Awards Configuration</legend>
+                <div class="card-body">
+                    <fieldset class="mt-2">
+                        <div class="row mb-3">
+                            <div class="col-8">
+                                <input type="hidden" name="id" />
+                                <div class="row mb-2">
+                                    <label for="awardName" class="col-4 col-form-label">Award Name</label>
+                                    <div class="col-8">
+                                        <input type="text" class="form-control" id="awardName" name="awardName" />
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <label for="teamId" class="col-4 col-form-label">Team Awarded</label>
+                                    <div class="col-8">
+                                        <input type="text" class="form-control" id="teamId" name="teamId" />
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <label for="personName" class="col-4 col-form-label">Person Awarded</label>
+                                    <div class="col-8">
+                                        <input type="text" class="form-control" id="personName" name="personName" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-primary" id="addAward">Save</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
