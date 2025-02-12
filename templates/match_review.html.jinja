@@ -1,0 +1,46 @@
+{% extends "base.html.jinja" %}
+{% block title %}
+Review
+{% endblock title %}
+{% block navbar %}
+{% include "navbar.html.jinja" %}
+{% endblock navbar %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" href="#Practice" id="tabPractice" aria-controls="tabPanePractice" data-bs-toggle="tab">Practice</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#Qualification" id="tabQualification" data-bs-toggle="tab">Qualification</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#Playoff" id="tabPlayoff" data-bs-toggle="tab">Playoff</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-2" id="tabPaneContainer">
+        </div>
+    </div>
+    <div class="modal fade" id="editMatch" tabindex="-1" aria-labelledby="editMatchLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editMatchLabel">Edit Match <span id="editorTitle"></span></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="editorContainer">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveResult()" data-bs-dismiss="modal">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block script %}
+<script src="{{ url_for('static', path='js/match_review.js') }}"></script>
+<script src="{{ url_for('static', path='js/match_review_edit.js') }}"></script>
+{% endblock script %}

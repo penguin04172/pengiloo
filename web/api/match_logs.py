@@ -9,7 +9,7 @@ import game
 import models
 from web.arena import get_arena
 
-router = APIRouter(prefix='/match_logs', tags=['match_logs'])
+router = APIRouter(prefix='/match/logs', tags=['match_logs'])
 
 
 class MatchLogsListItem(BaseModel):

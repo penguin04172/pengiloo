@@ -7,7 +7,7 @@ from web.arena import get_arena
 
 from .match_play import commit_match_score, get_current_match_result
 
-router = APIRouter(prefix='/match_review', tags=['match_review'])
+router = APIRouter(prefix='/match/review', tags=['match_review'])
 
 
 class MatchReviewListItem(BaseModel):
@@ -119,8 +119,8 @@ async def build_match_review_list(match_type: models.MatchType):
             id=match.id,
             short_name=match.short_name,
             time=match.scheduled_time.strftime('%b %m/%d %I:%M %p'),
-            red_teams=[match.red1, match.red2, match.red3],
-            blue_teams=[match.blue1, match.blue2, match.blue3],
+            red_teams=list(map(str, [match.red1, match.red2, match.red3])),
+            blue_teams=list(map(str, [match.blue1, match.blue2, match.blue3])),
         )
 
         result = models.read_match_result_for_match(match.id)

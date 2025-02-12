@@ -14,8 +14,8 @@ app.mount('/static', StaticFiles(directory='static'), name='static')
 
 
 async def main():
-    # db.bind(provider='sqlite', filename='event.db', create_db=True)
-    db.bind(provider='sqlite', filename=':memory:', create_db=True)
+    db.bind(provider='sqlite', filename='pengiloo.db', create_db=True)
+    # db.bind(provider='sqlite', filename=':memory:', create_db=True)
     db.generate_mapping(create_tables=True)
 
     arena = await Arena.new_arena()

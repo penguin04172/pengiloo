@@ -166,3 +166,4 @@ ruff.toml
 matchmaker/
 event.db
 profile_results.prof
+pengiloo.db

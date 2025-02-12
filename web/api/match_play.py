@@ -11,7 +11,7 @@ import tournament
 import ws
 from web.arena import get_arena
 
-router = APIRouter(prefix='/match_play', tags=['match_play'])
+router = APIRouter(prefix='/match/control', tags=['match_play'])
 
 
 class MatchPlayListItem(BaseModel):
