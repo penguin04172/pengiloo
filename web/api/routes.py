@@ -14,8 +14,8 @@ from . import (
     displays_twitch,
     displays_wall,
     displays_webpage,
+    match_control,
     match_logs,
-    match_play,
     match_review,
     panels_referee,
     panels_scoring,
@@ -62,7 +62,7 @@ router.include_router(panels_referee.router)
 router.include_router(panels_scoring.router)
 
 router.include_router(match_logs.router)
-router.include_router(match_play.router)
+router.include_router(match_control.router)
 router.include_router(match_review.router)
 
 

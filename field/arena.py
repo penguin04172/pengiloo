@@ -42,6 +42,18 @@ class AllianceStation:
     wifi_status: network.TeamWifiStatus = network.TeamWifiStatus()
     a_stop_reset: bool = False
 
+    def to_dict(self):
+        return {
+            'ds_conn': self.ds_conn.to_dict() if self.ds_conn is not None else None,
+            'ethernet': self.ethernet,
+            'a_stop': self.a_stop,
+            'e_stop': self.e_stop,
+            'bypass': self.bypass,
+            'team': self.team.model_dump() if self.team is not None else None,
+            'wifi_status': self.wifi_status.model_dump(),
+            'a_stop_reset': self.a_stop_reset,
+        }
+
 
 class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaNotifiersMixin):
     event: Event

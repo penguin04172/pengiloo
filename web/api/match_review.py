@@ -5,7 +5,7 @@ import game
 import models
 from web.arena import get_arena
 
-from .match_play import commit_match_score, get_current_match_result
+from .match_control import commit_match_score, get_current_match_result
 
 router = APIRouter(prefix='/match/review', tags=['match_review'])
 

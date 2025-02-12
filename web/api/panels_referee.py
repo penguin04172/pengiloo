@@ -63,6 +63,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     get_arena().blue_realtime_score.current_score.fouls.append(foul)
 
                 await get_arena().realtime_score_notifier.notify()
+
             elif message_type in [
                 'toggle_foul_type',
                 'update_foul_team',

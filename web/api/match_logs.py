@@ -182,8 +182,8 @@ def build_match_logs_list(match_type: models.MatchType):
                 id=match.id,
                 short_name=match.short_name,
                 time=match.scheduled_time.strftime('%b %m/%d %I:%M %p'),
-                red_teams=[match.red1, match.red2, match.red3],
-                blue_teams=[match.blue1, match.blue2, match.blue3],
+                red_teams=list(map(str, [match.red1, match.red2, match.red3])),
+                blue_teams=list(map(str, [match.blue1, match.blue2, match.blue3])),
             )
         )
         if match.status == game.MatchStatus.RED_WON_MATCH:

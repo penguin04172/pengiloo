@@ -14,7 +14,7 @@ from web.arena import get_arena
 router = APIRouter(prefix='/match/control', tags=['match_play'])
 
 
-class MatchPlayListItem(BaseModel):
+class MatchControlListItem(BaseModel):
     id: int
     short_name: str
     time: str
@@ -29,11 +29,11 @@ class MatchPlayListItem(BaseModel):
 
 
 class MatchLoadResponse(BaseModel):
-    matches_by_type: dict[models.MatchType, list[MatchPlayListItem]]
+    matches_by_type: dict[models.MatchType, list[MatchControlListItem]]
     current_match_type: models.MatchType
 
 
-@router.get('/match_load')
+@router.get('/load')
 async def load_match():
     pratice_matches = build_match_play_list(models.MatchType.PRACTICE)
     qualification_matches = build_match_play_list(models.MatchType.QUALIFICATION)
@@ -61,13 +61,13 @@ async def websocket_endpoint(websocket: WebSocket):
             get_arena().match_timing_notifier,
             get_arena().alliance_station_display_mode_notifier,
             get_arena().arena_status_notifier,
-            get_arena().audience_display_mode_notifier,
-            get_arena().event_status_notifier,
-            get_arena().match_load_notifier,
-            get_arena().match_time_notifier,
-            get_arena().realtime_score_notifier,
-            get_arena().score_posted_notifier,
-            get_arena().scoring_status_notifier,
+            # get_arena().audience_display_mode_notifier,
+            # get_arena().event_status_notifier,
+            # get_arena().match_load_notifier,
+            # get_arena().match_time_notifier,
+            # get_arena().realtime_score_notifier,
+            # get_arena().score_posted_notifier,
+            # get_arena().scoring_status_notifier,
         )
     )
 
@@ -369,7 +369,7 @@ def build_match_play_list(match_type: models.MatchType):
     matches = models.read_matches_by_type(match_type, False)
     match_play_list = []
     for match in matches:
-        list_item = MatchPlayListItem(
+        list_item = MatchControlListItem(
             id=match.id,
             short_name=match.short_name,
             time=match.scheduled_time.strftime('%I:%M %p'),

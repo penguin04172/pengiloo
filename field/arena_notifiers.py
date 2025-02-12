@@ -99,16 +99,20 @@ class ArenaNotifiersMixin:
         return self.alliance_station_display_mode
 
     def generate_arena_status_message(self):
+        new_alliance_stations = dict[str, dict]()
+        for station, alliance_station in self.alliance_stations.items():
+            new_alliance_stations[station] = alliance_station.to_dict()
+
         return {
             'match_id': self.current_match.id,
-            'alliance_stations': self.alliance_stations,
+            'alliance_stations': new_alliance_stations,
             'match_state': self.match_state,
             'can_start_match': self.check_can_start_match(),
-            # 'access_point_status': self.access_point.status,
-            # "switch_status": self.network_switch.status,
-            # "plc_is_healthy": self.plc.is_healthy(),
-            # "field_e_stop": self.plc.get_field_e_stop(),
-            # "plc_armor_block_status": self.plc.get_armor_block_status(),
+            'access_point_status': {},  # self.access_point.status,
+            'switch_status': {},  # self.network_switch.status,
+            'plc_is_healthy': False,  # self.plc.is_healthy(),
+            'field_e_stop': False,  # self.plc.get_field_e_stop(),
+            'plc_armor_block_status': {},  # self.plc.get_armor_block_status(),
         }
 
     def generate_audience_display_mode_message(self):
@@ -122,17 +126,22 @@ class ArenaNotifiersMixin:
         return displays_copy
 
     def generate_event_status_message(self):
-        return self.event_status
+        return self.event_status.model_dump()
 
     def generate_lower_third_message(self):
-        return {'lower_third': self.lower_third, 'show_lower_third': self.show_lower_third}
+        return {
+            'lower_third': self.lower_third.model_dump(),
+            'show_lower_third': self.show_lower_third,
+        }
 
     def generate_match_load_message(self):
-        teams = dict[str, models.Team]()
+        teams = dict[str, dict]()
         all_team_ids = []
 
         for station, alliance_station in self.alliance_stations.items():
-            teams[station] = alliance_station.team
+            teams[station] = (
+                alliance_station.team.model_dump() if alliance_station.team is not None else None
+            )
             if alliance_station.team is not None:
                 all_team_ids.append(alliance_station.team.id)
 
@@ -151,12 +160,12 @@ class ArenaNotifiersMixin:
             )
             for team_id in red_off_field_team_ids:
                 team = models.read_team_by_id(team_id)
-                red_off_field_teams.append(team)
+                red_off_field_teams.append(team.model_dump())
                 all_team_ids.append(team_id)
 
             for team_id in blue_off_field_team_ids:
                 team = models.read_team_by_id(team_id)
-                blue_off_field_team.append(team)
+                blue_off_field_team.append(team.model_dump())
                 all_team_ids.append(team_id)
 
         rankings = dict[str, int]()
@@ -183,7 +192,7 @@ class ArenaNotifiersMixin:
         ).model_dump()
 
     def generate_match_timing_message(self):
-        return game.timing
+        return game.timing.model_dump()
 
     def generate_realtime_score_message(self):
         return {

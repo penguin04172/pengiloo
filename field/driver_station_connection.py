@@ -234,6 +234,36 @@ class DriverStationConnection:
         if self.tcp_conn is not None:
             self.tcp_conn[1].write(packet)
 
+    def to_dict(self):
+        return {
+            'team_id': self.team_id,
+            'alliance_station': self.alliance_station,
+            'auto': self.auto,
+            'enabled': self.enabled,
+            'e_stop': self.e_stop,
+            'a_stop': self.a_stop,
+            'ds_linked': self.ds_linked,
+            'radio_linked': self.radio_linked,
+            'rio_linked': self.rio_linked,
+            'robot_linked': self.robot_linked,
+            'battery_voltage': self.battery_voltage,
+            'ds_robot_trip_time_ms': self.ds_robot_trip_time_ms,
+            'missed_packet_count': self.missed_packet_count,
+            'seconds_since_last_robot_link': self.seconds_since_last_robot_link,
+            'last_packet_time': self.last_packet_time.isoformat()
+            if self.last_packet_time
+            else None,
+            'last_robot_linked_time': self.last_robot_linked_time.isoformat()
+            if self.last_robot_linked_time
+            else None,
+            'packet_count': self.packet_count,
+            'missed_packet_offset': self.missed_packet_offset,
+            'tcp_conn': str(self.tcp_conn) if self.tcp_conn else None,  # 轉換為字串，避免無法序列化
+            'udp_conn': str(self.udp_conn) if self.udp_conn else None,  # 轉換為字串
+            'log': str(self.log) if self.log else None,  # 轉換為字串
+            'wrong_station': self.wrong_station,
+        }
+
 
 class AsyncUDPServerProtocol(asyncio.DatagramProtocol):
     def __init__(self, alliance_stations):
