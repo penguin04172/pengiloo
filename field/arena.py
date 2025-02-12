@@ -54,7 +54,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     alliance_stations: dict[str, AllianceStation]
     team_signs: TeamSigns
     scoring_panel_registry: ScoringPanelRegister
-    match_state: MatchState
+    match_state: MatchState = MatchState.PRE_MATCH
     last_match_state: MatchState
     current_match: models.Match
     match_start_time: datetime
@@ -78,7 +78,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     show_lower_third: bool = False
     mute_match_sounds: bool = False
     match_aborted: bool = False
-    sounds_played: set[game.MatchSounds] = set()
+    sounds_played: set[game.MatchSound] = set()
     break_description: str = ''
     preloaded_teams: list[models.Team] = None
 
@@ -111,7 +111,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         arena.audience_display_mode = 'blank'
         arena.saved_match = models.Match(id=0, type=models.MatchType.TEST, type_order=0)
         arena.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
-        arena.alliance_station_display_mode = 'Match'
+        arena.alliance_station_display_mode = 'match'
         return arena
 
     async def load_settings(self):
@@ -205,7 +205,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 False,
             )
 
-        self.sounds_played = set[game.MatchSounds]()
+        self.sounds_played = set[game.MatchSound]()
         self.red_realtime_score = RealtimeScore()
         self.blue_realtime_score = RealtimeScore()
         self.scoring_panel_registry.reset_score_commited()
@@ -365,7 +365,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
         game.timing.timeout_duration_sec = duration_sec
         game.update_match_sounds()
-        self.sounds_played = set[game.MatchSounds]()
+        self.sounds_played = set[game.MatchSound]()
         await self.match_timing_notifier.notify()
         self.break_description = description
         await self.match_load_notifier.notify()
@@ -380,7 +380,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.audience_display_mode = mode
             await self.audience_display_mode_notifier.notify()
             if mode == 'score':
-                self.play_sound('match_result')
+                await self.play_sound('match_result')
 
     async def set_alliance_station_display_mode(self, mode: str):
         if self.alliance_station_display_mode != mode:
@@ -517,7 +517,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             self.send_ds_packet(auto, enabled)
             await self.arena_status_notifier.notify()
 
-        self.handle_sounds(match_time_sec)
+        await self.handle_sounds(match_time_sec)
         # self.handle_plc_io()
         # self.team_signs.update(self)
 
@@ -710,7 +710,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             alliance_station.a_stop = False
             alliance_station.a_stop_reset = True
 
-    def handle_sounds(self, match_time_sec: float):
+    async def handle_sounds(self, match_time_sec: float):
         if self.match_state in [
             MatchState.PRE_MATCH,
             MatchState.TIMEOUT_ACTIVE,
@@ -727,12 +727,12 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                     match_time_sec >= sound.match_time_sec
                     and match_time_sec - sound.match_time_sec < 1
                 ):
-                    self.play_sound(sound.name)
+                    await self.play_sound(sound.name)
                     self.sounds_played.add(sound)
 
-    def play_sound(self, name: str):
+    async def play_sound(self, name: str):
         if not self.mute_match_sounds:
-            self.play_sound_notifier.notify_with_message(name)
+            await self.play_sound_notifier.notify_with_message(name)
 
     def alliance_post_match_score_ready(self, alliance: str):
         num_panels = self.scoring_panel_registry.get_num_panels(alliance)

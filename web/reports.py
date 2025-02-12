@@ -60,7 +60,7 @@ async def get_pdf_rankings(request: Request) -> StreamingResponse:
         'Coop': 20,
         'Match': 20,
         'Auto': 20,
-        'Stage': 20,
+        'Barge': 20,
         'W-L-T': 22,
         'DQ': 20,
         'Played': 20,
@@ -420,7 +420,7 @@ async def get_pdf_schedule(requset: Request, type: str) -> StreamingResponse:
         pdf.cell(
             col_widths['Time'],
             height,
-            datetime.strptime(match.scheduled_time, '%Y-%m-%d %H:%M:%S').strftime('%b %d %I:%M %p'),
+            match.scheduled_time.strftime('%b %d %I:%M %p'),
             border=border_str,
             align=align_str,
         )

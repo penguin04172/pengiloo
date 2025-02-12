@@ -1,21 +1,14 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 
 import models
 
 router = APIRouter(prefix='/setup/awards', tags=['awards'])
 
 
-class AwardResponse(BaseModel):
-    awards: list[models.Award]
-    teams: list[models.Team]
-
-
 @router.get('')
-async def get_awards() -> AwardResponse:
+async def get_awards() -> list[models.Award]:
     awards = models.read_all_awards()
-    teams = models.read_all_teams()
-    return AwardResponse(awards=awards, teams=teams)
+    return awards
 
 
 @router.post('')

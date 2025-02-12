@@ -66,7 +66,7 @@ class ArenaNotifiersMixin:
         )
         self.arena_status_notifier = Notifier('arena_status', self.generate_arena_status_message)
         self.audience_display_mode_notifier = Notifier(
-            'audience_display_mode', self.generate_alliance_station_display_mode_message
+            'audience_display_mode', self.generate_audience_display_mode_message
         )
         self.display_configuration_notifier = Notifier(
             'display_configuration', self.generate_display_configuration_message

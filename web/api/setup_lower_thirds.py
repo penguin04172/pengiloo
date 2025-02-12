@@ -30,7 +30,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             message_type = data['type']
 
-            if message_type == 'update_lower_third':
+            if message_type == 'save_lower_third':
                 lower_third = models.LowerThird(**data['data'])
                 save_lower_third(lower_third)
 
@@ -53,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await get_arena().lower_third_notifier.notify()
                 continue
 
-            elif message_type == 'reorder_lower_thirds':
+            elif message_type == 'reorder_lower_third':
                 id = data['data']['id']
                 move_up = data['data']['move_up']
 
@@ -88,7 +88,7 @@ async def websocket_endpoint(websocket: WebSocket):
 def save_lower_third(lower_third: models.LowerThird):
     old_lower_third = models.read_lower_third_by_id(lower_third.id)
     if old_lower_third is None:
-        lower_third.id = models.read_next_lower_third_display_order()
+        lower_third.display_order = models.read_next_lower_third_display_order()
         models.create_lower_third(lower_third)
     else:
         old_lower_third.top_text = lower_third.top_text

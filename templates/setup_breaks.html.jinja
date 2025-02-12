@@ -12,20 +12,14 @@ Breaks Configuration
             <div class="card bg-body-tertiary">
                 <legend class="card-header">Schedule Breaks Configuration</legend>
                 <div class="card-body">
-                    <h5>Break #</h5>
-                    <input type="hidden" name="id" value="" />
-                    <div class="row mb-3">
-                        <label class="col-3 form-label" for="description">Description</label>
-                        <div class="col-6">
-                            <input type="text" name="description" id="description" class="form-control" />
-                        </div>
-                        <div class="col-3">
-                            <button type="button" class="btn btn-primary">Save</button>
-                        </div>
-                    </div>
+                    <fieldset id="breaksContainer">
+                    </fieldset>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock content %}
+{% block script %}
+<script src="{{ url_for('static', path='js/setup_breaks.js') }}"></script>
+{% endblock script %}

@@ -88,6 +88,7 @@ from .sponsor_slides import (
     create_sponsor_slide,
     delete_sponsor_slide,
     read_all_sponsor_slides,
+    read_next_sponsor_slide_display_order,
     read_sponsor_slide_by_id,
     truncate_sponsor_slides,
     update_sponsor_slide,

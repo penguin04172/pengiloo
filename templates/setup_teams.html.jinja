@@ -57,16 +57,92 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="editTeam" tabindex="-1" aria-labelledby="editTeamLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editTeamLabel">Edit Team</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="row mb-3">
+                            <label for="teamId" class="col-sm-6 col-form-label">#</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamId">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamName" class="col-sm-6 col-form-label">Name</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamName">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamNickname" class="col-sm-6 col-form-label">Nickname</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamNickname">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamSchoolName" class="col-sm-6 col-form-label">School</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamSchoolName">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamCity" class="col-sm-6 col-form-label">City</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamCity">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamStateProv" class="col-sm-6 col-form-label">State Prov</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamStateProv">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamCountry" class="col-sm-6 col-form-label">Country</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamCountry">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamRookieYear" class="col-sm-6 col-form-label">RookieYear</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamRookieYear">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamRobotName" class="col-sm-6 col-form-label">RobotName</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamRobotName">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamAccomplishments" class="col-sm-6 col-form-label">Accomplishments</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamAccomplishments">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="teamWpakey" class="col-sm-6 col-form-label">Wpa Key</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="teamWpakey">
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTeam()" data-bs-dismiss="modal">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 {% block script %}
 <script src="{{ url_for('static', path='js/setup_teams.js') }}"></script>
-<script>
-    getData('/api/setup/settings')
-    .then(settings => parseSettings(settings))
-
-    getData('/api/setup/teams')
-    .then(teams => $('#tableContainer').innerHTML = createRows(teams))
-
-</script>
 {% endblock script %}

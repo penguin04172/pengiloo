@@ -39,6 +39,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         id=id, type=type, nickname=nickname, configuration=configuration
                     )
                 )
+
             elif message_type == 'reload_display':
                 display_id = data['data']['display_id']
                 await get_arena().reload_displays_notifier.notify_with_message(display_id)
@@ -60,4 +61,3 @@ async def websocket_endpoint(websocket: WebSocket):
             await notifiers_task
         except asyncio.CancelledError:
             pass
-        await websocket.close()

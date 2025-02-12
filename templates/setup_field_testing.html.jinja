@@ -11,11 +11,16 @@ Field Testing
         <div class="col-3">
             <div class="card bg-body-tertiary">
                 <legend class="card-header">Game Sounds</legend>
-                <div class="card-body">
-                    <p><button type="button" class="btn btn-sm btn-primary"><i class="bi-play-fill"></i>&nbsp;&nbsp;</button></p>
+                <div class="card-body" id="soundsContainer">
+                    
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock content %}
+{% block script %}
+<script src="{{ url_for('static', path='js/utils/websocket_handler.js') }}"></script>
+<script src="{{ url_for('static', path='js/setup_field_testing.js') }}"></script>
+
+{% endblock script %}

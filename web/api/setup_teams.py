@@ -69,7 +69,7 @@ async def get_team(team_number: int) -> models.Team:
 
 
 @router.post('/{team_number}')
-async def update_team(team_number: int, new_team: models.Team) -> dict:
+async def update_team(team_number: int, new_team: models.Team) -> models.Team | None:
     team = models.read_team_by_id(team_number)
     if team is None:
         raise HTTPException(status_code=404, detail='Team not found')
@@ -92,9 +92,9 @@ async def update_team(team_number: int, new_team: models.Team) -> dict:
 
     team.has_connected = new_team.has_connected
 
-    models.update_team(team)
+    data = models.update_team(team)
 
-    return {'status': 'success'}
+    return data
 
 
 @router.delete('/{team_number}')

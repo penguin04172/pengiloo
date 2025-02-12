@@ -66,8 +66,8 @@ class Match(BaseModel):
     scheduled_time: datetime = datetime.fromtimestamp(0)
     name_detail: str = ''
     playoff_match_group_id: str = None
-    playoff_red_alliance: int = None
-    playoff_blue_alliance: int = None
+    playoff_red_alliance: int | None = None
+    playoff_blue_alliance: int | None = None
     red1: int = 0
     red1_is_surrogate: bool = False
     red2: int = 0
@@ -80,11 +80,11 @@ class Match(BaseModel):
     blue2_is_surrogate: bool = False
     blue3: int = 0
     blue3_is_surrogate: bool = False
-    started_at: datetime = None
-    score_commit_at: datetime = None
-    field_ready_at: datetime = None
+    started_at: datetime | None = None
+    score_commit_at: datetime | None = None
+    field_ready_at: datetime | None = None
     status: MatchStatus = None
-    use_tiebreak_criteria: bool = None
+    use_tiebreak_criteria: bool | None = None
     tba_match_key: TbaMatchKey = TbaMatchKey()
     id: int = None
 

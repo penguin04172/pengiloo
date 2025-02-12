@@ -1,17 +1,17 @@
-from pony.orm import Optional, PrimaryKey, Required, db_session
+from pony.orm import Optional, PrimaryKey, db_session
 from pydantic import BaseModel
 
 from .base import db
 
 
 class SponsorSlide(BaseModel):
-    id: int = None
-    subtitle: str
+    id: int | None = None
+    subtitle: str = ''
     line1: str = ''
     line2: str = ''
     image: str = ''
     display_time_sec: int = 0
-    display_order: int = 0
+    display_order: int = None
 
     class Config:
         from_attributes = True
@@ -19,7 +19,7 @@ class SponsorSlide(BaseModel):
 
 class SponsorSlideDB(db.Entity):
     id = PrimaryKey(int, auto=True)
-    subtitle = Required(str)
+    subtitle = Optional(str)
     line1 = Optional(str)
     line2 = Optional(str)
     image = Optional(str)
@@ -72,6 +72,6 @@ def truncate_sponsor_slides():
 
 
 @db_session
-def get_next_sponsor_slide_display_order() -> int:
+def read_next_sponsor_slide_display_order() -> int:
     sponsor_slide_list = list(SponsorSlideDB.select().order_by(SponsorSlideDB.display_order))
     return 1 if len(sponsor_slide_list) == 0 else sponsor_slide_list[-1].display_order + 1

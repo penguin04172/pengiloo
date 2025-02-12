@@ -13,7 +13,7 @@ class AwardType(IntEnum):
 
 
 class Award(BaseModel):
-    id: int = None
+    id: int | None = None
     type: AwardType = AwardType.judged_award
     award_name: str = ''
     team_id: int = 0
