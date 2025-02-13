@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alliance Station Display - {{ settings.name }} </title>
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='img/favicon.png') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/display_alliance_station.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/pengiloo.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}">
+    </head>
+    <body>
+        <div class="mode" id="match">
+            <div id="preMatch">
+                <div id="teamNumber"></div>
+                <div id="teamName" class="databar">
+                    <span id="teamNameText"></span> <sub id="teamRank"></sub>
+                </div>
+                <div id="disabled" class="databar">DISABLED</div>
+                <div id="playoffAllianceInfo"></div>
+            </div>
+            <div id="inMatch">
+                <div id="redScore" class="datapoint"></div>
+                <div id="blueScore" class="datapoint"></div>
+                <div id="timeRemaining" class="datapoint"></div>
+            </div>            
+        </div>
+        <div id="logo" class="mode">
+            <img src="{{ url_for('static', path='img/logo.png') }}" alt="Logo">
+        </div>
+        <div id="fieldReset" class="mode">
+            <div>FIELD<br />RESET</div>
+        </div>
+        <script src="{{ url_for('static', path='js/utils/websocket_handler.js') }}"></script>
+        <script src="{{ url_for('static', path='js/match_timing.js') }}"></script>
+        <script src="{{ url_for('static', path='js/display_alliance_station.js') }}"></script>
+    </body>
+</html>

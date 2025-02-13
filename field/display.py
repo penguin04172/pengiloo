@@ -127,6 +127,7 @@ class DisplayMixin:
         if display is not None and config.type == DisplayType.PLACEHOLDER:
             self.displays[config.id].connection_count += 1
             self.displays[config.id].ip_address = ip_address
+
         else:
             if display is None:
                 display = Display(
