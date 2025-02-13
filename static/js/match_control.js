@@ -58,6 +58,12 @@ const showOverlay = () => {
     $('#showOverlay').disabled = true;
 }
 
+const showFinalScore = function() {
+    $("input[name=audienceDisplay][value=score]").checked = true;
+    setAudienceDisplay();
+    $("#showFinalScore").disabled = true;
+}
+  
 const setAudienceDisplay = () => {
     websocket.send("set_audience_display", $('input[name=audienceDisplay]:checked').value);
 }
@@ -72,7 +78,7 @@ const startTimeout = () => {
     if (duration.length > 1) {
         durationSec = durationSec * 60 + parseFloat(duration[1]);
     }
-    websocket.send("start_timeout", durationSec);
+    websocket.send("start_timeout", { duration_sec: durationSec});
 }
 
 const confirmCommit = () => {
@@ -91,7 +97,7 @@ const setTestMatchName = () => {
 
 const getTeamNumber = (station) => {
     const teamId = $(`#status${station} .team-number`).value.trim();
-    return teamId ? parseInt(teamId) : null;
+    return teamId ? parseInt(teamId) : 0;
 }
 
 const handleArenaStatus = (data) => {

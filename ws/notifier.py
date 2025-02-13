@@ -42,7 +42,8 @@ class Notifier:
         Args:
             websocket (WebSocket): _description_
         """
-        self.listeners.append(websocket)
+        async with self.lock:
+            self.listeners.append(websocket)
 
     async def disconnect(self, websocket: WebSocket):
         """Disconnect a listener.
@@ -50,14 +51,15 @@ class Notifier:
         Args:
             websocket (WebSocket): _description_
         """
-        self.listeners.remove(websocket)
+        async with self.lock:
+            self.listeners.remove(websocket)
 
     async def listen(self, websocket: WebSocket):
         """Listen for new listeners."""
         try:
             while True:
                 await asyncio.sleep(1)
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, asyncio.CancelledError):
             pass
         finally:
             await self.disconnect(websocket)
@@ -74,8 +76,9 @@ class Notifier:
             message (Any): _description_
         """
         message = self.MessageEnvelope(type=self.message_type, data=message)
-        for listener in self.listeners:
-            await self.notify_listener(listener, message)
+        async with self.lock:
+            for listener in self.listeners:
+                await self.notify_listener(listener, message)
 
     async def notify_listener(self, listener: WebSocket, message: MessageEnvelope):
         """Notify a single listener with a message.
@@ -107,6 +110,7 @@ async def handle_notifiers(websocket: WebSocket, *notifiers: Notifier):
                         await asyncio.sleep(10)
                         await websocket.send_json({'type': 'ping', 'data': {}})
                     except WebSocketDisconnect:
+                        tg.cancel()
                         return  # 這樣外部可以捕捉到 WebSocketDisconnect
                     except RuntimeError:
                         return  # 避免 asyncio 被關閉時出錯

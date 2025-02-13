@@ -31,7 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
     notifiers_task = asyncio.create_task(
         ws.handle_notifiers(
             websocket,
-            display.notifier,
+            # display.notifier,
             get_arena().match_timing_notifier,
             get_arena().alliance_station_display_mode_notifier,
             get_arena().arena_status_notifier,
@@ -43,7 +43,8 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     try:
-        await asyncio.wait([notifiers_task], return_when=asyncio.FIRST_COMPLETED)
+        while True:
+            await websocket.receive_text()
     except WebSocketDisconnect:
         pass
     finally:

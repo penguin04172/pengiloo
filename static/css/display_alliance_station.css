@@ -11,13 +11,14 @@ html {
   body {
     background-color: #000;
     font-family: "FuturaLTBold";
-    color: #fff;
+    color: #000;
   }
   body[data-mode=logo] {
     background-color: #000;
   }
   body[data-mode=fieldReset] {
     background-color: #0a3;
+    color: #000;
   }
   
   /* Switching Modes */
@@ -152,10 +153,10 @@ html {
     display: none;
   }
   [data-alliance-bg=R], [data-status=R] {
-    background-color: #d00;
+    background-color: #f66;
   }
   [data-alliance-bg=B], [data-status=B] {
-    background-color: #00c;
+    background-color: #66c;
   }
   #teamRank {
     background-color: transparent;

@@ -72,6 +72,14 @@ class DisplayConfiguration:
         self.type = type
         self.configuration = configuration
 
+    def to_dict(self) -> dict[str, str]:
+        return {
+            'id': self.id,
+            'nickname': self.nickname,
+            'type': display_type_names[self.type],
+            'configuration': self.configuration,
+        }
+
 
 class Display:
     display_configuration: DisplayConfiguration

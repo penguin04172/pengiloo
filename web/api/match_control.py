@@ -156,12 +156,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     continue
 
-                red1 = int(payload['red1'])
-                red2 = int(payload['red2'])
-                red3 = int(payload['red3'])
-                blue1 = int(payload['blue1'])
-                blue2 = int(payload['blue2'])
-                blue3 = int(payload['blue3'])
+                red1 = int(payload.get('red1', 0))
+                red2 = int(payload.get('red2', 0))
+                red3 = int(payload.get('red3', 0))
+                blue1 = int(payload.get('blue1', 0))
+                blue2 = int(payload.get('blue2', 0))
+                blue3 = int(payload.get('blue3', 0))
 
                 try:
                     await get_arena().substitute_team(red1, red2, red3, blue1, blue2, blue3)
@@ -212,7 +212,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
                 get_arena().field_reset = True
-                get_arena().alliance_station_display_mode = 'field_reset'
+                get_arena().alliance_station_display_mode = 'fieldReset'
                 await get_arena().alliance_station_display_mode_notifier.notify()
 
             elif command == 'commit_results':
@@ -267,7 +267,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 duration_sec = int(payload['duration_sec'])
                 try:
-                    await get_arena().start_timeout(duration_sec)
+                    await get_arena().start_timeout('Timeout', duration_sec)
                 except RuntimeError as e:
                     await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue

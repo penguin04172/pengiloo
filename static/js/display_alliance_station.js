@@ -37,7 +37,7 @@ function handleMatchLoad (data) {
         $('#teamRank').setAttribute('data-alliance-bg', station[0]);
 
         if (team) {
-            $('$teamNumber').setAttribute('data-alliance-bg', station[0]);
+            $('#teamNumber').setAttribute('data-alliance-bg', station[0]);
             $('#teamNumber').textContent = team.id;
             $('#teamNameText').textContent = team.nickname;
 
@@ -131,4 +131,4 @@ websocket = new wsHandler("/api/displays/alliance_station/websocket" + window.lo
     match_time: (e) => { handleMatchTime(e.data) },
     match_timing: (e) => { handleMatchTiming(e.data) },
     realtime_score: (e) => { handleRealtimeScore(e.data) }
-})
+});

@@ -39,7 +39,7 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     try:
-        await asyncio.wait([notifiers_task], return_when=asyncio.FIRST_COMPLETED)
+        await websocket.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
