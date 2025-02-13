@@ -4,15 +4,16 @@ let isReplay;
 const lowBatteryThreshold = 8;
 let confirmCommitModal = new bootstrap.Modal($('#corfirmCommitResults'))
 
+
 const loadMatch = (matchId) => {
-    websocket.send("load_match", { matchId: matchId });
+    websocket.send("load_match", { match_id: matchId });
 }
 
 const showResult = (matchId) => {
-    websocket.send("show_result", { matchId: matchId });
+    websocket.send("show_result", { match_id: matchId });
 }
 
-const subtituteTeams = (team, position) => {
+const substituteTeams = () => {
     const teams = {
         red1: getTeamNumber('R1'),
         red2: getTeamNumber('R2'),
@@ -22,7 +23,7 @@ const subtituteTeams = (team, position) => {
         blue3: getTeamNumber('B3'),
     }
 
-    websocket.send("substitute_team", teams);
+    websocket.send("substitute_teams", teams);
 }
 
 const toggleBypass = (station) => {
@@ -53,8 +54,12 @@ const discardResults = () => {
 
 const showOverlay = () => {
     $('input[name=audienceDisplayMode][value=intro]').checked = true;
-    setAudienceDisplayMode();
+    setAudienceDisplay();
     $('#showOverlay').disabled = true;
+}
+
+const setAudienceDisplay = () => {
+    websocket.send("set_audience_display", $('input[name=audienceDisplay]:checked').value);
 }
 
 const setAllianceStationDisplay = () => {
@@ -85,12 +90,11 @@ const setTestMatchName = () => {
 }
 
 const getTeamNumber = (station) => {
-    const teamId = $(`#status${station} `).value.trim();
+    const teamId = $(`#status${station} .team-number`).value.trim();
     return teamId ? parseInt(teamId) : null;
 }
 
 const handleArenaStatus = (data) => {
-    console.log(data);
     Object.entries(data.alliance_stations).forEach(([station, stationStatus]) => {
         const wifiStatus = stationStatus.wifi_status;
         $('#status' + station + ' .radio-status').innerText = wifiStatus.team_id;
@@ -144,7 +148,7 @@ const handleArenaStatus = (data) => {
         }
     });
 
-    switch (matchStates[data.MatchState]) {
+    switch (matchStates[data.match_state]) {
         case "PRE_MATCH":
             $('#startMatch').disabled = !data.can_start_match;
             $('#abortMatch').disabled = true;
@@ -227,19 +231,61 @@ const handleArenaStatus = (data) => {
     }
     $('#fieldEStop').setAttribute('data-ready', !data.field_e_stop);
     
-    Object.entries(data.plc_armor_block_statuses).forEach(([name, status]) => {
-        $('#plc' + name + 'Status').setAttribute('data-ready', status);
-    });
+    // Object.entries(data.plc_armor_block_statuses).forEach(([name, status]) => {
+    //     $('#plc' + name + 'Status').setAttribute('data-ready', status);
+    // });
+}
+
+const updateMatchList = (data) => {
+    let matchListHTML = `
+        <b class="btn btn-primary" onclick="loadMatch(0)">Load Test Match</b>
+        <ul class="nav nav-tabs mt-4">
+            <li><a href="#Practice" class="nav-link ${data.current_match_type === 1 ? 'active' : ''}" data-bs-toggle="tab">Practice</a></li>
+            <li><a href="#Qualification" class="nav-link ${data.current_match_type === 2 ? 'active' : ''}" data-bs-toggle="tab">Qualification</a></li>
+            <li><a href="#Playoff" class="nav-link ${data.current_match_type === 3 ? 'active' : ''}" data-bs-toggle="tab">Playoff</a></li>
+        </ul>
+        <div class="tab-content">
+            ${Object.entries(data.matches_by_type).map(([type, matches]) => {
+                return `
+                    <div class="match-list tab-pane ${data.current_match_type === parseInt(type) ? 'show active' : ''}" id="${matchTypeName[type]}">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Match</th>
+                                    <th>Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${matches.map(match => {
+                                    return `
+                                        <tr>
+                                            <td class="bg-${match.color_class}">${match.short_name}</td>
+                                            <td class="bg-${match.color_class}">${match.time}</td>
+                                            <td class="bg-${match.color_class} nowrap">
+                                                <b class="btn btn-primary btn-sm" onclick="loadMatch(${match.id})">Load</b>
+                                                ${match.status !== 0 ? `<b class="btn btn-primary btn-sm" onclick="showResult(${match.id})">Show Result</b>` : ''}
+                                            </td>
+                                        </tr>
+                                    `
+                                }).join('\n')}
+                            </tbody>
+                        </table>
+                    </div>
+                `
+            }).join('\n')}
+        </div>
+    `
+    $('#matchListContainer').innerHTML = matchListHTML;
 }
 
 const handleMatchLoad = (data) => {
     isReplay = data.is_replay;
 
-    fetch(`/api/match/load`)
-    .then(response => response.text())
-    .then(data => {
-        $('#matchListContainer').innerHTML = data;
-    });
+    getData('/api/match/control/load')
+        .then(data => {
+            updateMatchList(data);
+        });
 
     $('#matchName').innerText = data.match.long_name;
     $('#testMatchName').value = data.match.long_name;
@@ -247,7 +293,7 @@ const handleMatchLoad = (data) => {
     Object.entries(data.teams).forEach(([station, team]) => {
         const teamId = $(`#status${station} .team-number`);
         teamId.value = team ? team.id : "";
-        teamId.disabled = !data.allow_subtitution;
+        teamId.disabled = !data.allow_substitution;
     });
 
     $('#playoffRedAllianceInfo').innerHTML = formatPlayoffAllianceInfo(data.match.playoff_red_alliance, data.red_off_field_teams);
@@ -268,7 +314,7 @@ const handleMatchTime = (data) => {
 
         let matchTimeElement = $('#matchTime');
         if (matchTimeElement) {
-            matchTimeElement.textContent = formatMatchTime(countdownSec);
+            matchTimeElement.textContent = countdownSec;
         }
 
     })
@@ -298,11 +344,11 @@ const handleAudienceDisplayMode = (data) => {
 
 const handleScoringStatus = (data) => {
     scoreIsReady = data.referee_score_ready && data.red_score_ready && data.blue_score_ready;
-    $('#refereeScoreStatus').setAttribute('data-ready', data.referee_score_ready);
-    $('#redScoreStatus').textContent = `Red Scoring: ${data.num_red_scoring_panels_ready}/${data.num_red_scoring_panels}`;
-    $('#blueScoreStatus').textContent = `Blue Scoring: ${data.num_blue_scoring_panels_ready}/${data.num_blue_scoring_panels}`;
-    $('#redScoreStatus').setAttribute('data-ready', data.red_score_ready);
-    $('#blueScoreStatus').setAttribute('data-ready', data.blue_score_ready);
+    $('#refereeScoringStatus').setAttribute('data-ready', data.referee_score_ready);
+    $('#redScoringStatus').textContent = `Red Scoring: ${data.num_red_scoring_panels_ready}/${data.num_red_scoring_panels}`;
+    $('#blueScoringStatus').textContent = `Blue Scoring: ${data.num_blue_scoring_panels_ready}/${data.num_blue_scoring_panels}`;
+    $('#redScoringStatus').setAttribute('data-ready', data.red_score_ready);
+    $('#blueScoringStatus').setAttribute('data-ready', data.blue_score_ready);
 }
 
 const handleAllianceStationDisplayMode = (data) => {
@@ -341,6 +387,7 @@ websocket = new wsHandler(
         event_status: (e) => { handleEventStatus(e.data) },
         match_load: (e) => { handleMatchLoad(e.data) },
         match_time:(e) => { handleMatchTime(e.data) },
+        match_timing: (e) => { handleMatchTiming(e.data) },
         realtime_score: (e) => { handleRealtimeScore(e.data) },
         score_posted: (e) => { handleScorePosted(e.data) },
         scoring_status: (e) => { handleScoringStatus(e.data) },

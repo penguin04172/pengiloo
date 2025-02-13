@@ -61,13 +61,13 @@ async def websocket_endpoint(websocket: WebSocket):
             get_arena().match_timing_notifier,
             get_arena().alliance_station_display_mode_notifier,
             get_arena().arena_status_notifier,
-            # get_arena().audience_display_mode_notifier,
-            # get_arena().event_status_notifier,
-            # get_arena().match_load_notifier,
-            # get_arena().match_time_notifier,
-            # get_arena().realtime_score_notifier,
-            # get_arena().score_posted_notifier,
-            # get_arena().scoring_status_notifier,
+            get_arena().audience_display_mode_notifier,
+            get_arena().event_status_notifier,
+            get_arena().match_load_notifier,
+            get_arena().match_time_notifier,
+            get_arena().realtime_score_notifier,
+            get_arena().score_posted_notifier,
+            get_arena().scoring_status_notifier,
         )
     )
 
@@ -77,10 +77,11 @@ async def websocket_endpoint(websocket: WebSocket):
             if 'type' not in data:
                 continue
             command = data['type']
+            payload = data.get('data', {})
 
             if command == 'load_match':
-                if 'match_id' not in data:
-                    websocket.send_json(
+                if 'match_id' not in payload:
+                    await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Match ID not provided'}}
                     )
                     continue
@@ -90,10 +91,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue
 
-                match_id = int(data['match_id'])
+                match_id = int(payload['match_id'])
                 try:
                     if match_id == 0:
-                        get_arena().load_test_match()
+                        await get_arena().load_test_match()
                     else:
                         match = models.read_match_by_id(match_id)
                         if match is None:
@@ -101,19 +102,19 @@ async def websocket_endpoint(websocket: WebSocket):
                                 {'type': 'error', 'data': {'message': 'Match not found'}}
                             )
                             continue
-                        get_arena().load_match(match)
+                        await get_arena().load_match(match)
                 except RuntimeError as e:
                     await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue
 
             elif command == 'show_result':
-                if 'match_id' not in data:
+                if 'match_id' not in payload:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Match ID not provided'}}
                     )
                     continue
 
-                match_id = int(data['match_id'])
+                match_id = int(payload['match_id'])
                 if match_id == 0:
                     get_arena().saved_match = models.Match(type=models.MatchType.TEST, type_order=0)
                     get_arena().saved_match_result = models.MatchResult(
@@ -145,19 +146,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 get_arena().saved_match_result = match_result
                 await get_arena().score_posted_notifier.notify()
 
-            elif command == 'substitude_teams':
-                if ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'] not in data:
+            elif command == 'substitute_teams':
+                if not all(
+                    station in payload
+                    for station in ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3']
+                ):
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Team IDs not provided'}}
                     )
                     continue
 
-                red1 = int(data['red1'])
-                red2 = int(data['red2'])
-                red3 = int(data['red3'])
-                blue1 = int(data['blue1'])
-                blue2 = int(data['blue2'])
-                blue3 = int(data['blue3'])
+                red1 = int(payload['red1'])
+                red2 = int(payload['red2'])
+                red3 = int(payload['red3'])
+                blue1 = int(payload['blue1'])
+                blue2 = int(payload['blue2'])
+                blue3 = int(payload['blue3'])
 
                 try:
                     await get_arena().substitute_team(red1, red2, red3, blue1, blue2, blue3)
@@ -166,13 +170,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
             elif command == 'toggle_bypass':
-                if 'station' not in data:
+                if 'station' not in payload:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Station not provided'}}
                     )
                     continue
 
-                station = data['station']
+                station = payload['station']
                 if station not in get_arena().alliance_stations:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Invalid station'}}
@@ -182,10 +186,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 get_arena().alliance_stations[station].bypass = (
                     not get_arena().alliance_stations[station].bypass
                 )
-                ws.write_notifier(websocket, get_arena().arena_status_notifier)
+                await ws.write_notifier(websocket, get_arena().arena_status_notifier)
 
             elif command == 'start_match':
-                mute_match_sounds = data.get('mute_match_sounds', False)
+                mute_match_sounds = payload.get('mute_match_sounds', False)
                 get_arena().mute_match_sounds = mute_match_sounds
                 try:
                     await get_arena().start_match()
@@ -220,38 +224,48 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 try:
                     await commit_current_match_score()
-                    await get_arena().reset_match()
-                    await get_arena().load_next_match()
+                    get_arena().reset_match()
+                    await get_arena().load_next_match(True)
                 except RuntimeError as e:
                     await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue
 
             elif command == 'discard_results':
                 try:
-                    await get_arena().reset_match()
-                    await get_arena().load_next_match()
+                    get_arena().reset_match()
+                    await get_arena().load_next_match(False)
                 except RuntimeError as e:
                     await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
                     continue
 
             elif command == 'set_audience_display':
-                if 'mode' not in data:
+                if 'data' not in data:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Mode not provided'}}
                     )
                     continue
 
-                mode = data['mode']
+                mode = data['data']
                 await get_arena().set_audience_display_mode(mode)
 
+            elif command == 'set_alliance_station_display':
+                if 'data' not in data:
+                    await websocket.send_json(
+                        {'type': 'error', 'data': {'message': 'Mode not provided'}}
+                    )
+                    continue
+
+                mode = data['data']
+                await get_arena().set_alliance_station_display_mode(mode)
+
             elif command == 'start_timeout':
-                if 'duration_sec' not in data:
+                if 'duration_sec' not in payload:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Duration not provided'}}
                     )
                     continue
 
-                duration_sec = int(data['duration_sec'])
+                duration_sec = int(payload['duration_sec'])
                 try:
                     await get_arena().start_timeout(duration_sec)
                 except RuntimeError as e:
@@ -264,13 +278,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         {'type': 'error', 'data': {'message': 'Current match is not a test match'}}
                     )
                     continue
-                if 'name' not in data:
+                if 'name' not in payload:
                     await websocket.send_json(
                         {'type': 'error', 'data': {'message': 'Name not provided'}}
                     )
                     continue
 
-                get_arena().current_match.long_name = data['name']
+                get_arena().current_match.long_name = payload['name']
                 await get_arena().match_load_notifier.notify()
 
             else:

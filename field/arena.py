@@ -7,7 +7,7 @@ import models
 import network
 import playoff
 from models.event import Event
-from network.access_point import AccessPoint
+from network import AccessPoint, Switch
 
 from .arena_notifiers import ArenaNotifiersMixin
 from .display import Display, DisplayMixin
@@ -58,7 +58,7 @@ class AllianceStation:
 class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaNotifiersMixin):
     event: Event
     access_point: AccessPoint = AccessPoint()
-    # network_switch:
+    network_switch: Switch
     # plc:
     # tba_client: tba
     # nexus_client:
@@ -90,7 +90,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     show_lower_third: bool = False
     mute_match_sounds: bool = False
     match_aborted: bool = False
-    sounds_played: set[game.MatchSound] = set()
+    sounds_played: set[str] = set()
     break_description: str = ''
     preloaded_teams: list[models.Team] = None
 
@@ -123,6 +123,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         arena.audience_display_mode = 'blank'
         arena.saved_match = models.Match(id=0, type=models.MatchType.TEST, type_order=0)
         arena.saved_match_result = models.MatchResult(match_id=0, match_type=models.MatchType.TEST)
+        arena.saved_rankings = game.Rankings()
         arena.alliance_station_display_mode = 'match'
         return arena
 
@@ -336,7 +337,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             return
 
         if self.match_state != MatchState.WARMUP_PERIOD:
-            self.play_sound('abort')
+            await self.play_sound('abort')
 
         self.match_state = MatchState.POST_MATCH
         self.match_aborted = True
@@ -730,17 +731,17 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         ]:
             return
 
-        for sound in game.sounds:
+        for sound in game.get_sounds():
             if sound.match_time_sec < 0:
                 continue
 
-            if sound not in self.sounds_played:
+            if sound.name not in self.sounds_played:
                 if (
                     match_time_sec >= sound.match_time_sec
                     and match_time_sec - sound.match_time_sec < 1
                 ):
                     await self.play_sound(sound.name)
-                    self.sounds_played.add(sound)
+                    self.sounds_played.add(sound.name)
 
     async def play_sound(self, name: str):
         if not self.mute_match_sounds:

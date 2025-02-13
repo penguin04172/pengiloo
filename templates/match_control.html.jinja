@@ -46,10 +46,10 @@ Control
                 <div class="col-lg-2 card bg-body-tertiary">
                     <div class="card-body" id="matchTime">&nbsp;</div>
                 </div>
-                <div class="col-lg-2 card bg-body-tertiary">
+                <div class="col-lg-2 card bg-red">
                     <div class="card-body" id="redScore">&nbsp;</div>
                 </div>
-                <div class="col-lg-2 card bg-body-tertiary">
+                <div class="col-lg-2 card bg-blue">
                     <div class="card-body" id="blueScore">&nbsp;</div>
                 </div>
             </div>
@@ -70,7 +70,7 @@ Control
                         <div id="playoffBlueAllianceInfo"></div>
                     </div>
                 </div>
-                <div class="col-lg-6 card bg-blue mb-2">
+                <div class="col-lg-6 card bg-red mb-2">
                     <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-lg-4">Red Teams</div>
@@ -114,7 +114,7 @@ Control
                     Abort Match
                 </button>
                 <button type="button" id="discardResults" class="btn btn-warning btn-match-play ms-1"
-                    onclick="$('#confirmDiscardResults').modal('show');" disabled>
+                    data-bs-toggle="modal" data-bs-target="#corfirmDiscardResults" disabled>
                     Discard Results
                 </button>
                 <button type="button" id="editResults" class="btn btn-secondary btn-match-play ms-1"
@@ -139,23 +139,28 @@ Control
                                 <br />
                                 <span class="badge badge-scoring" id="blueScoringStatus">Blue</span>
                             </p>
-                            {% if settings.network_security_enabled %}
-                            <h6>Network Security</h6>
-                            <p>
-                                <span class="badge badge-status" id="accessPointStatus">Access Point</span>
-                                <span class="badge badge-status" id="switchStatus">Switch</span>
-                            </p>
-                            {% endif %}
-                            {% if settings.plc_is_enabled %}
-                            <h6>PLC Status</h6>
-                            <p>
-                                <span class="badge badge-scoring" id="plcStatus"></span>
-                                <span class="badge badge-scoring" id="fieldEStop">E-Stop</span>
-                                {% for name, status in settings.plc_armor_block_statuses.items() %}
-                                <span class="badge badge-scoring" id="plc{{ name }}Status">{{ name }}</span>
-                                {% endfor %}
-                            </p>
-                            {% endif %}
+                            <div class="{% if not settings.network_security_enabled %}d-none{% endif %}">
+                                <h6>Network Security</h6>
+                                <p>
+                                    <span class="badge badge-status" id="accessPointStatus">Access Point</span>
+                                    <span class="badge badge-status" id="switchStatus">Switch</span>
+                                </p>
+                            </div>
+                            
+                            <div class="{% if not settings.plc_is_enabled %}d-none{% endif %}">
+                                <h6>Field E-Stop</h6>
+                                <p>
+                                    <span class="badge badge-scoring" id="fieldEStop">E-Stop</span>
+                                </p>
+                                <h6>PLC Status</h6>
+                                <p>
+                                    <span class="badge badge-scoring" id="plcStatus"></span>
+                                    <span class="badge badge-scoring" id="fieldEStop">E-Stop</span>
+                                    {# {% for name, status in settings.plc_armor_block_statuses.items() %}
+                                    <span class="badge badge-scoring" id="plc{{ name }}Status">{{ name }}</span>
+                                    {% endfor %} #}
+                                </p>
+                            </div>
                         </div>
 
                         <div class="col-lg-3">
@@ -301,11 +306,11 @@ Control
         </div>
     </div>
 
-    <div class="modal fade" id="corfirmDiscardResults" style="top: 20%;" aria-hidden="true">
+    <div class="modal fade" id="corfirmDiscardResults" style="top: 20%;" aria-hidden="true"  tabindex="-1" aria-labelledby="corfirmDiscardResultsLabel" >
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Confirm</h4>
+                    <h4 class="modal-title" id="corfirmDiscardResultsLabel">Confirm</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

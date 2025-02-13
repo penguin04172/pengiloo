@@ -15,6 +15,14 @@ class EventStatus(BaseModel):
     last_match_start_time: datetime
     last_match_scheduled_start_time: datetime
 
+    def to_dict(self):
+        return {
+            'cycle_time': self.cycle_time,
+            'early_late_message': self.early_late_message,
+            'last_match_start_time': self.last_match_start_time.isoformat(),
+            'last_match_scheduled_start_time': self.last_match_scheduled_start_time.isoformat(),
+        }
+
 
 class EventStatusMixin:
     event_status: EventStatus

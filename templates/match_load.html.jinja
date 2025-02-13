@@ -1,0 +1,14 @@
+<b class="btn btn-primary" onclick="loadMatch(0)">Load Test Match</b>
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link {% if current_match_type == 1 %}active{% endif %}" href="#Practice" id="tabPractice" aria-controls="tabPanePractice" data-bs-toggle="tab">Practice</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if current_match_type == 2 %}active{% endif %}" href="#Qualification" id="tabQualification" data-bs-toggle="tab">Qualification</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if current_match_type == 3 %}active{% endif %}" href="#Playoff" id="tabPlayoff" data-bs-toggle="tab">Playoff</a>
+    </li>
+</ul>
+<div class="tab-content mt-2" id="tabPaneContainer">
+</div>

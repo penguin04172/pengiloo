@@ -1,25 +1,117 @@
+
+.form-control[disabled] {
+    cursor: default;
+}
+
+.btn[disabled] {
+    color: #000;
+    opacity: 0.2;
+}
 .bg-blue {
-    background-color: #B0E0E6
+    background-color: #bee !important;
 }
 
 .bg-red {
-    background-color: #F4C2C2
+    background-color: #fcc !important;
+}
+
+.bg-green {
+    background-color: #afa !important;
+}
+
+.bg-yellow {
+    background-color: #feb !important;
 }
 
 .badge-scoring {
-    background-color: #e66
+    background-color: #e66 !important;
+}
+
+.badge-scoring [data-ready=true] {
+    background-color: #6e6 !important;
+}
+
+.badge-status {
+    background-color: #e66;
+}
+
+.badge-status[data-status=BOOTING] {
+    background-color: #f92;
+}
+
+.badge-status[data-status=CONFIGURING] {
+    background-color: #08f;
+}
+
+.badge-status[data-status=ACTIVE] {
+    background-color: #0c6;
 }
 
 .badge-saved-match {
     background-color: #666;
 }
+.nowrap {
+    white-space: nowrap;
+}
+
+.indentwrap p {
+    margin: 8px 0px;
+    padding-left: 20px;
+    text-indent: -20px;
+}
 
 .red-text {
-    color: #ff1e90
+    color: #f19
 }
 
 .blue-text {
-    color: #1E90FF
+    color: #29f
+}
+
+.col-no-padding {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.modal-large {
+    width: 60%;
+}
+
+.team-number {
+    height: 27px;
+}
+
+.ds-status, .radio-status, .robot-status, .bypass-status {
+    background-color: #aaa;
+    color: #000;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 0px;
+    width: 60px;
+    height: 27px;
+    line-height: 25px;
+    font-size: 14px;
+    margin: 0 auto;
+}
+
+.bypass-status {
+    cursor: pointer;
+}
+
+[data-status-ok="true"], [data-status-ternary="2"] {
+    background-color: #292;
+}
+
+[data-status-ok="false"], [data-status-ternary="0"] {
+    background-color: #e66;
+}
+
+[data-status-ternary="1"] {
+    background-color: #fc3;
+}
+
+[data-blink="true"] {
+    background-color: #960;
 }
 
 .btn-match-play {
@@ -27,4 +119,38 @@
     height: 50px;
     line-height: 36px;
     font-size: 16px;
+}
+
+.btn-game-sound {
+    width: 190px;
+    text-align: left;
+}
+
+.btn-logs {
+    width: 60px;
+}
+
+.btn-lower-third {
+    width: 80px;
+}
+
+input[data-changed="true"], select[data-changed="true"] {
+    border: 2px solid #f00;
+}
+
+td[data-plc-value="false"] {
+    color: #f00;
+}
+
+td[data-plc-value="true"] {
+    color: #090;
+}
+
+.match-list {
+    height: 610px;
+    overflow-y: auto;
+}
+.match-list th {
+    position: sticky;
+    top: 0;
 }

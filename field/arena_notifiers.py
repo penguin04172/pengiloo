@@ -108,8 +108,8 @@ class ArenaNotifiersMixin:
             'alliance_stations': new_alliance_stations,
             'match_state': self.match_state,
             'can_start_match': self.check_can_start_match(),
-            'access_point_status': {},  # self.access_point.status,
-            'switch_status': {},  # self.network_switch.status,
+            'access_point_status': self.access_point.status,
+            'switch_status': self.network_switch.status,
             'plc_is_healthy': False,  # self.plc.is_healthy(),
             'field_e_stop': False,  # self.plc.get_field_e_stop(),
             'plc_armor_block_status': {},  # self.plc.get_armor_block_status(),
@@ -126,7 +126,7 @@ class ArenaNotifiersMixin:
         return displays_copy
 
     def generate_event_status_message(self):
-        return self.event_status.model_dump()
+        return self.event_status.to_dict()
 
     def generate_lower_third_message(self):
         return {
@@ -225,6 +225,8 @@ class ArenaNotifiersMixin:
         # playoff
         red_wins = 0
         blue_wins = 0
+        red_destination = ''
+        blue_destination = ''
         red_off_field_team_ids = []
         blue_off_field_team_ids = []
         if self.saved_match.type == models.MatchType.PLAYOFF:
@@ -249,19 +251,19 @@ class ArenaNotifiersMixin:
         }
         for ranking in self.saved_rankings:
             if ranking.team_id in red_rankings:
-                red_rankings[ranking.team_id] = ranking
+                red_rankings[ranking.team_id] = ranking.model_dump()
 
             if ranking.team_id in blue_rankings:
-                blue_rankings[ranking.team_id] = ranking
+                blue_rankings[ranking.team_id] = ranking.model_dump()
 
         return {
-            'match': self.saved_match,
-            'red_score_summary': red_score_summary,
-            'blue_score_summary': blue_score_summary,
+            'match': self.saved_match.to_dict(),
+            'red_score_summary': red_score_summary.model_dump(),
+            'blue_score_summary': blue_score_summary.model_dump(),
             'red_ranking_points': red_ranking_points,
             'blue_ranking_points': blue_ranking_points,
-            'red_fouls': self.saved_match_result.red_score.fouls,
-            'blue_fouls': self.saved_match_result.blue_score.fouls,
+            'red_fouls': [foul.model_dump() for foul in self.saved_match_result.red_score.fouls],
+            'blue_fouls': [foul.model_dump() for foul in self.saved_match_result.blue_score.fouls],
             'rules_violated': self.get_rules_violated(
                 self.saved_match_result.red_score.fouls, self.saved_match_result.blue_score.fouls
             ),

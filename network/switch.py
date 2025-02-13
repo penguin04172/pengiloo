@@ -16,7 +16,7 @@ class Switch:
     def __init__(self, address, password):
         self._ubus = UbusClient(host=address, password=password)
         self._lock = asyncio.Lock()
-        self.status = 'UNKNOWN'
+        self.status = 'BOOTING'
         self.config_backoff_duration = SWITCH_CONFIG_BACKOFF_DURATION
         self.config_pause_duration_sec = SWITCH_CONFIG_PAUSE_DURATION_SEC
 

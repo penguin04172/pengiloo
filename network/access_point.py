@@ -50,7 +50,7 @@ class AccessPoint:
         self.network_security_enabled = False
         self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
         self.last_configured_teams: list[Team] = [None] * 6
-        # 新增配置請求佇列
+        self.status: str = 'UnKnown'
         self.config_request_queue = asyncio.Queue(10)
 
     async def set_settings(
@@ -64,6 +64,7 @@ class AccessPoint:
         self.ap = openwrt.UbusClient(host=address, username='root', password=password)
         self.network_security_enabled = network_security_enabled
         self.team_wifi_statuses = wifi_statuses
+        self.status = 'ACTIVE'
 
         if self.channel != channel and self.network_security_enabled:
             logger_ap.info(f'設定 AP 頻道至 {channel}')
@@ -88,6 +89,7 @@ class AccessPoint:
                     await self.handle_configuration_request(config_request)
                 except Exception as err:
                     logger_ap.error(f'配置失敗: {err}')
+                    self.status = 'ErrorConfig'
 
             except asyncio.TimeoutError:  # noqa
                 # 超時時執行定期監控
@@ -95,6 +97,7 @@ class AccessPoint:
                     await self.update_monitoring()
                 except Exception as err:
                     logger_ap.error(f'監控更新失敗: {err}')
+                    self.status = 'ErrorMonitor'
 
     async def configure_team_wifi(self, teams: list[Team | None]):
         """提交新的配置請求"""
@@ -108,6 +111,7 @@ class AccessPoint:
         if self.status_correct_configuration(teams):
             return
 
+        self.status = 'CONFIGURING'
         await self.configure_teams(teams)
 
     async def configure_teams(self, teams: list[Team | None]):
@@ -136,7 +140,7 @@ class AccessPoint:
                     return
 
                 logger_ap.info(f'配置未成功，正在重試 ({retry + 1}')
-                await asyncio.sleep()
+                await asyncio.sleep(3)
 
             except Exception as err:
                 logger_ap.error(f'第 {retry + 1} 次嘗試失敗: {err}')

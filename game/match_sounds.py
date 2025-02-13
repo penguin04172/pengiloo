@@ -40,7 +40,7 @@ def update_match_sounds():
                 match_time_sec=float(timing.auto_duration_sec + timing.pause_duration_sec),
             ),
             MatchSound(
-                name='warning_gituar',
+                name='warning_sonar',
                 file_extension='wav',
                 match_time_sec=float(
                     timing.auto_duration_sec

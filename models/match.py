@@ -36,8 +36,8 @@ class MatchDB(db.Entity):
     short_name = Optional(str)
     name_detail = Optional(str)
     playoff_match_group_id = Optional(str)
-    playoff_red_alliance = Optional(int)
-    playoff_blue_alliance = Optional(int)
+    playoff_red_alliance = Required(int, default=0)
+    playoff_blue_alliance = Required(int, default=0)
     red1 = Optional(int)
     red1_is_surrogate = Optional(bool)
     red2 = Optional(int)
@@ -65,9 +65,9 @@ class Match(BaseModel):
     short_name: str = ''
     scheduled_time: datetime = datetime.fromtimestamp(0)
     name_detail: str = ''
-    playoff_match_group_id: str = None
-    playoff_red_alliance: int | None = None
-    playoff_blue_alliance: int | None = None
+    playoff_match_group_id: str = ''
+    playoff_red_alliance: int = 0
+    playoff_blue_alliance: int = 0
     red1: int = 0
     red1_is_surrogate: bool = False
     red2: int = 0
