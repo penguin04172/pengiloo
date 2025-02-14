@@ -96,56 +96,57 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     await get_arena().realtime_score_notifier.notify()
 
-                elif message_type == 'card':
-                    alliance = data['data'].get('alliance')
-                    team_id = data['data'].get('team_id')
-                    card = data['data'].get('card')
+            elif message_type == 'card':
+                alliance = data['data'].get('alliance')
+                team_id = data['data'].get('team_id')
+                card = data['data'].get('card')
 
-                    if alliance == 'red':
-                        cards = get_arena().red_realtime_score.cards
-                    else:
-                        cards = get_arena().blue_realtime_score.cards
-
-                    if get_arena().current_match.type == models.MatchType.PLAYOFF:
-                        if alliance == 'red':
-                            cards[str(get_arena().current_match.red1)] = card
-                            cards[str(get_arena().current_match.red2)] = card
-                            cards[str(get_arena().current_match.red3)] = card
-                        else:
-                            cards[str(get_arena().current_match.blue1)] = card
-                            cards[str(get_arena().current_match.blue2)] = card
-                            cards[str(get_arena().current_match.blue3)] = card
-                    else:
-                        cards[str(team_id)] = card
-
-                    await get_arena().alliance_station_display_mode_notifier.notify()
-
-                elif message_type == 'signal_reset':
-                    if get_arena().match_state != field.MatchState.POST_MATCH:
-                        continue
-
-                    get_arena().field_reset = True
-                    get_arena().alliance_station_display_mode = 'field_reset'
-                    await get_arena().scoring_status_notifier.notify()
-
-                elif message_type == 'commit_match':
-                    if get_arena().match_state != field.MatchState.POST_MATCH:
-                        continue
-
-                    get_arena().red_realtime_score.fouls_commited = True
-                    get_arena().blue_realtime_score.fouls_commited = True
-                    get_arena().field_reset = True
-                    get_arena().alliance_station_display_mode = 'field_reset'
-                    await get_arena().alliance_station_display_mode_notifier.notify()
-                    await get_arena().scoring_status_notifier.notify()
-
+                if alliance == 'red':
+                    cards = get_arena().red_realtime_score.cards
                 else:
-                    await websocket.send_json(
-                        {
-                            'type': 'error',
-                            'data': {'message': f'Invalid message type{message_type}'},
-                        }
-                    )
+                    cards = get_arena().blue_realtime_score.cards
+
+                if get_arena().current_match.type == models.MatchType.PLAYOFF:
+                    if alliance == 'red':
+                        cards[str(get_arena().current_match.red1)] = card
+                        cards[str(get_arena().current_match.red2)] = card
+                        cards[str(get_arena().current_match.red3)] = card
+                    else:
+                        cards[str(get_arena().current_match.blue1)] = card
+                        cards[str(get_arena().current_match.blue2)] = card
+                        cards[str(get_arena().current_match.blue3)] = card
+                else:
+                    cards[str(team_id)] = card
+
+                await get_arena().alliance_station_display_mode_notifier.notify()
+                await get_arena().realtime_score_notifier.notify()
+
+            elif message_type == 'signal_reset':
+                if get_arena().match_state != field.MatchState.POST_MATCH:
+                    continue
+
+                get_arena().field_reset = True
+                get_arena().alliance_station_display_mode = 'field_reset'
+                await get_arena().scoring_status_notifier.notify()
+
+            elif message_type == 'commit_match':
+                if get_arena().match_state != field.MatchState.POST_MATCH:
+                    continue
+
+                get_arena().red_realtime_score.fouls_commited = True
+                get_arena().blue_realtime_score.fouls_commited = True
+                get_arena().field_reset = True
+                get_arena().alliance_station_display_mode = 'field_reset'
+                await get_arena().alliance_station_display_mode_notifier.notify()
+                await get_arena().scoring_status_notifier.notify()
+
+            else:
+                await websocket.send_json(
+                    {
+                        'type': 'error',
+                        'data': {'message': f'Invalid message type{message_type}'},
+                    }
+                )
 
     except WebSocketDisconnect:
         pass
