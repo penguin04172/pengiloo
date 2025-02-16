@@ -114,13 +114,16 @@ class Algae(BaseModel):
     auto_processor_algae: int = 0
     auto_net_algae: int = 0
     teleop_processor_algae: int = 0
-    teleop_net_algae: int = 0
+    total_net_algae: int = 0
 
     def auto_algae_points(self) -> int:
-        return 6 * self.auto_processor_algae + 4 * self.auto_net_algae
+        auto_net = min(self.auto_net_algae, self.total_net_algae)
+        return 6 * self.auto_processor_algae + 4 * auto_net
 
     def teleop_algae_points(self) -> int:
-        return 6 * self.teleop_processor_algae + 4 * self.teleop_net_algae
+        return 6 * self.teleop_processor_algae + 4 * max(
+            (self.total_net_algae - self.auto_net_algae), 0
+        )
 
     def total_algae_points(self) -> int:
         return self.auto_algae_points() + self.teleop_algae_points()
@@ -129,7 +132,7 @@ class Algae(BaseModel):
         return self.auto_processor_algae + self.teleop_processor_algae
 
     def num_net_algae_scored(self) -> int:
-        return self.auto_net_algae + self.teleop_net_algae
+        return self.total_net_algae
 
     def total_algae_scored(self) -> int:
         return self.num_processor_algae_scored() + self.num_net_algae_scored()

@@ -125,8 +125,8 @@ async def build_match_review_list(match_type: models.MatchType):
 
         result = models.read_match_result_for_match(match.id)
         if result is not None:
-            list_item.red_score = await result.red_score_summary().score
-            list_item.blue_score = await result.blue_score_summary().score
+            list_item.red_score = result.red_score_summary().score
+            list_item.blue_score = result.blue_score_summary().score
 
         if match.status == game.MatchStatus.RED_WON_MATCH:
             list_item.color_class = 'red'

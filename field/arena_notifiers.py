@@ -215,9 +215,9 @@ class ArenaNotifiersMixin:
 
         match self.saved_match.status:
             case game.MatchStatus.RED_WON_MATCH:
-                red_ranking_points += 2
+                red_ranking_points += 3
             case game.MatchStatus.BLUE_WON_MATCH:
-                blue_ranking_points += 2
+                blue_ranking_points += 3
             case game.MatchStatus.TIE_MATCH:
                 red_ranking_points += 1
                 blue_ranking_points += 1
@@ -271,8 +271,8 @@ class ArenaNotifiersMixin:
             'blue_cards': self.saved_match_result.blue_cards,
             'red_rankings': red_rankings,
             'blue_rankings': blue_rankings,
-            'red_off_field_team_ids': red_off_field_team_ids,
-            'blue_off_field_team_ids': blue_off_field_team_ids,
+            'red_off_field_team_ids': red_off_field_team_ids or [],
+            'blue_off_field_team_ids': blue_off_field_team_ids or [],
             'red_won': self.saved_match.status == game.MatchStatus.RED_WON_MATCH,
             'blue_won': self.saved_match.status == game.MatchStatus.BLUE_WON_MATCH,
             'red_wins': red_wins,

@@ -4,12 +4,7 @@ import aiohttp
 from pydantic import BaseModel
 
 from . import config
-from .exceptions import (
-    UbusLoginError,
-    UbusRequestError,
-    UbusTimeoutError,
-    UbusUnauthorizedError,
-)
+from .exceptions import UbusLoginError, UbusRequestError, UbusTimeoutError, UbusUnauthorizedError
 
 
 class UbusPayload(BaseModel):
@@ -20,7 +15,7 @@ class UbusPayload(BaseModel):
 
 
 class UbusClient:
-    def __init__(self, host='', username='root', password='', timeout=1):
+    def __init__(self, host='', username='root', password='', timeout=10):
         self.host = host
         self.username = username
         self.password = password
@@ -95,11 +90,11 @@ class UbusClient:
     async def get_wifi_clients(self, station='wlan0') -> dict:
         """查詢無線網路客戶端列表"""
         data = await self.call(*config.UBUS_METHODS['WIFI_CLIENTS'](station))
+        print(data)
         return data['result'][1]['clients']
 
     async def set_wifi_channel(self, channel: int, radio=0):
         """設定無線網路頻道"""
-
         async with aiohttp.ClientSession() as session:
             payload = UbusPayload(
                 params=[self._session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](radio, channel)]
@@ -112,14 +107,14 @@ class UbusClient:
             await session.post(self.base_url, json=payload, timeout=self.timeout)
 
             payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['RECONE_WIFI']]
+                params=[self._session_id, *config.UBUS_METHODS['RECONF_WIFI']]
             ).model_dump()
             await session.post(self.base_url, json=payload, timeout=self.timeout)
 
     async def set_wifi_ssid_and_password(self, channel: int, teams: list[dict]):
         async with aiohttp.ClientSession() as session:
             channel_payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](channel)]
+                params=[self._session_id, *config.UBUS_METHODS['WIFI_CHANNEL'](2, channel)]
             ).model_dump()
             await session.post(self.base_url, json=channel_payload, timeout=self.timeout)
 
@@ -141,17 +136,41 @@ class UbusClient:
                 ).model_dump()
                 await session.post(self.base_url, json=setup_payload, timeout=self.timeout)
 
-            # 提交變更
-            commit_payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
-            )
-            await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
+            access_payload = UbusPayload(
+                params=[self._session_id, *config.UBUS_METHODS['UCI_ACCESS']('wireless')]
+            ).model_dump()
+            resp = await session.post(self.base_url, json=access_payload, timeout=self.timeout)
+            print(await resp.text())
 
-            # 重新啟動 Wi-Fi
-            reload_payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['RECONF_WIFI']]
+            await session.post(
+                f'http://{self.host}/cgi-bin/cgi-exec',
+                data={'sessionid': self._session_id, 'command': '/usr/libexec/luci-peeraddr'},
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                timeout=self.timeout,
             )
-            await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
+
+            await session.post(
+                f'http://{self.host}/cgi-bin/luci/admin/uci/apply_unchecked',
+                data={'sid': self._session_id},
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                timeout=self.timeout,
+            )
+
+            # # 提交變更
+            # commit_payload = UbusPayload(
+            #     params=[self._session_id, *config.UBUS_METHODS['UCI_COMMIT']('wireless')]
+            # ).model_dump()
+            # resp = await session.post(self.base_url, json=commit_payload, timeout=self.timeout)
+            # print(await resp.text())
+
+            # # 重新啟動 Wi-Fi
+            # reload_payload = UbusPayload(
+            #     params=[self._session_id, *config.UBUS_METHODS['RECONF_WIFI']]
+            # ).model_dump()
+            # resp = await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
+            # print(await resp.text())
 
     async def generate_ethernet_configs(self, team_id: int = None, vlan: int = None):
         if vlan not in [10, 20, 30, 40, 50, 60]:
@@ -230,11 +249,11 @@ class UbusClient:
             await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
 
             reload_payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['RESTART_SERVICE']('dnsmasq')]
+                params=[self._session_id, *config.UBUS_METHODS['RC_INIT']('dnsmasq')]
             ).model_dump()
             await session.post(self.base_url, json=reload_payload, timeout=self.timeout)
 
             reload_payload = UbusPayload(
-                params=[self._session_id, *config.UBUS_METHODS['RESTART_SERVICE']('odhcpd')]
+                params=[self._session_id, *config.UBUS_METHODS['RC_INIT']('odhcpd')]
             ).model_dump()
             await session.post(self.base_url, json=reload_payload, timeout=self.timeout)

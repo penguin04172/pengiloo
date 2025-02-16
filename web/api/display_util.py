@@ -38,7 +38,8 @@ async def enforce_display_configuration(
 
 
 async def register_display(websocket: WebSocket) -> field.Display:
-    query = websocket.query_params
+    query = dict(websocket.query_params)
+
     display_configuration = field.display_from_url(websocket.url.path, query)
 
     ip_address = websocket.headers.get('X-Real-IP', '')

@@ -23,6 +23,11 @@ UBUS_METHODS = {
         'del',
         {'config': config, 'section': section, 'options': options},
     ],
+    'UCI_ACCESS': lambda config: [
+        'session',
+        'access',
+        {'function': 'write', 'object': config, 'scope': 'uci'},
+    ],
     'UCI_COMMIT': lambda config: ['uci', 'commit', {'config': config}],
     'UCI_APPLY': lambda timeout: ['uci', 'apply', {'timeout': timeout}],
     'SERVICE_RESTART': lambda service: [
@@ -30,4 +35,5 @@ UBUS_METHODS = {
         'event',
         {'type': 'restart', 'data': {'name': service}},
     ],
+    'RC_INIT': lambda service: ['rc', 'init', {'name': service, 'action': 'restart'}],
 }

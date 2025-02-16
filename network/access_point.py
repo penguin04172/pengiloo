@@ -12,7 +12,7 @@ logger_ap = logging.getLogger(__name__)
 
 ACCESS_POINT_POLL_PERIOD_SEC = 3
 ACCESS_POINT_RETRY_DELAY_SEC = 30
-ACCESS_POINT_INTERFACES = ['phy1-ap0', 'phy1-ap1', 'phy1-ap2', 'phy1-ap3', 'phy1-ap4', 'phy1-ap5']
+ACCESS_POINT_INTERFACES = ['phy2-ap0', 'phy2-ap1', 'phy2-ap2', 'phy2-ap3', 'phy2-ap4', 'phy2-ap5']
 
 
 class TeamWifiStatus(BaseModel):
@@ -26,7 +26,7 @@ class TeamWifiStatus(BaseModel):
 
 
 class StationStatus(BaseModel):
-    ssid: str = ''
+    team_id: int = 0
     is_linked: bool = False
     rx_rate_mbps: float = 0.0
     tx_rate_mbps: float = 0.0
@@ -46,7 +46,7 @@ class APMonitoringError(Exception):
 class AccessPoint:
     def __init__(self):
         self.ap = None
-        self.channel = 0
+        self.channel = 149
         self.network_security_enabled = False
         self.team_wifi_statuses: list[TeamWifiStatus] = [None] * 6
         self.last_configured_teams: list[Team] = [None] * 6
@@ -79,7 +79,6 @@ class AccessPoint:
                 config_request = await asyncio.wait_for(
                     self.config_request_queue.get(), timeout=ACCESS_POINT_POLL_PERIOD_SEC
                 )
-
                 # 清空佇列中的其他請求，只處理最新的
                 while not self.config_request_queue.empty():
                     config_request = await self.config_request_queue.get()
@@ -102,6 +101,7 @@ class AccessPoint:
     async def configure_team_wifi(self, teams: list[Team | None]):
         """提交新的配置請求"""
         await self.config_request_queue.put(teams)
+        # print(f'configure_team_wifi: {teams}')
 
     async def handle_configuration_request(self, teams: list[Team | None]):
         """處理配置請求"""
@@ -162,10 +162,13 @@ class AccessPoint:
         for i, interface in enumerate(ACCESS_POINT_INTERFACES):
             station_status = StationStatus()
             wifi_info = await self.ap.get_wifi_info(interface)
+            # print(f'wifi_info: {wifi_info}')
             self.channel = wifi_info['channel']
-            station_status.ssid = wifi_info['ssid']
+            ssid = wifi_info['ssid']
+            station_status.team_id = 0 if 'no-team' in ssid else int(ssid)
             station_status.connection_quality = wifi_info.get('quality', 0)
-            wifi_clients = await self.ap.get_wifi_clients(interface)
+            wifi_clients = await self.ap.get_wifi_assoclist(interface)
+            logger_ap.info(f'wifi_clients: {wifi_clients}')
 
             if len(wifi_clients) > 0:
                 mac = list(wifi_clients.keys())[0]
@@ -178,8 +181,10 @@ class AccessPoint:
                 station_status.bandwidth_used_mbps = (
                     wifi_clients[mac]['airtime']['rx'] + wifi_clients[mac]['airtime']['tx']
                 ) / 1000000
+            logger_ap.info(f'station_status: {station_status}')
 
-            update_team_wifi_status(self.team_wifi_statuses[i], station_status)
+            self.team_wifi_statuses[i] = TeamWifiStatus(**station_status.model_dump())
+        print(f'team_wifi_statuses: {self.team_wifi_statuses}')
 
     def status_correct_configuration(self, teams: list[Team | None]):
         for i, team in enumerate(teams):
@@ -192,21 +197,26 @@ class AccessPoint:
 
         return True
 
+    async def get_team_wifi_status(self, station_id: str):
+        if station_id not in ['R1', 'R2', 'R3', 'B1', 'B2', 'B3']:
+            return None
+        return self.team_wifi_statuses[station_id]
 
-def update_team_wifi_status(team_wifi_status: TeamWifiStatus, station_status: StationStatus):
+
+def update_team_wifi_status(team_wifi_status: list[TeamWifiStatus], station_status: StationStatus):
     if station_status is None:
-        team_wifi_status.team_id = 0
-        team_wifi_status.radio_linked = False
-        team_wifi_status.mbits = 0
-        team_wifi_status.rx_rate = 0
-        team_wifi_status.tx_rate = 0
-        team_wifi_status.signal_noise_ratio = 0
-        team_wifi_status.connection_quality = 0
+        team_wifi_status[0].team_id = 0
+        team_wifi_status[0].radio_linked = False
+        team_wifi_status[0].mbits = 0
+        team_wifi_status[0].rx_rate = 0
+        team_wifi_status[0].tx_rate = 0
+        team_wifi_status[0].signal_noise_ratio = 0
+        team_wifi_status[0].connection_quality = 0
     else:
-        team_wifi_status.team_id = int(station_status.ssid)
-        team_wifi_status.radio_linked = station_status.is_linked
-        team_wifi_status.mbits = station_status.bandwidth_used_mbps
-        team_wifi_status.rx_rate = station_status.rx_rate_mbps
-        team_wifi_status.tx_rate = station_status.tx_rate_mbps
-        team_wifi_status.signal_noise_ratio = station_status.signal_noise_ratio
-        team_wifi_status.connection_quality = station_status.connection_quality
+        team_wifi_status[0].team_id = int(station_status.ssid)
+        team_wifi_status[0].radio_linked = station_status.is_linked
+        team_wifi_status[0].mbits = station_status.bandwidth_used_mbps
+        team_wifi_status[0].rx_rate = station_status.rx_rate_mbps
+        team_wifi_status[0].tx_rate = station_status.tx_rate_mbps
+        team_wifi_status[0].signal_noise_ratio = station_status.signal_noise_ratio
+        team_wifi_status[0].connection_quality = station_status.connection_quality

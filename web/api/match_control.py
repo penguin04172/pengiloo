@@ -355,7 +355,7 @@ async def commit_match_score(
         if get_arena().event.tba_publishing_enabled and match.type != models.MatchType.PRACTICE:
             pass
 
-        models.backup_db(get_arena().event.name, f'post_{match.type}_match_{match.short_name}')
+        # models.backup_db(get_arena().event.name, f'post_{match.type}_match_{match.short_name}')
 
     if not is_match_review_edit:
         get_arena().saved_match = match

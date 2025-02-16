@@ -7,7 +7,7 @@ import models
 import network
 import playoff
 from models.event import Event
-from network import AccessPoint, Switch
+from network import AccessPoint, Switch, TeamWifiStatus
 
 from .arena_notifiers import ArenaNotifiersMixin
 from .display import Display, DisplayMixin
@@ -33,14 +33,33 @@ logger = logging.getLogger(__name__)
 
 
 class AllianceStation:
-    ds_conn: DriverStationConnection = None
-    ethernet: bool = False
-    a_stop: bool = False
-    e_stop: bool = False
-    bypass: bool = False
-    team: models.Team = None
-    wifi_status: network.TeamWifiStatus = network.TeamWifiStatus()
-    a_stop_reset: bool = False
+    def __init__(
+        self,
+        station_id: int,
+        access_point: AccessPoint,
+        ds_conn: DriverStationConnection = None,
+        ethernet: bool = False,
+        a_stop: bool = False,
+        e_stop: bool = False,
+        bypass: bool = False,
+        team: models.Team = None,
+        a_stop_reset: bool = False,
+    ):
+        self.station_id = station_id
+        self.access_point = access_point
+        self.ds_conn = ds_conn
+        self.ethernet = ethernet
+        self.a_stop = a_stop
+        self.e_stop = e_stop
+        self.bypass = bypass
+        self.team = team
+        self.a_stop_reset = a_stop_reset
+
+    @property
+    def wifi_status(self):
+        if self.team is None:
+            return TeamWifiStatus()
+        return self.access_point.team_wifi_statuses[self.station_id]
 
     def to_dict(self):
         return {
@@ -100,13 +119,10 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     @classmethod
     async def new_arena(cls):
         arena = cls()
-        arena.alliance_stations = dict[str, AllianceStation]()
-        arena.alliance_stations['R1'] = AllianceStation()
-        arena.alliance_stations['R2'] = AllianceStation()
-        arena.alliance_stations['R3'] = AllianceStation()
-        arena.alliance_stations['B1'] = AllianceStation()
-        arena.alliance_stations['B2'] = AllianceStation()
-        arena.alliance_stations['B3'] = AllianceStation()
+        arena.alliance_stations = {
+            station: AllianceStation(i, arena.access_point)
+            for i, station in enumerate(['R1', 'R2', 'R3', 'B1', 'B2', 'B3'])
+        }
 
         arena.displays = dict[str, Display]()
         arena.team_signs = TeamSigns()
@@ -140,16 +156,12 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.team_signs.blue_3.set_id(settings.team_sign_blue_3_id)
         self.team_signs.blue_timer.set_id(settings.team_sign_blue_timer_id)
 
-        access_point_wifi_status = [
-            self.alliance_stations[station].wifi_status
-            for station in ['R1', 'R2', 'R3', 'B1', 'B2', 'B3']
-        ]
         await self.access_point.set_settings(
             settings.ap_address,
             settings.ap_password,
             settings.ap_channel,
             settings.network_security_enabled,
-            access_point_wifi_status,
+            [TeamWifiStatus() for _ in range(6)],
         )
 
         self.network_switch = network.Switch(settings.switch_address, settings.switch_password)
@@ -481,6 +493,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 auto = False
                 enabled = False
                 send_ds_packet = True
+                await self.play_sound('end')
                 # stop blackmagic
 
                 async def post_match_dwell():
@@ -539,8 +552,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
     async def run(self):
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(self.listen_for_driver_stations())
-            tg.create_task(self.listen_for_ds_udp_packets())
+            # tg.create_task(self.listen_for_driver_stations())
+            # tg.create_task(self.listen_for_ds_udp_packets())
             tg.create_task(self.run_periodic_task())
             tg.create_task(self.access_point.run())
             # run plc
@@ -634,7 +647,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
         teams = [models.read_team_by_id(team_id) for team_id in team_ids]
         await self.setup_network(teams, True)
-        self.team_signs.set_next_match_teams(teams)
+        self.team_signs.set_next_match_teams(next_match)
 
     async def setup_network(self, teams: list[models.Team], is_preload: bool):
         if is_preload:

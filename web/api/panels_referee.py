@@ -136,7 +136,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 get_arena().red_realtime_score.fouls_commited = True
                 get_arena().blue_realtime_score.fouls_commited = True
                 get_arena().field_reset = True
-                get_arena().alliance_station_display_mode = 'field_reset'
+                get_arena().alliance_station_display_mode = 'fieldReset'
                 await get_arena().alliance_station_display_mode_notifier.notify()
                 await get_arena().scoring_status_notifier.notify()
 

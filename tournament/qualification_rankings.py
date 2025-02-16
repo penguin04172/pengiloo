@@ -97,11 +97,11 @@ def add_match_result_to_rankings(
         disqualified = True
 
     if is_red:
-        ranking.fields.add_score_summary(
+        ranking.add_score_summary(
             match_result.red_score_summary(), match_result.blue_score_summary(), disqualified
         )
     else:
-        ranking.fields.add_score_summary(
+        ranking.add_score_summary(
             match_result.blue_score_summary(), match_result.red_score_summary(), disqualified
         )
 

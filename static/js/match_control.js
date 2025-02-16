@@ -92,7 +92,7 @@ const confirmCommit = () => {
 }
 
 const setTestMatchName = () => {
-    websocket.send("set_test_match_name", $('#testMatchName').value);
+    websocket.send("set_test_match_name", { name: $('#testMatchName').value});
 }
 
 const getTeamNumber = (station) => {
@@ -101,6 +101,7 @@ const getTeamNumber = (station) => {
 }
 
 const handleArenaStatus = (data) => {
+    // console.log(data);
     Object.entries(data.alliance_stations).forEach(([station, stationStatus]) => {
         const wifiStatus = stationStatus.wifi_status;
         $('#status' + station + ' .radio-status').innerText = wifiStatus.team_id;
@@ -349,6 +350,7 @@ const handleAudienceDisplayMode = (data) => {
 }
 
 const handleScoringStatus = (data) => {
+    console.log(data);
     scoreIsReady = data.referee_score_ready && data.red_score_ready && data.blue_score_ready;
     $('#refereeScoringStatus').setAttribute('data-ready', data.referee_score_ready);
     $('#redScoringStatus').textContent = `Red Scoring: ${data.num_red_scoring_panels_ready}/${data.num_red_scoring_panels}`;

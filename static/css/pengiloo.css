@@ -27,7 +27,7 @@
     background-color: #e66 !important;
 }
 
-.badge-scoring [data-ready=true] {
+.badge-scoring[data-ready="true"] {
     background-color: #6e6 !important;
 }
 

@@ -25,6 +25,8 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
     opponent_realtime_score = (
         get_arena().blue_realtime_score if alliance == 'red' else get_arena().red_realtime_score
     )
+    get_arena().scoring_panel_registry.register_panel(alliance, websocket)
+    await get_arena().scoring_status_notifier.notify()
 
     notifiers_task = asyncio.create_task(
         ws.handle_notifiers(
@@ -67,19 +69,26 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
 
                 elif command == 'cage':
                     if 2 >= payload['position'] >= 0:
-                        if score.cage_statuses[payload['position']] == max(game.CageStatus):
+                        if game.CageStatus(score.cage_statuses[payload['position']]) == max(
+                            game.CageStatus
+                        ):
                             score.cage_statuses[payload['position']] = min(game.CageStatus)
                         else:
-                            score.cage_statuses[payload['position']] += 1
+                            score.cage_statuses[payload['position']] = game.CageStatus(
+                                score.cage_statuses[payload['position']].value + 1
+                            )
                         score_changed = True
 
                 elif command == 'endgame':
                     if 2 >= payload['position'] >= 0:
-                        if score.endgame_statuses[payload['position']] == max(game.EndgameStatus):
-                            score.endgame_statuses[payload['position']] = min(game.EndgameStatus)
-                        else:
-                            score.endgame_statuses[payload['position']] += 1
-                        score_changed = True
+                        (
+                            score_changed,
+                            score.endgame_statuses[payload['position']],
+                        ) = set_goal(
+                            score.endgame_statuses[payload['position']],
+                            game.EndgameStatus(payload['state']),
+                        )
+                        print(score.endgame_statuses[payload['position']])
 
                 elif command == 'trough_auto':
                     if payload['action'] == 'plus':
@@ -132,19 +141,25 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
                         score_changed, score.score_elements.auto_net_algae = increment_goal(
                             score.score_elements.auto_net_algae
                         )
+                        _, score.score_elements.total_net_algae = increment_goal(
+                            score.score_elements.total_net_algae
+                        )
                     elif payload['action'] == 'minus':
                         score_changed, score.score_elements.auto_net_algae = decrement_goal(
                             score.score_elements.auto_net_algae
                         )
+                        _, score.score_elements.total_net_algae = decrement_goal(
+                            score.score_elements.total_net_algae
+                        )
 
-                elif command == 'net_teleop':
+                elif command == 'net_total':
                     if payload['action'] == 'plus':
-                        score_changed, score.score_elements.teleop_net_algae = increment_goal(
-                            score.score_elements.teleop_net_algae
+                        score_changed, score.score_elements.total_net_algae = increment_goal(
+                            score.score_elements.total_net_algae
                         )
                     elif payload['action'] == 'minus':
-                        score_changed, score.score_elements.teleop_net_algae = decrement_goal(
-                            score.score_elements.teleop_net_algae
+                        score_changed, score.score_elements.total_net_algae = decrement_goal(
+                            score.score_elements.total_net_algae
                         )
 
                 elif command == 'branches_auto':
@@ -210,6 +225,8 @@ async def websocket_endpoint(alliance: str, websocket: WebSocket):
             await notifiers_task
         except asyncio.CancelledError:
             pass
+        get_arena().scoring_panel_registry.unregister_panel(alliance, websocket)
+        await get_arena().scoring_status_notifier.notify()
 
 
 def increment_goal(goal: object):
