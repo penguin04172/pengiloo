@@ -249,6 +249,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             'match_id': self.current_match.id,
             'match': self.current_match.model_dump()
         })
+        self.broadcast_full_state()
 
     async def load_test_match(self):
         return await self.load_match(
@@ -461,6 +462,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             # reset plc
             self.field_reset = False
             self.broadcast_state('match_started', {'match_id': self.current_match.id})
+            self.broadcast_full_state()
 
         elif self.match_state == MatchState.WARMUP_PERIOD:
             auto = True
@@ -503,6 +505,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 send_ds_packet = True
                 await self.play_sound('end')
                 self.broadcast_state('match_ended', {'match_id': self.current_match.id})
+                self.broadcast_full_state()
                 # stop blackmagic
 
                 async def post_match_dwell():
@@ -620,22 +623,26 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                     payload['red1'], payload['red2'], payload['red3'],
                     payload['blue1'], payload['blue2'], payload['blue3']
                 )
+                self.broadcast_full_state()
             elif cmd == 'toggle_bypass':
                 station = payload['station']
                 if station in self.alliance_stations:
                     self.alliance_stations[station].bypass = not self.alliance_stations[station].bypass
                     await self.arena_status_notifier.notify()
+                    self.broadcast_full_state()
             elif cmd == 'signal_reset':
                 if self.match_state in [MatchState.POST_MATCH, MatchState.PRE_MATCH]:
                     self.field_reset = True
                     self.alliance_station_display_mode = 'fieldReset'
                     await self.alliance_station_display_mode_notifier.notify()
+                    self.broadcast_full_state()
             elif cmd == 'start_timeout':
                 await self.start_timeout('Timeout', payload['duration_sec'])
             elif cmd == 'set_test_match_name':
                 if self.current_match.type == models.MatchType.TEST:
                     self.current_match.long_name = payload['name']
                     await self.match_load_notifier.notify()
+                    self.broadcast_full_state()
             elif cmd == 'load_next_match':
                 await self.load_next_match(payload.get('start_break', True))
             elif cmd == 'reset_match':
@@ -649,6 +656,67 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         """Broadcast state update to Web process via IPC."""
         if self.ipc:
             self.ipc.broadcast_state(state_type, data)
+    
+    def broadcast_full_state(self):
+        """Broadcast complete Arena state to Web process."""
+        if not self.ipc:
+            return
+        
+        try:
+            state = {
+                'type': 'full_state',
+                'match_state': self.match_state.value if hasattr(self.match_state, 'value') else str(self.match_state),
+                'match_id': self.current_match.id if self.current_match else None,
+                'match_type': self.current_match.type.value if self.current_match and hasattr(self.current_match.type, 'value') else None,
+                'match_name': self.current_match.long_name if self.current_match else None,
+                'match_time_sec': self.match_timing.current_time_sec() if hasattr(self, 'match_timing') else 0,
+                'field_reset': self.field_reset,
+                'audience_display_mode': self.audience_display_mode,
+                'alliance_station_display_mode': self.alliance_station_display_mode,
+                'event_name': self.event.name if self.event else 'Unknown Event',
+                'event_code': self.event.code if self.event else '',
+            }
+            
+            # Alliance stations status
+            if self.alliance_stations:
+                state['alliance_stations'] = {
+                    station: {
+                        'team_id': status.team.id if status.team else 0,
+                        'bypass': status.bypass,
+                        'ethernet': status.ethernet,
+                        'ds_linked': status.ds_conn.ds_linked if status.ds_conn else False,
+                        'wifi_status': status.wifi_status.model_dump() if status.wifi_status else None,
+                    }
+                    for station, status in self.alliance_stations.items()
+                }
+            
+            # Realtime scores
+            state['red_score'] = self.red_realtime_score.model_dump() if self.red_realtime_score else {}
+            state['blue_score'] = self.blue_realtime_score.model_dump() if self.blue_realtime_score else {}
+            
+            # Alliance selection data
+            state['alliance_selection_alliances'] = [
+                alliance.model_dump() for alliance in self.alliance_selection_alliances
+            ]
+            state['alliance_selection_ranked_teams'] = [
+                {
+                    'rank': team.rank,
+                    'team_id': team.team_id,
+                    'picked': team.picked
+                }
+                for team in self.alliance_selection_ranked_teams
+            ]
+            state['alliance_selection_show_timer'] = self.alliance_selection_show_timer
+            state['alliance_selection_time_remaining_sec'] = self.alliance_selection_time_remaining_sec
+            
+            # Lower third
+            if self.lower_third:
+                state['lower_third'] = self.lower_third.model_dump()
+                state['show_lower_third'] = self.show_lower_third
+            
+            self.ipc.broadcast_state('full_state', state)
+        except Exception as e:
+            logger.error(f'Error broadcasting full state: {e}')
 
     def red_score_summary(self):
         return self.red_realtime_score.current_score.summarize(
@@ -849,7 +917,14 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         )
 
     async def run_periodic_task(self):
+        last_full_state_broadcast = datetime.now()
         while True:
             await self.update_early_late_message()
             await self.purge_disconnected_displays()
+            
+            # Broadcast full state every 2 seconds for Web process cache
+            if (datetime.now() - last_full_state_broadcast).total_seconds() >= 2.0:
+                self.broadcast_full_state()
+                last_full_state_broadcast = datetime.now()
+            
             await asyncio.sleep(PERIODIC_TASK_PERIOD_SEC)
