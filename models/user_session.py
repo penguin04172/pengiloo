@@ -1,48 +1,47 @@
 from datetime import datetime
+from typing import Optional
 
-from pony.orm import Optional, PrimaryKey, Required, db_session
-from pydantic import BaseModel
+from sqlmodel import Field, SQLModel, Session, select
 
-from .base import db
+from .base import engine
 
 
-class UserSession(BaseModel):
-    id: int | None = None
+class UserSession(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     token: str
-    user_name: str | None = None
-    created_at: datetime | None = None
+    user_name: Optional[str] = None
+    created_at: datetime = Field(default=datetime(1970, 1, 1, 0, 0))
 
 
-class UserSessionDB(db.Entity):
-    id = PrimaryKey(int)
-    token = Required(str)
-    user_name = Optional(str)
-    created_at = Optional(datetime, default=datetime(1970, 1, 1, 0, 0), volatile=True)
+def create_user_session(session_data: UserSession) -> UserSession:
+    with Session(engine) as session:
+        existing = session.exec(select(UserSession).where(UserSession.token == session_data.token)).first()
+        if existing:
+            return existing
+
+        session.add(session_data)
+        session.commit()
+        session.refresh(session_data)
+        return session_data
 
 
-@db_session
-def create_user_session(session: UserSession):
-    user_session = UserSessionDB.get(token=session.token)
-    if user_session is not None:
-        return UserSession(**user_session.to_dict())
-
-    user_session = UserSessionDB(**session.model_dump(exclude_none=True))
-    return UserSession(**user_session.to_dict())
+def read_user_session_by_token(token: str) -> Optional[UserSession]:
+    with Session(engine) as session:
+        return session.exec(select(UserSession).where(UserSession.token == token)).first()
 
 
-@db_session
-def read_user_session_by_token(token: str):
-    user_session = UserSessionDB.get(token=token)
-    if user_session is None:
-        return None
-    return UserSession(**user_session.to_dict())
-
-
-@db_session
 def delete_user_session(id: int):
-    UserSessionDB[id].delete()
+    with Session(engine) as session:
+        user_session = session.get(UserSession, id)
+        if user_session:
+            session.delete(user_session)
+            session.commit()
 
 
 def truncate_user_sessions():
-    db.drop_table(table_name=UserSessionDB._table_, with_all_data=True)
-    db.create_tables()
+    with Session(engine) as session:
+        statement = select(UserSession)
+        results = session.exec(statement)
+        for us in results:
+            session.delete(us)
+        session.commit()

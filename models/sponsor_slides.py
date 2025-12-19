@@ -1,77 +1,74 @@
-from pony.orm import Optional, PrimaryKey, db_session
-from pydantic import BaseModel
+from typing import Optional, List
 
-from .base import db
+from sqlmodel import Field, SQLModel, Session, select
+
+from .base import engine
 
 
-class SponsorSlide(BaseModel):
-    id: int | None = None
-    subtitle: str = ''
-    line1: str = ''
-    line2: str = ''
-    image: str = ''
+class SponsorSlide(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    subtitle: Optional[str] = None
+    line1: Optional[str] = None
+    line2: Optional[str] = None
+    image: Optional[str] = None
     display_time_sec: int = 0
-    display_order: int = None
-
-    class Config:
-        from_attributes = True
+    display_order: Optional[int] = None
 
 
-class SponsorSlideDB(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    subtitle = Optional(str)
-    line1 = Optional(str)
-    line2 = Optional(str)
-    image = Optional(str)
-    display_time_sec = Optional(int)
-    display_order = Optional(int)
+def create_sponsor_slide(sponsor_slide: SponsorSlide) -> Optional[SponsorSlide]:
+    with Session(engine) as session:
+        if sponsor_slide.id and session.get(SponsorSlide, sponsor_slide.id):
+            return None
+        session.add(sponsor_slide)
+        session.commit()
+        session.refresh(sponsor_slide)
+        return sponsor_slide
 
 
-@db_session
-def create_sponsor_slide(sponsor_slide: SponsorSlide):
-    if SponsorSlideDB.get(id=sponsor_slide.id) is not None:
-        return None
-    sponsor_slide = SponsorSlideDB(**sponsor_slide.model_dump(exclude_none=True))
-    return SponsorSlide(**sponsor_slide.to_dict())
+def read_all_sponsor_slides() -> List[SponsorSlide]:
+    with Session(engine) as session:
+        statement = select(SponsorSlide).order_by(SponsorSlide.display_order)
+        return list(session.exec(statement).all())
 
 
-@db_session
-def read_all_sponsor_slides():
-    sponsor_slide_list = SponsorSlideDB.select().order_by(SponsorSlideDB.display_order)
-    return [SponsorSlide(**s.to_dict()) for s in sponsor_slide_list]
+def read_sponsor_slide_by_id(id: int) -> Optional[SponsorSlide]:
+    with Session(engine) as session:
+        return session.get(SponsorSlide, id)
 
 
-@db_session
-def read_sponsor_slide_by_id(id: int):
-    sponsor_slide = SponsorSlideDB.get(id=id)
-    if sponsor_slide is None:
-        return None
-    return SponsorSlide(**sponsor_slide.to_dict())
+def update_sponsor_slide(sponsor_slide: SponsorSlide) -> Optional[SponsorSlide]:
+    with Session(engine) as session:
+        sponsor_slide_db = session.get(SponsorSlide, sponsor_slide.id)
+        if not sponsor_slide_db:
+            return None
+
+        ss_dict = sponsor_slide.model_dump(exclude_unset=True)
+        for key, value in ss_dict.items():
+            setattr(sponsor_slide_db, key, value)
+
+        session.add(sponsor_slide_db)
+        session.commit()
+        session.refresh(sponsor_slide_db)
+        return sponsor_slide_db
 
 
-@db_session
-def update_sponsor_slide(sponsor_slide: SponsorSlide):
-    sponsor_slide_db = SponsorSlideDB.get(id=sponsor_slide.id)
-    if sponsor_slide_db is None:
-        return None
-    sponsor_slide_db.set(**sponsor_slide.model_dump(exclude_none=True))
-    return SponsorSlide(**sponsor_slide_db.to_dict())
-
-
-@db_session
 def delete_sponsor_slide(id: int):
-    sponsor_slide = SponsorSlideDB.get(id=id)
-    if sponsor_slide is None:
-        return None
-    sponsor_slide.delete()
+    with Session(engine) as session:
+        sponsor_slide = session.get(SponsorSlide, id)
+        if sponsor_slide:
+            session.delete(sponsor_slide)
+            session.commit()
 
 
 def truncate_sponsor_slides():
-    db.drop_table(table_name=SponsorSlideDB._table_, with_all_data=True)
-    db.create_tables()
+    with Session(engine) as session:
+        statement = select(SponsorSlide)
+        results = session.exec(statement)
+        for sponsor_slide in results:
+            session.delete(sponsor_slide)
+        session.commit()
 
 
-@db_session
 def read_next_sponsor_slide_display_order() -> int:
-    sponsor_slide_list = list(SponsorSlideDB.select().order_by(SponsorSlideDB.display_order))
-    return 1 if len(sponsor_slide_list) == 0 else sponsor_slide_list[-1].display_order + 1
+    slides = read_all_sponsor_slides()
+    return 1 if len(slides) == 0 else (slides[-1].display_order or 0) + 1

@@ -1,80 +1,106 @@
-from pony.orm import Json, Optional, PrimaryKey, Required, db_session, desc
+from typing import Optional, Dict, List
+from sqlmodel import Field, SQLModel, Session, select, JSON, Column, desc
 from pydantic import BaseModel
 
 from game.score import Score
-
-from .base import db
+from .base import engine
 from .match import MatchType
 
 
-class MatchResult(BaseModel):
-    id: int = None
-    match_id: int
-    play_number: int = 0
-    match_type: MatchType
-    red_score: Score = Score()
-    blue_score: Score = Score()
-    red_cards: dict[str, str] = {}
-    blue_cards: dict[str, str] = {}
+class MatchResult(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    match_id: Optional[int] = None
+    play_number: Optional[int] = 0
+    match_type: int
+    red_score: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    blue_score: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    red_cards: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    blue_cards: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
 
-    class Config:
-        from_attributes = True
+    def get_red_score(self) -> Score:
+        return Score(**self.red_score)
+
+    def get_blue_score(self) -> Score:
+        return Score(**self.blue_score)
 
     def red_score_summary(self):
-        return self.red_score.summarize(self.blue_score)
+        return self.get_red_score().summarize(self.get_blue_score())
 
     def blue_score_summary(self):
-        return self.blue_score.summarize(self.red_score)
+        return self.get_blue_score().summarize(self.get_red_score())
 
     def correct_playoff_score(self):
-        self.red_score.playoff_dq = (
+        # This method modifies the score objects in place, but since we store them as dicts,
+        # we need to be careful. This method seems to be used before saving or for calculation.
+        # If we want to update the stored dicts, we need to convert back.
+        
+        r_score = self.get_red_score()
+        b_score = self.get_blue_score()
+        
+        r_score.playoff_dq = (
             'red' in self.red_cards.values() or 'dq' in self.red_cards.values()
         )
-        self.blue_score.playoff_dq = (
+        b_score.playoff_dq = (
             'red' in self.blue_cards.values() or 'dq' in self.blue_cards.values()
         )
+        
+        self.red_score = r_score.model_dump()
+        self.blue_score = b_score.model_dump()
 
 
-class MatchResultDB(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    match_id = Optional(int)
-    play_number = Optional(int)
-    match_type = Required(int)
-    red_score = Optional(Json)
-    blue_score = Optional(Json)
-    red_cards = Optional(Json)
-    blue_cards = Optional(Json)
+def create_match_result(match_result: MatchResult) -> MatchResult:
+    with Session(engine) as session:
+        # Ensure dicts are dumped if they are objects (though type hint says Dict)
+        if hasattr(match_result.red_score, 'model_dump'):
+             match_result.red_score = match_result.red_score.model_dump()
+        if hasattr(match_result.blue_score, 'model_dump'):
+             match_result.blue_score = match_result.blue_score.model_dump()
+
+        session.add(match_result)
+        session.commit()
+        session.refresh(match_result)
+        return match_result
 
 
-@db_session
-def create_match_result(match_result: MatchResult):
-    return MatchResult(**MatchResultDB(**match_result.model_dump(exclude_none=True)).to_dict())
+def read_match_result_for_match(match_id: int) -> Optional[MatchResult]:
+    with Session(engine) as session:
+        statement = select(MatchResult).where(MatchResult.match_id == match_id).order_by(desc(MatchResult.play_number))
+        return session.exec(statement).first()
 
 
-@db_session
-def read_match_result_for_match(match_id: int):
-    result_list = MatchResultDB.select(match_id=match_id)
-    if len(result_list) == 0:
-        return None
+def update_match_result(match_result: MatchResult) -> Optional[MatchResult]:
+    with Session(engine) as session:
+        statement = select(MatchResult).where(
+            MatchResult.match_id == match_result.match_id, 
+            MatchResult.play_number == match_result.play_number
+        )
+        result = session.exec(statement).first()
+        
+        if not result:
+            return None
+            
+        data = match_result.model_dump(exclude_unset=True)
+        for key, value in data.items():
+            setattr(result, key, value)
+            
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+        return result
 
-    match_result = result_list.order_by(desc(MatchResultDB.play_number)).first()
-    return MatchResult(**match_result.to_dict())
 
-
-@db_session
-def update_match_result(match_result: MatchResult):
-    result = MatchResultDB.get(match_id=match_result.match_id, play_number=match_result.play_number)
-    if result is None:
-        return None
-    result.set(**match_result.model_dump(exclude_none=True))
-    return MatchResult(**result.to_dict())
-
-
-@db_session
 def delete_match_result(id: int):
-    MatchResultDB[id].delete()
+    with Session(engine) as session:
+        result = session.get(MatchResult, id)
+        if result:
+            session.delete(result)
+            session.commit()
 
 
 def truncate_match_results():
-    db.drop_table(table_name=MatchResultDB._table_, with_all_data=True)
-    db.create_tables()
+    with Session(engine) as session:
+        statement = select(MatchResult)
+        results = session.exec(statement)
+        for result in results:
+            session.delete(result)
+        session.commit()

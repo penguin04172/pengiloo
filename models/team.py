@@ -1,11 +1,9 @@
-from pony.orm import Optional, PrimaryKey, Required, db_session
-from pydantic import BaseModel
+from typing import Optional, List
+from sqlmodel import Field, SQLModel, Session, select
+from .base import engine
 
-from .base import db
-
-
-class Team(BaseModel):
-    id: int
+class Team(SQLModel, table=True):
+    id: int = Field(primary_key=True)
     name: str = ''
     nickname: str = ''
     city: str = ''
@@ -20,63 +18,49 @@ class Team(BaseModel):
     has_connected: bool = False
     fta_notes: str = ''
 
-    class Config:
-        from_attributes = True
+def read_all_teams() -> List[Team]:
+    with Session(engine) as session:
+        statement = select(Team)
+        results = session.exec(statement)
+        return list(results.all())
 
+def read_team_by_id(id: int) -> Optional[Team]:
+    with Session(engine) as session:
+        return session.get(Team, id)
 
-class TeamDB(db.Entity):
-    id = PrimaryKey(int, auto=False)
-    name = Optional(str)
-    nickname = Optional(str)
-    city = Optional(str)
-    state_prov = Optional(str)
-    country: str = Optional(str)
-    school_name = Optional(str)
-    rookie_year = Optional(int)
-    robot_name = Optional(str)
-    accomplishments = Optional(str)
-    wpakey = Optional(str)
-    yellow_card = Required(bool, default=False)
-    has_connected = Required(bool, default=False)
-    fta_notes = Optional(str)
+def create_team(team: Team) -> Optional[Team]:
+    with Session(engine) as session:
+        if session.get(Team, team.id):
+            return None
+        session.add(team)
+        session.commit()
+        session.refresh(team)
+        return team
 
+def update_team(team: Team) -> Optional[Team]:
+    with Session(engine) as session:
+        team_db = session.get(Team, team.id)
+        if not team_db:
+            return None
+        team_data = team.model_dump(exclude_unset=True)
+        for key, value in team_data.items():
+            setattr(team_db, key, value)
+        session.add(team_db)
+        session.commit()
+        session.refresh(team_db)
+        return team_db
 
-@db_session
-def read_all_teams():
-    return [Team(**t.to_dict()) for t in TeamDB.select()]
-
-
-@db_session
-def read_team_by_id(id: int):
-    team = TeamDB.get(id=id)
-    if team is None:
-        return None
-
-    return Team(**team.to_dict())
-
-
-@db_session
-def create_team(team: Team):
-    if TeamDB.get(id=team.id) is not None:
-        return None
-    team = TeamDB(**team.model_dump(exclude_none=True))
-    return Team(**team.to_dict())
-
-
-@db_session
-def update_team(team: Team):
-    team_db = TeamDB.get(id=team.id)
-    if team_db is None:
-        return None
-    team_db.set(**team.model_dump(exclude_none=True))
-    return Team(**team_db.to_dict())
-
-
-@db_session
 def delete_team(id: int):
-    TeamDB[id].delete()
-
+    with Session(engine) as session:
+        team = session.get(Team, id)
+        if team:
+            session.delete(team)
+            session.commit()
 
 def truncate_teams():
-    db.drop_table(table_name=TeamDB._table_, with_all_data=True)
-    db.create_tables()
+    with Session(engine) as session:
+        statement = select(Team)
+        results = session.exec(statement)
+        for team in results:
+            session.delete(team)
+        session.commit()

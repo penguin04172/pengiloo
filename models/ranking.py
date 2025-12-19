@@ -1,71 +1,93 @@
-from pony.orm import Optional, PrimaryKey, Required, db_session
+from typing import Optional, List
+from sqlmodel import Field, SQLModel, Session, select
+from game.ranking import RankingField
+from .base import engine
 
-from game.ranking import Ranking
-
-from .base import db
-
-
-class RankingDB(db.Entity):
-    team_id = PrimaryKey(int, auto=False)
-    rank = Optional(int)
-    previous_rank = Optional(int)
-
-    ranking_points = Required(int, default=0)
-    coopertition_points = Required(int, default=0)
-    match_points = Required(int, default=0)
-    auto_points = Required(int, default=0)
-    barge_points = Required(int, default=0)
-    rand = Required(float, default=0)
-    wins = Required(int, default=0)
-    losses = Required(int, default=0)
-    ties = Required(int, default=0)
-    disqualifications = Required(int, default=0)
-    played = Required(int, default=0)
-
-
-@db_session
-def create_ranking(ranking: Ranking):
-    if RankingDB.get(team_id=ranking.team_id) is not None:
-        return None
-    new_ranking = RankingDB(**ranking.model_dump(exclude_none=True))
-    return Ranking(**new_ranking.to_dict())
+class Ranking(RankingField, SQLModel, table=True):
+    team_id: int = Field(primary_key=True)
+    rank: Optional[int] = None
+    previous_rank: Optional[int] = None
+    
+    # Explicitly redeclare fields if needed for SQLModel to pick them up as columns correctly,
+    # but usually inheritance works. However, for clarity and to ensure they are columns:
+    ranking_points: int = Field(default=0)
+    coopertition_points: int = Field(default=0)
+    match_points: int = Field(default=0)
+    auto_points: int = Field(default=0)
+    barge_points: int = Field(default=0)
+    rand: float = Field(default=0.0)
+    wins: int = Field(default=0)
+    losses: int = Field(default=0)
+    ties: int = Field(default=0)
+    disqualifications: int = Field(default=0)
+    played: int = Field(default=0)
 
 
-@db_session
-def read_ranking_for_team(team_id: int):
-    ranking = RankingDB.get(team_id=team_id)
-    return None if ranking is None else Ranking(**ranking.to_dict())
+def create_ranking(ranking: Ranking) -> Optional[Ranking]:
+    with Session(engine) as session:
+        if session.get(Ranking, ranking.team_id):
+            return None
+        session.add(ranking)
+        session.commit()
+        session.refresh(ranking)
+        return ranking
 
 
-@db_session
-def update_ranking(ranking: Ranking):
-    ranking_data = RankingDB.get(team_id=ranking.team_id)
-    if ranking_data is None:
-        return None
-
-    ranking_data.set(**ranking.model_dump(exclude_none=True))
-    return Ranking(**ranking_data.to_dict())
+def read_ranking_for_team(team_id: int) -> Optional[Ranking]:
+    with Session(engine) as session:
+        return session.get(Ranking, team_id)
 
 
-@db_session
+def update_ranking(ranking: Ranking) -> Optional[Ranking]:
+    with Session(engine) as session:
+        ranking_data = session.get(Ranking, ranking.team_id)
+        if not ranking_data:
+            return None
+        
+        data = ranking.model_dump(exclude_unset=True)
+        for key, value in data.items():
+            setattr(ranking_data, key, value)
+            
+        session.add(ranking_data)
+        session.commit()
+        session.refresh(ranking_data)
+        return ranking_data
+
+
 def delete_ranking(team_id: int):
-    RankingDB[team_id].delete()
+    with Session(engine) as session:
+        ranking = session.get(Ranking, team_id)
+        if ranking:
+            session.delete(ranking)
+            session.commit()
 
 
 def truncate_ranking():
-    db.drop_table(RankingDB._table_, with_all_data=True)
-    db.create_tables(True)
+    with Session(engine) as session:
+        statement = select(Ranking)
+        results = session.exec(statement)
+        for ranking in results:
+            session.delete(ranking)
+        session.commit()
 
 
-@db_session
-def read_all_rankings():
-    rankings = RankingDB.select().order_by(RankingDB.rank)
+def read_all_rankings() -> List[Ranking]:
+    with Session(engine) as session:
+        statement = select(Ranking).order_by(Ranking.rank)
+        return list(session.exec(statement).all())
 
-    return [Ranking(**rank.to_dict()) for rank in rankings]
 
-
-def replace_all_rankings(rankings: list[Ranking]):
-    truncate_ranking()
-
-    for rank in rankings:
-        create_ranking(rank)
+def replace_all_rankings(rankings: List[Ranking]):
+    # This needs to be atomic ideally
+    with Session(engine) as session:
+        # Truncate
+        statement = select(Ranking)
+        results = session.exec(statement)
+        for ranking in results:
+            session.delete(ranking)
+        
+        # Insert new
+        for rank in rankings:
+            session.add(rank)
+        
+        session.commit()

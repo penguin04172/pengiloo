@@ -98,6 +98,8 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
     audience_display_mode: str = 'blank'
     saved_match: models.Match
     saved_match_result: models.MatchResult
+    ipc = None  # IPCManager instance for inter-process communication
+    running: bool = True  # Control flag for the main loop
     saved_rankings: game.Rankings
     alliance_station_display_mode: str = ''
     alliance_selection_alliances: list[models.Alliance] = []
@@ -117,8 +119,9 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         super().__init__(*args, **kwargs)
 
     @classmethod
-    async def new_arena(cls):
+    async def new_arena(cls, ipc=None):
         arena = cls()
+        arena.ipc = ipc
         arena.alliance_stations = {
             station: AllianceStation(i, arena.access_point)
             for i, station in enumerate(['R1', 'R2', 'R3', 'B1', 'B2', 'B3'])
@@ -242,6 +245,10 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         self.alliance_station_display_mode = 'match'
         await self.alliance_station_display_mode_notifier.notify()
         await self.scoring_status_notifier.notify()
+        self.broadcast_state('match_loaded', {
+            'match_id': self.current_match.id,
+            'match': self.current_match.model_dump()
+        })
 
     async def load_test_match(self):
         return await self.load_match(
@@ -453,6 +460,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
             # reset plc
             self.field_reset = False
+            self.broadcast_state('match_started', {'match_id': self.current_match.id})
 
         elif self.match_state == MatchState.WARMUP_PERIOD:
             auto = True
@@ -494,6 +502,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 enabled = False
                 send_ds_packet = True
                 await self.play_sound('end')
+                self.broadcast_state('match_ended', {'match_id': self.current_match.id})
                 # stop blackmagic
 
                 async def post_match_dwell():
@@ -532,6 +541,10 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             or self.match_state != self.last_match_state
         ):
             await self.match_time_notifier.notify()
+            self.broadcast_state('match_time', {
+                'match_time_sec': match_time_sec,
+                'match_state': self.match_state.value if hasattr(self.match_state, 'value') else self.match_state
+            })
 
         ms_since_last_ds_packet = (datetime.now() - self.last_ds_packet_time).total_seconds() * 1000
         if send_ds_packet or ms_since_last_ds_packet > DS_PACKET_PERIOD_MS:
@@ -561,6 +574,11 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
 
             while self.running:
                 loop_start_time = datetime.now()
+                
+                # Process IPC commands from Web process
+                if self.ipc:
+                    await self.process_ipc_commands()
+                
                 await self.update()
 
                 loop_run_time = int((datetime.now() - loop_start_time).total_seconds() * 1000000)
@@ -568,6 +586,41 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                     logger.warning(f'Arena loop took a long time: {loop_run_time}us')
 
                 await asyncio.sleep(ARENA_LOOP_PERIOD_MS / 1000)
+
+    async def process_ipc_commands(self):
+        """Process commands from the Web process via IPC."""
+        command = self.ipc.get_command()
+        if command is None:
+            return
+        
+        cmd = command.get('command')
+        payload = command.get('payload', {})
+        
+        try:
+            if cmd == 'load_match':
+                match = models.read_match_by_id(payload['match_id'])
+                if match:
+                    await self.load_match(match)
+            elif cmd == 'start_match':
+                await self.start_match()
+            elif cmd == 'abort_match':
+                await self.abort_match()
+            elif cmd == 'commit_scores':
+                await self.score_commit()
+            elif cmd == 'load_test_match':
+                await self.load_test_match()
+            elif cmd == 'set_audience_display':
+                self.audience_display_mode = payload.get('mode', 'blank')
+                await self.audience_display_notifier.notify()
+            else:
+                logger.warning(f'Unknown IPC command: {cmd}')
+        except Exception as e:
+            logger.error(f'Error processing IPC command {cmd}: {e}')
+
+    def broadcast_state(self, state_type: str, data: dict):
+        """Broadcast state update to Web process via IPC."""
+        if self.ipc:
+            self.ipc.broadcast_state(state_type, data)
 
     def red_score_summary(self):
         return self.red_realtime_score.current_score.summarize(

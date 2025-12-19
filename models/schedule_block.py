@@ -1,51 +1,48 @@
 from datetime import datetime
+from typing import List, Optional
 
-from pony.orm import PrimaryKey, Required, db_session
-from pydantic import BaseModel
+from sqlmodel import Field, SQLModel, Session, select
 
-from .base import db
-from .match import MatchType
+from .base import engine
 
 
-class ScheduleBlock(BaseModel):
-    id: int | None = None
-    match_type: MatchType
+class ScheduleBlock(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    match_type: int
     start_time: datetime
     num_matches: int
     match_spacing_sec: int
 
-    class Config:
-        from_attributes = True
+
+def read_schedule_blocks_by_match_type(match_type: int) -> List[ScheduleBlock]:
+    with Session(engine) as session:
+        statement = select(ScheduleBlock).where(ScheduleBlock.match_type == match_type)
+        return list(session.exec(statement).all())
 
 
-class ScheduleBlockDB(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    match_type = Required(int)
-    start_time = Required(datetime)
-    num_matches = Required(int)
-    match_spacing_sec = Required(int)
+def create_schedule_block(schedule_block: ScheduleBlock) -> Optional[ScheduleBlock]:
+    with Session(engine) as session:
+        if schedule_block.id and session.get(ScheduleBlock, schedule_block.id):
+            return None
+        session.add(schedule_block)
+        session.commit()
+        session.refresh(schedule_block)
+        return schedule_block
 
 
-@db_session
-def read_schedule_blocks_by_match_type(match_type: MatchType):
-    return [
-        ScheduleBlock(**t.to_dict()) for t in ScheduleBlockDB.select() if t.match_type == match_type
-    ]
-
-
-@db_session
-def create_schedule_block(schedule_block: ScheduleBlock):
-    if ScheduleBlockDB.get(id=schedule_block.id) is not None:
-        return None
-    schedule_block = ScheduleBlockDB(**schedule_block.model_dump(exclude_none=True))
-    return ScheduleBlock(**schedule_block.to_dict())
-
-
-@db_session
-def delete_schedule_block_by_match_type(match_type: MatchType):
-    ScheduleBlockDB.select(match_type=match_type.value).delete(bulk=True)
+def delete_schedule_block_by_match_type(match_type: int):
+    with Session(engine) as session:
+        statement = select(ScheduleBlock).where(ScheduleBlock.match_type == match_type)
+        results = session.exec(statement)
+        for sb in results:
+            session.delete(sb)
+        session.commit()
 
 
 def truncate_schedule_blocks():
-    db.drop_table(table_name=ScheduleBlockDB._table_, with_all_data=True)
-    db.create_tables()
+    with Session(engine) as session:
+        statement = select(ScheduleBlock)
+        results = session.exec(statement)
+        for sb in results:
+            session.delete(sb)
+        session.commit()

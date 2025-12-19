@@ -1,9 +1,10 @@
 from enum import IntEnum
+from typing import Optional, List
 
-from pony.orm import Optional, PrimaryKey, Required, db_session
+from sqlmodel import Field, SQLModel, Session, select
 from pydantic import BaseModel
 
-from .base import db
+from .base import engine
 
 
 class AwardType(IntEnum):
@@ -12,59 +13,67 @@ class AwardType(IntEnum):
     winner_award = 2
 
 
-class Award(BaseModel):
-    id: int | None = None
-    type: AwardType = AwardType.judged_award
-    award_name: str = ''
-    team_id: int = 0
-    person_name: str = ''
+class Award(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type: int
+    award_name: Optional[str] = None
+    team_id: Optional[int] = None
+    person_name: Optional[str] = None
 
 
-class AwardDB(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    type = Required(int)
-    award_name = Optional(str)
-    team_id = Optional(int)
-    person_name = Optional(str)
+def create_award(award: Award) -> Award:
+    with Session(engine) as session:
+        session.add(award)
+        session.commit()
+        session.refresh(award)
+        return award
 
 
-@db_session
-def create_award(award: Award):
-    return Award(**AwardDB(**award.model_dump(exclude_none=True)).to_dict())
+def read_award_by_id(id: int) -> Optional[Award]:
+    with Session(engine) as session:
+        return session.get(Award, id)
 
 
-@db_session
-def read_award_by_id(id: int):
-    award = AwardDB.get(id=id)
-    return None if award is None else Award(**award.to_dict())
+def update_award(award: Award) -> Optional[Award]:
+    with Session(engine) as session:
+        data = session.get(Award, award.id)
+        if not data:
+            return None
+        
+        award_dict = award.model_dump(exclude_unset=True)
+        for key, value in award_dict.items():
+            setattr(data, key, value)
+            
+        session.add(data)
+        session.commit()
+        session.refresh(data)
+        return data
 
 
-@db_session
-def update_award(award: Award):
-    data = AwardDB.get(id=award.id)
-    if data is None:
-        return None
-    data.set(**award.model_dump(exclude_none=True))
-    return Award(**data.to_dict())
-
-
-@db_session
 def delete_award(id: int):
-    AwardDB[id].delete()
+    with Session(engine) as session:
+        award = session.get(Award, id)
+        if award:
+            session.delete(award)
+            session.commit()
 
 
 def truncate_awards():
-    db.drop_table(AwardDB._table_, with_all_data=True)
-    db.create_tables(True)
+    with Session(engine) as session:
+        statement = select(Award)
+        results = session.exec(statement)
+        for award in results:
+            session.delete(award)
+        session.commit()
 
 
-@db_session
-def read_all_awards():
-    awards = AwardDB.select().order_by(AwardDB.id)
-    return [Award(**award.to_dict()) for award in awards]
+def read_all_awards() -> List[Award]:
+    with Session(engine) as session:
+        statement = select(Award).order_by(Award.id)
+        return list(session.exec(statement).all())
 
 
-@db_session
-def read_awards_by_type(award_type: AwardType):
-    awards = AwardDB.select(type=award_type)
-    return [Award(**award.to_dict()) for award in awards]
+def read_awards_by_type(award_type: int) -> List[Award]:
+    with Session(engine) as session:
+        statement = select(Award).where(Award.type == award_type)
+        return list(session.exec(statement).all())
