@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Matches</h2>
+    <div>
+        <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#blocksModal"
+            onclick="loadBlocks()">Manage Schedule Blocks</button>
+        <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#generateModal">Generate
+            Quals</button>
+        <button class="btn btn-danger" onclick="generatePlayoffs()">Generate Playoffs</button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="matches-table">
+        <thead>
+            <tr>
+                <th>Match</th>
+                <th>Time</th>
+                <th>Red Alliance</th>
+                <th>Blue Alliance</th>
+                <th>Status</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal fade" id="generateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Qualification Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This will delete all existing Qualification matches!</p>
+                <form id="generateForm">
+                    <div class="mb-3">
+                        <label class="form-label">Generation Mode</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="genMode" id="modeTotal" value="total"
+                                checked onchange="toggleGenMode()">
+                            <label class="form-check-label" for="modeTotal">Total Matches</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="genMode" id="modePerTeam" value="perTeam"
+                                onchange="toggleGenMode()">
+                            <label class="form-check-label" for="modePerTeam">Matches Per Team</label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="inputTotal">
+                        <label for="totalMatches" class="form-label">Total Matches</label>
+                        <input type="number" class="form-control" id="totalMatches" value="50" min="1">
+                    </div>
+                    <div class="mb-3 d-none" id="inputPerTeam">
+                        <label for="matchesPerTeam" class="form-label">Matches Per Team</label>
+                        <input type="number" class="form-control" id="matchesPerTeam" value="10" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="teamsPerAlliance" class="form-label">Teams Per Alliance</label>
+                        <input type="number" class="form-control" id="teamsPerAlliance" value="3" min="1" max="3">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="generateSchedule()">Generate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blocks Modal -->
+<div class="modal fade" id="blocksModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Schedule Blocks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table" id="blocks-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Interval (s)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <hr>
+                <h6>Add New Block</h6>
+                <form id="addBlockForm">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="blockName" placeholder="Name (e.g. Day 1 AM)"
+                                required>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="blockType">
+                                <option value="2">Qualification</option>
+                                <option value="1">Practice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="datetime-local" class="form-control" id="blockStart" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="datetime-local" class="form-control" id="blockEnd" required>
+                        </div>
+                        <div class="col-md-1">
+                            <input type="number" class="form-control" id="blockInterval" value="420" placeholder="Secs">
+                        </div>
+                    </div>
+                    <div class="mt-2 text-end">
+                        <button type="button" class="btn btn-success" onclick="addBlock()">Add Block</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleGenMode() {
+        const mode = document.querySelector('input[name="genMode"]:checked').value;
+        if (mode === 'total') {
+            document.getElementById('inputTotal').classList.remove('d-none');
+            document.getElementById('inputPerTeam').classList.add('d-none');
+        } else {
+            document.getElementById('inputTotal').classList.add('d-none');
+            document.getElementById('inputPerTeam').classList.remove('d-none');
+        }
+    }
+
+    async function loadBlocks() {
+        try {
+            const response = await fetch('/api/schedule/');
+            const blocks = await response.json();
+            const tbody = document.querySelector('#blocks-table tbody');
+            tbody.innerHTML = '';
+
+            blocks.forEach(block => {
+                const row = `
+                    <tr>
+                        <td>${block.name}</td>
+                        <td>${block.type === 2 ? 'Qualification' : 'Practice'}</td>
+                        <td>${new Date(block.start_time).toLocaleString()}</td>
+                        <td>${new Date(block.end_time).toLocaleString()}</td>
+                        <td>${block.match_interval_sec}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteBlock(${block.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Error loading blocks:', error);
+        }
+    }
+
+    async function addBlock() {
+        const name = document.getElementById('blockName').value;
+        const type = parseInt(document.getElementById('blockType').value);
+        const start = document.getElementById('blockStart').value;
+        const end = document.getElementById('blockEnd').value;
+        const interval = parseInt(document.getElementById('blockInterval').value);
+
+        if (!name || !start || !end) {
+            alert('Please fill all fields');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/schedule/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    type: type,
+                    start_time: start,
+                    end_time: end,
+                    match_interval_sec: interval
+                })
+            });
+
+            if (response.ok) {
+                loadBlocks();
+                document.getElementById('addBlockForm').reset();
+            } else {
+                alert('Failed to add block');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function deleteBlock(id) {
+        if (!confirm('Delete this block?')) return;
+        try {
+            await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
+            loadBlocks();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function generateSchedule() {
+        const mode = document.querySelector('input[name="genMode"]:checked').value;
+        const teamsPerAlliance = document.getElementById('teamsPerAlliance').value;
+
+        let payload = {
+            teams_per_alliance: parseInt(teamsPerAlliance)
+        };
+
+        if (mode === 'total') {
+            payload.total_matches = parseInt(document.getElementById('totalMatches').value);
+        } else {
+            payload.matches_per_team = parseInt(document.getElementById('matchesPerTeam').value);
+        }
+
+        if (!confirm('Are you sure? This will wipe existing qualification matches.')) return;
+
+        try {
+            const response = await fetch('/api/matches/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Schedule generated successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('generateModal')).hide();
+                loadMatches();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + err.detail);
+            }
+        } catch (error) {
+            console.error('Error generating schedule:', error);
+            alert('Failed to generate schedule');
+        }
+    }
+
+    async function generatePlayoffs() {
+        if (!confirm('Generate Playoff Bracket? This will wipe existing Playoff matches.')) return;
+        try {
+            const response = await fetch('/api/matches/generate_playoffs', { method: 'POST' });
+            if (response.ok) {
+                alert('Playoff bracket generated!');
+                loadMatches();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + err.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Failed to generate playoffs');
+        }
+    }
+
+    async function loadMatches() {
+        try {
+            const response = await fetch('/api/matches/');
+            const matches = await response.json();
+            const tbody = document.querySelector('#matches-table tbody');
+            tbody.innerHTML = '';
+
+            // Sort matches by type order then match number (assuming short_name contains number)
+            matches.sort((a, b) => a.type_order - b.type_order || a.id - b.id);
+
+            matches.forEach(match => {
+                // Format status
+                let statusBadge = '<span class="badge bg-secondary">Pending</span>';
+                if (match.status === 6 || match.status === 7 || match.status === 8) { // Won/Tie
+                    statusBadge = '<span class="badge bg-success">Complete</span>';
+                } else if (match.status === 1 || match.status === 2 || match.status === 4) { // Active
+                    statusBadge = '<span class="badge bg-primary">In Progress</span>';
+                }
+
+                const row = `
+                    <tr>
+                        <td>${match.short_name}</td>
+                        <td>${new Date(match.scheduled_time).toLocaleTimeString()}</td>
+                        <td class="table-danger">
+                            ${match.red1} ${match.red2} ${match.red3}
+                        </td>
+                        <td class="table-primary">
+                            ${match.blue1} ${match.blue2} ${match.blue3}
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            ${match.type === 3 && match.status !== 6 && match.status !== 7 ?
+                        `<div class="btn-group btn-group-sm">
+                                    <button class="btn btn-danger" onclick="setWinner(${match.id}, 6)">Red Win</button>
+                                    <button class="btn btn-primary" onclick="setWinner(${match.id}, 7)">Blue Win</button>
+                                </div>` : '-'}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Error loading matches:', error);
+        }
+    }
+
+    async function setWinner(matchId, status) {
+        if (!confirm(`Set winner for Match ${matchId}?`)) return;
+        try {
+            const res = await fetch(`/api/matches/${matchId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+            if (res.ok) {
+                loadMatches();
+            } else {
+                alert('Failed to update match');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMatches);
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">Arena Control</div>
+            <div class="card-body text-center">
+                <h2 id="arena-state" class="display-4">IDLE</h2>
+                <h1 id="arena-timer" class="display-1 fw-bold">0</h1>
+                <div class="mt-4">
+                    <button class="btn btn-success btn-lg" onclick="sendArenaCommand('START')">Start Match</button>
+                    <button class="btn btn-danger btn-lg" onclick="sendArenaCommand('ABORT')">Abort / E-Stop</button>
+                    <button class="btn btn-warning btn-lg" onclick="sendArenaCommand('RESET')">Reset Field</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">System Status</div>
+            <div class="card-body">
+                <ul class="list-group" id="status-log">
+                    <li class="list-group-item">System Initialized</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Arena specific logic
+    function updateArenaDisplay(data) {
+        if (data.type === 'arena_status') {
+            document.getElementById('arena-state').innerText = data.state;
+            document.getElementById('arena-timer').innerText = data.remaining_time;
+
+            // Update color based on state
+            const stateEl = document.getElementById('arena-state');
+            stateEl.className = 'display-4';
+            if (data.state === 'AUTO') stateEl.classList.add('text-primary');
+            else if (data.state === 'TELEOP') stateEl.classList.add('text-success');
+            else if (data.state === 'ESTOP') stateEl.classList.add('text-danger');
+        }
+    }
+
+    async function sendArenaCommand(action) {
+        try {
+            const response = await fetch(`/api/arena/${action.toLowerCase()}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            console.log(result);
+        } catch (error) {
+            console.error('Error sending command:', error);
+            alert('Failed to send command');
+        }
+    }
+
+    // Hook into the main websocket handler
+    window.addEventListener('ws-message', (e) => {
+        updateArenaDisplay(e.detail);
+    });
+</script>
+{% endblock %}

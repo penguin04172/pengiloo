@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Teams</h2>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importModal">Import CSV</button>
+        <a href="/api/teams/export" class="btn btn-secondary" target="_blank">Export CSV</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="teams-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Nickname</th>
+                <th>Location</th>
+                <th>Rookie Year</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Teams</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" accept=".csv" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="uploadTeams()">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadTeams() {
+        try {
+            const response = await fetch('/api/teams/');
+            const teams = await response.json();
+            const tbody = document.querySelector('#teams-table tbody');
+            tbody.innerHTML = '';
+
+            teams.forEach(team => {
+                const row = `
+                    <tr>
+                        <td>${team.id}</td>
+                        <td>${team.name}</td>
+                        <td>${team.nickname}</td>
+                        <td>${team.city}, ${team.state_prov}</td>
+                        <td>${team.rookie_year}</td>
+                        <td>
+                            ${team.has_connected ? '<span class="badge bg-success">Connected</span>' : '<span class="badge bg-secondary">Offline</span>'}
+                            ${team.yellow_card ? '<span class="badge bg-warning text-dark">Yellow Card</span>' : ''}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Error loading teams:', error);
+        }
+    }
+
+    async function uploadTeams() {
+        const fileInput = document.getElementById('csvFile');
+        if (!fileInput.files[0]) return;
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const response = await fetch('/api/teams/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message);
+                bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                loadTeams();
+            } else {
+                alert('Upload failed');
+            }
+        } catch (error) {
+            console.error('Error uploading:', error);
+            alert('Error uploading file');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTeams);
+</script>
+{% endblock %}

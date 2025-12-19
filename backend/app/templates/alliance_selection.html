@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <h2>Alliance Selection</h2>
+        <div>
+            <button class="btn btn-danger" onclick="initAlliances()">Initialize / Reset</button>
+            <button class="btn btn-warning" onclick="undoPick()">Undo Last Pick</button>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info" id="status-bar">
+    <h4>Current Round: <span id="current-round">-</span></h4>
+    <h3>Current Pick: <span id="current-pick" class="badge bg-primary">-</span></h3>
+</div>
+
+<div class="row">
+    <!-- Available Teams -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Available Teams</div>
+            <div class="list-group list-group-flush overflow-auto" style="max-height: 70vh;" id="available-teams">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Alliances Display -->
+    <div class="col-md-9">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3" id="alliances-container">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentStatus = null;
+
+    async function loadStatus() {
+        try {
+            const response = await fetch('/api/alliances/status');
+            const data = await response.json();
+            currentStatus = data;
+            render(data);
+        } catch (error) {
+            console.error('Error loading status:', error);
+        }
+    }
+
+    function render(data) {
+        if (data.status === "Not Initialized") {
+            document.getElementById('current-round').innerText = "Not Initialized";
+            document.getElementById('current-pick').innerText = "-";
+            document.getElementById('available-teams').innerHTML = '<div class="p-3">Please Initialize</div>';
+            document.getElementById('alliances-container').innerHTML = '';
+            return;
+        }
+
+        // Status Bar
+        document.getElementById('current-round').innerText = data.round;
+        if (data.current_alliance) {
+            document.getElementById('current-pick').innerText = `${data.current_alliance.name} (${data.current_field === 'captain_team_id' ? 'Captain' : (data.current_field === 'pick1_team_id' ? 'Pick 1' : 'Pick 2')})`;
+        } else {
+            document.getElementById('current-pick').innerText = "Selection Complete";
+        }
+
+        // Available Teams
+        const teamsList = document.getElementById('available-teams');
+        teamsList.innerHTML = '';
+        data.available_teams.forEach(team => {
+            const item = document.createElement('button');
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.innerHTML = `<strong>${team.id}</strong> <span>${team.nickname || ''}</span>`;
+            item.onclick = () => makePick(team.id);
+            teamsList.appendChild(item);
+        });
+
+        // Alliances
+        const container = document.getElementById('alliances-container');
+        container.innerHTML = '';
+        data.alliances.forEach(alliance => {
+            const isCurrent = data.current_alliance && data.current_alliance.id === alliance.id;
+            const card = document.createElement('div');
+            card.className = 'col';
+            card.innerHTML = `
+                <div class="card h-100 ${isCurrent ? 'border-primary shadow' : ''}">
+                    <div class="card-header ${isCurrent ? 'bg-primary text-white' : 'bg-light'}">
+                        ${alliance.name}
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item ${alliance.captain_team_id ? 'bg-warning-subtle' : ''}">
+                            <small>Captain:</small> <strong>${alliance.captain_team_id || '-'}</strong>
+                        </li>
+                        <li class="list-group-item ${alliance.pick1_team_id ? '' : (isCurrent && data.current_field === 'pick1_team_id' ? 'bg-info-subtle' : '')}">
+                            <small>Pick 1:</small> <strong>${alliance.pick1_team_id || '-'}</strong>
+                        </li>
+                        <li class="list-group-item ${alliance.pick2_team_id ? '' : (isCurrent && data.current_field === 'pick2_team_id' ? 'bg-info-subtle' : '')}">
+                            <small>Pick 2:</small> <strong>${alliance.pick2_team_id || '-'}</strong>
+                        </li>
+                    </ul>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function initAlliances() {
+        if (!confirm('Reset all alliances? This cannot be undone.')) return;
+        await fetch('/api/alliances/init', { method: 'POST' });
+        loadStatus();
+    }
+
+    async function makePick(teamId) {
+        if (!currentStatus.current_alliance) return;
+
+        if (!confirm(`Select Team ${teamId} for ${currentStatus.current_alliance.name}?`)) return;
+
+        try {
+            const res = await fetch(`/api/alliances/pick?team_id=${teamId}`, { method: 'POST' });
+            if (res.ok) {
+                loadStatus();
+            } else {
+                const err = await res.json();
+                alert(err.detail);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function undoPick() {
+        if (!confirm('Undo last pick?')) return;
+        await fetch('/api/alliances/undo', { method: 'POST' });
+        loadStatus();
+    }
+
+    // Auto refresh every 5s
+    setInterval(loadStatus, 5000);
+    document.addEventListener('DOMContentLoaded', loadStatus);
+</script>
+{% endblock %}
