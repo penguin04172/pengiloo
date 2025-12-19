@@ -12,7 +12,6 @@ import models
 import tournament
 
 from .api.bracket_svg import generate_bracket_svg
-from .arena import get_arena
 from .template_config import templates
 
 
@@ -40,13 +39,15 @@ async def get_csv_rankings(request: Request):
 @router.get('/pdf/rankings')
 async def get_pdf_rankings(request: Request) -> StreamingResponse:
     rankings = models.read_all_rankings()
+    event = models.read_event_settings()
 
     pdf = PDF(orientation='P', unit='mm', format='Letter')
     pdf.add_page()
 
     # 標題
     pdf.set_font('Arial', 'B', 14)
-    pdf.cell(195, 10, f'Team Standings - {get_arena().event.name}', ln=True, align='C')
+    event_name = event.name if event else 'Unknown Event'
+    pdf.cell(195, 10, f'Team Standings - {event_name}', ln=True, align='C')
     pdf.ln(5)
 
     # 表格標題
@@ -275,7 +276,8 @@ async def get_pdf_coupons(request: Request) -> StreamingResponse:
     if len(alliances) == 0:
         raise HTTPException(400, 'No alliances found in the database')
 
-    event_name = get_arena().event.name
+    event = models.read_event_settings()
+    event_name = event.name if event else 'Unknown Event'
     for page in range(0, int((len(alliances) + 3) / 4)):
         height_acc = C_TOP_MARGIN
         pdf.add_page()
@@ -358,7 +360,9 @@ async def get_pdf_schedule(requset: Request, type: str) -> StreamingResponse:
 
     pdf.set_font('Arial', 'B', 10)
     pdf.set_fill_color(220, 220, 220)
-    pdf.cell(195, 10, f'Match Schedule - {get_arena().event.name}', ln=True, align='C')
+    event = models.read_event_settings()
+    event_name = event.name if event else 'Unknown Event'
+    pdf.cell(195, 10, f'Match Schedule - {event_name}', ln=True, align='C')
 
     pdf.cell(col_widths['Time'], row_height, 'Time', border=1, align='C', fill=True)
     pdf.cell(col_widths['Match'], row_height, 'Match', border=1, align='C', fill=True)
@@ -534,7 +538,9 @@ async def get_pdf_teams(request: Request, show_has_connected: bool) -> Streaming
     pdf.set_font('Arial', 'B', 10)
     pdf.set_fill_color(220, 220, 220)
 
-    pdf.cell(195, 10, f'Team List - {get_arena().event.name}', ln=True, align='C')
+    event = models.read_event_settings()
+    event_name = event.name if event else 'Unknown Event'
+    pdf.cell(195, 10, f'Team List - {event_name}', ln=True, align='C')
     pdf.cell(col_widths['Id'], row_height, 'Id', border=1, align='C', fill=True)
     pdf.cell(col_widths['Name'], row_height, 'Name', border=1, align='C', fill=True)
     pdf.cell(col_widths['Location'], row_height, 'Location', border=1, align='C', fill=True)
@@ -615,10 +621,12 @@ async def get_csv_wpakeys(request: Request):
 async def get_pdf_alliances(request: Request) -> StreamingResponse:
     alliances = models.read_all_alliances()
 
+    # TODO: Need to get playoff_tournament state from Arena via IPC
+    # For now, we'll skip the tournament status check
     alliance_statuses = {}
-    if get_arena().playoff_tournament.is_complete():
-        alliance_statuses[get_arena().playoff_tournament.winning_alliance_id()] = 'Winner'
-        alliance_statuses[get_arena().playoff_tournament.finalist_alliance_id()] = 'Finalist'
+    # if get_arena().playoff_tournament.is_complete():
+    #     alliance_statuses[get_arena().playoff_tournament.winning_alliance_id()] = 'Winner'
+    #     alliance_statuses[get_arena().playoff_tournament.finalist_alliance_id()] = 'Finalist'
 
     def update_alliance_status(matchup):
         if matchup.is_complete():
@@ -633,7 +641,8 @@ async def get_pdf_alliances(request: Request) -> StreamingResponse:
                 if matchup.blue_alliance_id > 0:
                     alliance_statuses[matchup.blue_alliance_id] = f'Playing in {matchup.Id()}'
 
-    get_arena().playoff_tournament.traverse(update_alliance_status)
+    # TODO: Need to get playoff_tournament from Arena via IPC
+    # get_arena().playoff_tournament.traverse(update_alliance_status)
 
     teams = models.read_all_teams()
     teams_dict = {team.id: team for team in teams}
@@ -647,7 +656,8 @@ async def get_pdf_alliances(request: Request) -> StreamingResponse:
     pdf.set_font('Arial', 'B', 10)
     pdf.set_fill_color(220, 220, 220)
 
-    event_name = 'Playoff Alliances - ' + get_arena().event.name
+    event = models.read_event_settings()
+    event_name = 'Playoff Alliances - ' + (event.name if event else 'Unknown Event')
     pdf.cell(195, row_height, event_name, ln=1, align='C')
 
     pdf.cell(col_widths['Alliance'], row_height, 'Alliance', border=1, align='C', fill=True)
@@ -762,10 +772,12 @@ async def get_pdf_cycle(request: Request, type: str):
 
     pdf.set_font('Arial', 'B', 10)
     pdf.set_fill_color(220, 220, 220)
+    event = models.read_event_settings()
+    event_name = event.name if event else 'Unknown Event'
     pdf.cell(
         195,
         row_height,
-        f'{cycle_type.name.capitalize()} Cycle Time - {get_arena().event.name}',
+        f'{cycle_type.name.capitalize()} Cycle Time - {event_name}',
         ln=True,
         align='C',
     )

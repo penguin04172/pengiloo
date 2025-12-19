@@ -3,6 +3,8 @@ import logging
 from typing import Set
 from fastapi import WebSocket
 
+from web.state_manager import get_state_manager
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,11 +48,14 @@ class WebSocketManager:
         """Listen for state updates from Arena process via IPC and broadcast to WebSocket clients."""
         self.running = True
         logger.info("Starting WebSocket state listener...")
+        state_manager = get_state_manager()
         
         while self.running:
             try:
                 state_update = self.ipc.get_state_update()
                 if state_update:
+                    # Update state cache for Web process
+                    state_manager.update_state(state_update)
                     # Broadcast to all WebSocket clients
                     await self.broadcast(state_update)
                 else:
@@ -63,3 +68,4 @@ class WebSocketManager:
     def stop(self):
         """Stop the state listener."""
         self.running = False
+

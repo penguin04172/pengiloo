@@ -612,6 +612,34 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             elif cmd == 'set_audience_display':
                 self.audience_display_mode = payload.get('mode', 'blank')
                 await self.audience_display_notifier.notify()
+            elif cmd == 'set_alliance_station_display':
+                self.alliance_station_display_mode = payload.get('mode', 'match')
+                await self.alliance_station_display_mode_notifier.notify()
+            elif cmd == 'substitute_teams':
+                await self.substitute_team(
+                    payload['red1'], payload['red2'], payload['red3'],
+                    payload['blue1'], payload['blue2'], payload['blue3']
+                )
+            elif cmd == 'toggle_bypass':
+                station = payload['station']
+                if station in self.alliance_stations:
+                    self.alliance_stations[station].bypass = not self.alliance_stations[station].bypass
+                    await self.arena_status_notifier.notify()
+            elif cmd == 'signal_reset':
+                if self.match_state in [MatchState.POST_MATCH, MatchState.PRE_MATCH]:
+                    self.field_reset = True
+                    self.alliance_station_display_mode = 'fieldReset'
+                    await self.alliance_station_display_mode_notifier.notify()
+            elif cmd == 'start_timeout':
+                await self.start_timeout('Timeout', payload['duration_sec'])
+            elif cmd == 'set_test_match_name':
+                if self.current_match.type == models.MatchType.TEST:
+                    self.current_match.long_name = payload['name']
+                    await self.match_load_notifier.notify()
+            elif cmd == 'load_next_match':
+                await self.load_next_match(payload.get('start_break', True))
+            elif cmd == 'reset_match':
+                self.reset_match()
             else:
                 logger.warning(f'Unknown IPC command: {cmd}')
         except Exception as e:
