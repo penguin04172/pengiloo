@@ -7,8 +7,6 @@ class IPCManager:
     def __init__(self):
         self.command_queue: multiprocessing.Queue = multiprocessing.Queue()
         self.state_queue: multiprocessing.Queue = multiprocessing.Queue()
-        self.manager = multiprocessing.Manager()
-        self.shared_state = self.manager.dict()
 
     @classmethod
     def get_instance(cls):

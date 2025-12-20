@@ -728,6 +728,78 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
             elif cmd == 'load_settings':
                 await self.load_settings()
                 self.broadcast_full_state()
+            elif cmd == 'register_display':
+                display_config = payload.get('display_config', {})
+                ip_address = payload.get('ip_address', '')
+                if display_config:
+                    from field import DisplayConfiguration
+                    config = DisplayConfiguration(
+                        id=display_config.get('id'),
+                        type=display_config.get('type'),
+                        nickname=display_config.get('nickname'),
+                        configuration=display_config.get('configuration')
+                    )
+                    await self.register_display(config, ip_address)
+            elif cmd == 'add_foul':
+                alliance = payload.get('alliance')
+                is_major = payload.get('is_major', False)
+                if alliance in ['red', 'blue']:
+                    foul = game.Foul(is_major=is_major)
+                    if alliance == 'red':
+                        self.red_realtime_score.current_score.fouls.append(foul)
+                    else:
+                        self.blue_realtime_score.current_score.fouls.append(foul)
+                    await self.realtime_score_notifier.notify()
+                    self.broadcast_full_state()
+            elif cmd == 'update_foul':
+                alliance = payload.get('alliance')
+                foul_command = payload.get('command')
+                index = payload.get('index')
+                team_id = payload.get('team_id', 0)
+                rule_id = payload.get('rule_id', 0)
+                
+                if alliance in ['red', 'blue'] and index is not None:
+                    fouls = self.red_realtime_score.current_score.fouls if alliance == 'red' else self.blue_realtime_score.current_score.fouls
+                    if 0 <= index < len(fouls):
+                        if foul_command == 'toggle_foul_type':
+                            fouls[index].is_technical = not fouls[index].is_technical
+                            fouls[index].rule_id = 0
+                        elif foul_command == 'delete_foul':
+                            fouls.pop(index)
+                        elif foul_command == 'update_foul_rule':
+                            fouls[index].rule_id = rule_id
+                        elif foul_command == 'update_foul_team':
+                            fouls[index].team_id = team_id if fouls[index].team_id != team_id else 0
+                        await self.realtime_score_notifier.notify()
+                        self.broadcast_full_state()
+            elif cmd == 'assign_card':
+                alliance = payload.get('alliance')
+                team_id = payload.get('team_id', 0)
+                card = payload.get('card', '')
+                
+                if alliance in ['red', 'blue']:
+                    cards = self.red_realtime_score.cards if alliance == 'red' else self.blue_realtime_score.cards
+                    
+                    if self.current_match.type == models.MatchType.PLAYOFF:
+                        # Assign to all alliance members in playoff
+                        teams = [self.current_match.red1, self.current_match.red2, self.current_match.red3] if alliance == 'red' else [self.current_match.blue1, self.current_match.blue2, self.current_match.blue3]
+                        for tid in teams:
+                            cards[str(tid)] = card
+                    else:
+                        cards[str(team_id)] = card
+                    
+                    await self.alliance_station_display_mode_notifier.notify()
+                    await self.realtime_score_notifier.notify()
+                    self.broadcast_full_state()
+            elif cmd == 'commit_fouls':
+                if self.match_state == MatchState.POST_MATCH:
+                    self.red_realtime_score.fouls_commited = True
+                    self.blue_realtime_score.fouls_commited = True
+                    self.field_reset = True
+                    self.alliance_station_display_mode = 'fieldReset'
+                    await self.alliance_station_display_mode_notifier.notify()
+                    await self.scoring_status_notifier.notify()
+                    self.broadcast_full_state()
             else:
                 logger.warning(f'Unknown IPC command: {cmd}')
         except Exception as e:

@@ -12,15 +12,27 @@ from web.arena import APIArena
 from web.websocket_manager import WebSocketManager
 from ipc import IPCManager
 
-def run_arena(ipc: IPCManager):
+def run_arena(command_queue, state_queue):
+    """Arena process entry point"""
     async def _run():
         create_db_and_tables()
+        # Create IPC manager in this process with shared queues
+        ipc = IPCManager()
+        ipc.command_queue = command_queue
+        ipc.state_queue = state_queue
+        
         arena = await Arena.new_arena(ipc)
         await arena.run()
     
     asyncio.run(_run())
 
-def run_web(ipc: IPCManager):
+def run_web(command_queue, state_queue):
+    """Web process entry point"""
+    # Create IPC manager in this process with shared queues
+    ipc = IPCManager()
+    ipc.command_queue = command_queue
+    ipc.state_queue = state_queue
+    
     app = fastapi.FastAPI()
     APIArena.set_ipc(ipc)  # Initialize IPC in web process
     
@@ -54,10 +66,13 @@ def run_web(ipc: IPCManager):
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
-    ipc = IPCManager.get_instance()
     
-    arena_process = multiprocessing.Process(target=run_arena, args=(ipc,))
-    web_process = multiprocessing.Process(target=run_web, args=(ipc,))
+    # Create queues in main process - these can be pickled
+    command_queue = multiprocessing.Queue()
+    state_queue = multiprocessing.Queue()
+    
+    arena_process = multiprocessing.Process(target=run_arena, args=(command_queue, state_queue))
+    web_process = multiprocessing.Process(target=run_web, args=(command_queue, state_queue))
     
     arena_process.start()
     web_process.start()

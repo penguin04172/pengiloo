@@ -114,12 +114,3 @@ async def websocket_endpoint(websocket: WebSocket):
         pass
     finally:
         pass
-
-    except WebSocketDisconnect:
-        pass
-    finally:
-        notifiers_task.cancel()
-        try:
-            await notifiers_task
-        except asyncio.CancelledError:
-            pass

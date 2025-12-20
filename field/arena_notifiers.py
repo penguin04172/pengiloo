@@ -126,7 +126,7 @@ class ArenaNotifiersMixin:
         return displays_copy
 
     def generate_event_status_message(self):
-        return self.event_status.to_dict()
+        return self.event_status.model_dump()
 
     def generate_lower_third_message(self):
         return {
@@ -175,7 +175,7 @@ class ArenaNotifiersMixin:
                 rankings[team_id] = ranking.rank
 
         return {
-            'match': self.current_match.to_dict(),
+            'match': self.current_match.model_dump(),
             'allow_substitution': self.current_match.should_allow_substitution(),
             'is_replay': is_replay,
             'teams': teams,
@@ -257,7 +257,7 @@ class ArenaNotifiersMixin:
                 blue_rankings[ranking.team_id] = ranking.model_dump()
 
         return {
-            'match': self.saved_match.to_dict(),
+            'match': self.saved_match.model_dump(),
             'red_score_summary': red_score_summary.model_dump(),
             'blue_score_summary': blue_score_summary.model_dump(),
             'red_ranking_points': red_ranking_points,

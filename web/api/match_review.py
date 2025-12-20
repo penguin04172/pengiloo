@@ -5,7 +5,7 @@ import game
 import models
 from web import arena_state, arena_commands
 
-from .match_control import commit_match_score, get_current_match_result
+from .match_control import commit_match_score
 
 router = APIRouter(prefix='/match/review', tags=['match_review'])
 
@@ -99,7 +99,18 @@ def get_match_result_from_request(match_id: str):
         current_match = models.read_match_by_id(current_match_id) if current_match_id else None
         if current_match is None:
             raise ValueError('No current match loaded')
-        return current_match, get_current_match_result(), True
+        
+        # Build match result from current realtime score
+        realtime_score = arena_state.get_realtime_score()
+        match_result = models.MatchResult(
+            match_id=current_match.id,
+            match_type=current_match.type,
+            red_score=realtime_score.get('red', {}).get('score', 0) if realtime_score else 0,
+            blue_score=realtime_score.get('blue', {}).get('score', 0) if realtime_score else 0,
+            red_score_summary=game.ScoreSummary(),
+            blue_score_summary=game.ScoreSummary(),
+        )
+        return current_match, match_result, True
 
     match = models.read_match_by_id(int(match_id))
     if match is None:
