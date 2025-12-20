@@ -3,9 +3,9 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
-import game
-from web.arena import get_arena
+import models
 from web.template_config import templates
+from game.match_sounds import get_sounds_list
 
 router = APIRouter(prefix='/displays', tags=['displays'])
 
@@ -17,8 +17,9 @@ async def alliance_station_display(request: Request, display_id: str = '', nickn
     if path is not None:
         return RedirectResponse(path)
 
+    event = models.read_event_settings()
     return templates.TemplateResponse(
-        request, 'display_alliance_station.html.jinja', {'settings': get_arena().event}
+        request, 'display_alliance_station.html.jinja', {'settings': event}
     )
 
 
@@ -38,13 +39,91 @@ async def audience_display(request: Request, display_id: str = '', nickname: str
     if path is not None:
         return RedirectResponse(path)
 
+    event = models.read_event_settings()
+    
     return templates.TemplateResponse(
         request,
         'display_audience.html.jinja',
         {
-            'settings': get_arena().event,
-            'match_sounds': game.get_sounds(),
+            'settings': event,
+            'match_sounds': get_sounds_list(),
         },
+    )
+
+
+@router.get('/announcer')
+async def announcer_display(request: Request, display_id: str = '', nickname: str = ''):
+    """Announcer display page - redirects to API for WebSocket-based display."""
+    path = await enforce_display_configuration(request, display_id, nickname, None)
+    if path is not None:
+        return RedirectResponse(path)
+    
+    # For displays without templates, render a simple iframe to the API
+    event = models.read_event_settings()
+    return templates.TemplateResponse(
+        request,
+        'display_generic.html.jinja',
+        {'settings': event, 'api_path': '/api/displays/announcer', 'display_type': 'Announcer'}
+    )
+
+
+@router.get('/rankings')
+async def rankings_display(request: Request, display_id: str = '', nickname: str = ''):
+    """Rankings display page."""
+    path = await enforce_display_configuration(request, display_id, nickname, {'scroll_ms_per_row': '1000'})
+    if path is not None:
+        return RedirectResponse(path)
+    
+    event = models.read_event_settings()
+    return templates.TemplateResponse(
+        request,
+        'display_generic.html.jinja',
+        {'settings': event, 'api_path': '/api/displays/rankings', 'display_type': 'Rankings'}
+    )
+
+
+@router.get('/bracket')
+async def bracket_display(request: Request, display_id: str = '', nickname: str = ''):
+    """Bracket display page."""
+    path = await enforce_display_configuration(request, display_id, nickname, None)
+    if path is not None:
+        return RedirectResponse(path)
+    
+    event = models.read_event_settings()
+    return templates.TemplateResponse(
+        request,
+        'display_generic.html.jinja',
+        {'settings': event, 'api_path': '/api/displays/bracket', 'display_type': 'Bracket'}
+    )
+
+
+@router.get('/queueing')
+async def queueing_display(request: Request, display_id: str = '', nickname: str = ''):
+    """Queueing display page."""
+    path = await enforce_display_configuration(request, display_id, nickname, None)
+    if path is not None:
+        return RedirectResponse(path)
+    
+    event = models.read_event_settings()
+    return templates.TemplateResponse(
+        request,
+        'display_generic.html.jinja',
+        {'settings': event, 'api_path': '/api/displays/queueing', 'display_type': 'Queueing'}
+    )
+
+
+@router.get('/field_monitor')
+async def field_monitor_display(request: Request, display_id: str = '', nickname: str = ''):
+    """Field monitor display page."""
+    path = await enforce_display_configuration(request, display_id, nickname, None)
+    if path is not None:
+        return RedirectResponse(path)
+    
+    event = models.read_event_settings()
+    return templates.TemplateResponse(
+        request,
+        'display_generic.html.jinja',
+        {'settings': event, 'api_path': '/api/displays/field_monitor', 'display_type': 'Field Monitor'}
     )
 
 
@@ -55,7 +134,9 @@ async def enforce_display_configuration(
     configuration = dict[str, str]()
 
     if display_id == '':
-        display_id = get_arena().next_display_id()
+        # Generate a simple display ID based on timestamp
+        import time
+        display_id = str(int(time.time() * 1000))
         all_present = False
 
     if nickname != '':

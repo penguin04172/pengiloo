@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request
 
 import models
-from web.arena import get_arena
 from web.template_config import templates
 
 router = APIRouter(prefix='/match', tags=['matchPage'])
@@ -19,7 +18,6 @@ async def get_result(request: Request):
 
 @router.get('/control')
 async def get_control(request: Request):
-    from web.arena import APIArena
     # In multiprocessing mode, read event from database
     event = models.read_event_settings()
     return templates.TemplateResponse(

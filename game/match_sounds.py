@@ -27,6 +27,23 @@ def get_sounds() -> MatchSounds | None:
     return MatchSounds.get_instance()
 
 
+def get_sounds_list() -> list[dict[str, str]]:
+    """
+    Get a static list of match sounds for web pages.
+    This function doesn't require Arena initialization.
+    
+    **修改聲音列表請在這裡編輯**
+    """
+    return [
+        {'name': 'start', 'file_extension': 'wav'},
+        {'name': 'end', 'file_extension': 'wav'},
+        {'name': 'resume', 'file_extension': 'wav'},
+        {'name': 'warning_sonar', 'file_extension': 'wav'},
+        {'name': 'abort', 'file_extension': 'wav'},
+        {'name': 'match_result', 'file_extension': 'wav'},
+    ]
+
+
 def update_match_sounds():
     MatchSounds.set_instance(
         [

@@ -1,11 +1,20 @@
 import asyncio
+import json
 import logging
-from typing import Set, Dict, List
+from datetime import datetime
+from typing import Set, Dict, List, Any
 from fastapi import WebSocket
 
 from web.state_manager import get_state_manager
 
 logger = logging.getLogger(__name__)
+
+
+def json_serializer(obj: Any) -> str:
+    """Custom JSON serializer for objects not serializable by default json code."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 class WebSocketManager:
@@ -57,10 +66,13 @@ class WebSocketManager:
         if not self.active_connections:
             return
 
+        # Serialize with custom encoder for datetime handling
+        json_str = json.dumps(message, default=json_serializer)
+        
         disconnected = set()
         for connection in self.active_connections:
             try:
-                await connection.send_json(message)
+                await connection.send_text(json_str)
             except Exception as e:
                 logger.error(f"Error sending to WebSocket: {e}")
                 disconnected.add(connection)
@@ -84,10 +96,13 @@ class WebSocketManager:
         if not subscribers:
             return
         
+        # Serialize with custom encoder for datetime handling
+        json_str = json.dumps(message, default=json_serializer)
+        
         disconnected = set()
         for connection in subscribers:
             try:
-                await connection.send_json(message)
+                await connection.send_text(json_str)
             except Exception as e:
                 logger.error(f"Error sending {message_type} to WebSocket: {e}")
                 disconnected.add(connection)

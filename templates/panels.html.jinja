@@ -1,0 +1,59 @@
+{% extends "base.html.jinja" %}
+
+{% block title %}Panels{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Scoring Panels</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3>Red Alliance Scoring Panel</h3>
+                </div>
+                <div class="card-body">
+                    <p>Click below to open the Red alliance scoring panel:</p>
+                    <a href="/api/panels/scoring/red" target="_blank" class="btn btn-danger btn-lg">
+                        <i class="bi bi-window"></i> Open Red Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>Blue Alliance Scoring Panel</h3>
+                </div>
+                <div class="card-body">
+                    <p>Click below to open the Blue alliance scoring panel:</p>
+                    <a href="/api/panels/scoring/blue" target="_blank" class="btn btn-primary btn-lg">
+                        <i class="bi bi-window"></i> Open Blue Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h3>Referee Panel</h3>
+                </div>
+                <div class="card-body">
+                    <p>Click below to open the referee panel for managing fouls:</p>
+                    <a href="/api/panels/referee" target="_blank" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-window"></i> Open Referee Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <strong>Note:</strong> These panels should be opened on dedicated devices (tablets, laptops) for match scoring and refereeing.
+    </div>
+</div>
+{% endblock %}

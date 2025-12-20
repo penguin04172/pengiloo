@@ -1,0 +1,29 @@
+{% extends "base.html.jinja" %}
+
+{% block title %}{{ display_type }} Display{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    #display-frame {
+        width: 100vw;
+        height: 100vh;
+        border: none;
+    }
+</style>
+
+<iframe id="display-frame" src="{{ api_path }}{{ request.url.query }}"></iframe>
+
+<script>
+    // Prevent iframe navigation issues
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'redirect') {
+            window.location.href = event.data.path;
+        }
+    });
+</script>
+{% endblock %}
