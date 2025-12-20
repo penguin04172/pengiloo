@@ -161,3 +161,115 @@ def stop_alliance_selection_timer():
     """Stop alliance selection timer."""
     APIArena.send_command('stop_alliance_selection_timer', {})
 
+
+def register_scoring_panel(alliance: str, panel_id: str = None):
+    """
+    Register a scoring panel for an alliance.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        panel_id: Unique panel identifier (optional)
+    """
+    if panel_id is None:
+        panel_id = f"panel_{alliance}"
+    APIArena.send_command('register_scoring_panel', {'alliance': alliance, 'panel_id': panel_id})
+
+
+def unregister_scoring_panel(alliance: str, panel_id: str = None):
+    """
+    Unregister a scoring panel for an alliance.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        panel_id: Unique panel identifier (optional)
+    """
+    if panel_id is None:
+        panel_id = f"panel_{alliance}"
+    APIArena.send_command('unregister_scoring_panel', {'alliance': alliance, 'panel_id': panel_id})
+
+
+def commit_panel_score(alliance: str, panel_id: str = None):
+    """
+    Commit score from a scoring panel.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        panel_id: Unique panel identifier (optional)
+    """
+    if panel_id is None:
+        panel_id = f"panel_{alliance}"
+    APIArena.send_command('commit_panel_score', {'alliance': alliance, 'panel_id': panel_id})
+
+
+def update_scoring(alliance: str, command: str, position: int = None, level: int = None, 
+                   action: str = None, state = None):
+    """
+    Update score for an alliance.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        command: Scoring command type (leave, cage, endgame, etc.)
+        position: Position index for multi-position elements
+        level: Level index for multi-level elements
+        action: Action type ('plus', 'minus', etc.)
+        state: New state value
+    """
+    APIArena.send_command('update_scoring', {
+        'alliance': alliance,
+        'command': command,
+        'position': position,
+        'level': level,
+        'action': action,
+        'state': state
+    })
+
+
+def play_sound(sound_name: str):
+    """
+    Play a sound through the Arena.
+    
+    Args:
+        sound_name: Name of the sound to play
+    """
+    APIArena.send_command('play_sound', {'sound_name': sound_name})
+
+
+def update_display(display_config: dict):
+    """
+    Update display configuration.
+    
+    Args:
+        display_config: Display configuration dictionary with id, type, nickname, configuration
+    """
+    APIArena.send_command('update_display', {'display_config': display_config})
+
+
+def reload_displays(display_id: str = None):
+    """
+    Reload displays. If display_id is provided, only that display is reloaded.
+    
+    Args:
+        display_id: Optional specific display ID to reload
+    """
+    APIArena.send_command('reload_displays', {'display_id': display_id})
+
+
+def show_lower_third(lower_third: dict):
+    """
+    Show a lower third on audience displays.
+    
+    Args:
+        lower_third: Lower third data dictionary
+    """
+    APIArena.send_command('show_lower_third', {'lower_third': lower_third})
+
+
+def hide_lower_third():
+    """Hide the currently displayed lower third."""
+    APIArena.send_command('hide_lower_third', {})
+
+
+def load_settings():
+    """Reload Arena settings from database."""
+    APIArena.send_command('load_settings', {})
+

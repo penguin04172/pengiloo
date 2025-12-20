@@ -4,7 +4,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 import ws
 from field import DisplayConfiguration, DisplayType, display_type_names
-from web.arena import get_arena
+from web import arena_commands
 
 router = APIRouter(prefix='/setup/displays', tags=['displays'])
 
@@ -18,10 +18,6 @@ async def get_display_type() -> dict[DisplayType, str]:
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    notifiers_task = asyncio.create_task(
-        ws.handle_notifiers(websocket, get_arena().display_configuration_notifier)
-    )
-
     try:
         while True:
             data = await websocket.receive_json()
@@ -34,18 +30,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 type = data['data']['type']
                 nickname = data['data']['nickname']
                 configuration = data['data']['configuration']
-                await get_arena().update_display(
-                    DisplayConfiguration(
-                        id=id, type=type, nickname=nickname, configuration=configuration
-                    )
-                )
+                
+                display_config = {
+                    'id': id,
+                    'type': type,
+                    'nickname': nickname,
+                    'configuration': configuration
+                }
+                arena_commands.update_display(display_config)
 
             elif message_type == 'reload_display':
                 display_id = data['data']['display_id']
-                await get_arena().reload_displays_notifier.notify_with_message(display_id)
+                arena_commands.reload_displays(display_id)
 
             elif message_type == 'reload_all_displays':
-                await get_arena().reload_displays_notifier.notify()
+                arena_commands.reload_displays()
 
             else:
                 await websocket.send_json(
@@ -56,8 +55,4 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
-        notifiers_task.cancel()
-        try:
-            await notifiers_task
-        except asyncio.CancelledError:
-            pass
+        pass

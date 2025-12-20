@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import models
-from web.arena import get_arena
+from web import arena_state
 
 router = APIRouter(prefix='/setup/teams', tags=['teams'])
 
@@ -83,7 +83,10 @@ async def update_team(team_number: int, new_team: models.Team) -> models.Team | 
     team.rookie_year = new_team.rookie_year
     team.robot_name = new_team.robot_name
     team.accomplishments = new_team.accomplishments
-    if get_arena().event.network_security_enabled:
+    
+    event_name = arena_state.get_event_name()
+    event = models.read_event_settings()
+    if event and event.network_security_enabled:
         team.wpakey = new_team.wpakey
         if len(team.wpakey) < 8 or len(team.wpakey) > 63:
             raise HTTPException(

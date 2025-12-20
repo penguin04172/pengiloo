@@ -677,6 +677,57 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 self.alliance_selection_time_remaining_sec = 0
                 await self.alliance_selection_notifier.notify()
                 self.broadcast_full_state()
+            elif cmd == 'register_scoring_panel':
+                alliance = payload['alliance']
+                panel_id = payload.get('panel_id', f"panel_{alliance}")
+                self.scoring_panel_registry.register_panel(alliance, panel_id)
+                await self.scoring_status_notifier.notify()
+            elif cmd == 'unregister_scoring_panel':
+                alliance = payload['alliance']
+                panel_id = payload.get('panel_id', f"panel_{alliance}")
+                self.scoring_panel_registry.unregister_panel(alliance, panel_id)
+                await self.scoring_status_notifier.notify()
+            elif cmd == 'commit_panel_score':
+                alliance = payload['alliance']
+                panel_id = payload.get('panel_id', f"panel_{alliance}")
+                self.scoring_panel_registry.set_score_commited(alliance, panel_id)
+                await self.scoring_status_notifier.notify()
+            elif cmd == 'update_scoring':
+                await self.process_scoring_command(payload)
+            elif cmd == 'play_sound':
+                sound_name = payload.get('sound_name', '')
+                await self.play_sound(sound_name)
+            elif cmd == 'update_display':
+                display_config = payload.get('display_config', {})
+                if display_config:
+                    from field import DisplayConfiguration
+                    config = DisplayConfiguration(
+                        id=display_config.get('id'),
+                        type=display_config.get('type'),
+                        nickname=display_config.get('nickname'),
+                        configuration=display_config.get('configuration')
+                    )
+                    await self.update_display(config)
+            elif cmd == 'reload_displays':
+                display_id = payload.get('display_id')
+                if display_id:
+                    await self.reload_displays_notifier.notify_with_message(display_id)
+                else:
+                    await self.reload_displays_notifier.notify()
+            elif cmd == 'show_lower_third':
+                lower_third_data = payload.get('lower_third', {})
+                if lower_third_data:
+                    self.lower_third = models.LowerThird(**lower_third_data)
+                    self.show_lower_third = True
+                    await self.lower_third_notifier.notify()
+                    self.broadcast_full_state()
+            elif cmd == 'hide_lower_third':
+                self.show_lower_third = False
+                await self.lower_third_notifier.notify()
+                self.broadcast_full_state()
+            elif cmd == 'load_settings':
+                await self.load_settings()
+                self.broadcast_full_state()
             else:
                 logger.warning(f'Unknown IPC command: {cmd}')
         except Exception as e:
@@ -686,6 +737,166 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
         """Broadcast state update to Web process via IPC."""
         if self.ipc:
             self.ipc.broadcast_state(state_type, data)
+    
+    async def process_scoring_command(self, payload: dict):
+        """Process scoring commands from Web process."""
+        alliance = payload['alliance']
+        command = payload['command']
+        position = payload.get('position')
+        level = payload.get('level')
+        action = payload.get('action')
+        state = payload.get('state')
+        
+        # Get the correct realtime score
+        realtime_score = self.red_realtime_score if alliance == 'red' else self.blue_realtime_score
+        opponent_score = self.blue_realtime_score if alliance == 'red' else self.red_realtime_score
+        score = realtime_score.current_score
+        opponent = opponent_score.current_score
+        score_changed = False
+        
+        try:
+            if command == 'leave':
+                if position is not None and 0 <= position <= 2:
+                    score_changed, score.leave_statuses[position] = self._set_goal(
+                        score.leave_statuses[position], state
+                    )
+            
+            elif command == 'cage':
+                if position is not None and 0 <= position <= 2:
+                    if game.CageStatus(score.cage_statuses[position]) == max(game.CageStatus):
+                        score.cage_statuses[position] = min(game.CageStatus)
+                    else:
+                        score.cage_statuses[position] = game.CageStatus(
+                            score.cage_statuses[position].value + 1
+                        )
+                    score_changed = True
+            
+            elif command == 'endgame':
+                if position is not None and 0 <= position <= 2:
+                    score_changed, score.endgame_statuses[position] = self._set_goal(
+                        score.endgame_statuses[position], game.EndgameStatus(state)
+                    )
+            
+            elif command == 'trough_auto':
+                if action == 'plus':
+                    score_changed, score.score_elements.auto_trough_coral = self._increment_goal(
+                        score.score_elements.auto_trough_coral
+                    )
+                    _, score.score_elements.total_trough_coral = self._increment_goal(
+                        score.score_elements.total_trough_coral
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.auto_trough_coral = self._decrement_goal(
+                        score.score_elements.auto_trough_coral
+                    )
+                    _, score.score_elements.total_trough_coral = self._decrement_goal(
+                        score.score_elements.total_trough_coral
+                    )
+            
+            elif command == 'trough_total':
+                if action == 'plus':
+                    score_changed, score.score_elements.total_trough_coral = self._increment_goal(
+                        score.score_elements.total_trough_coral
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.total_trough_coral = self._decrement_goal(
+                        score.score_elements.total_trough_coral
+                    )
+            
+            elif command == 'processor_auto':
+                if action == 'plus':
+                    score_changed, score.score_elements.auto_processor_algae = self._increment_goal(
+                        score.score_elements.auto_processor_algae
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.auto_processor_algae = self._decrement_goal(
+                        score.score_elements.auto_processor_algae
+                    )
+            
+            elif command == 'processor_teleop':
+                if action == 'plus':
+                    score_changed, score.score_elements.teleop_processor_algae = self._increment_goal(
+                        score.score_elements.teleop_processor_algae
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.teleop_processor_algae = self._decrement_goal(
+                        score.score_elements.teleop_processor_algae
+                    )
+            
+            elif command == 'net_auto':
+                if action == 'plus':
+                    score_changed, score.score_elements.auto_net_algae = self._increment_goal(
+                        score.score_elements.auto_net_algae
+                    )
+                    _, score.score_elements.total_net_algae = self._increment_goal(
+                        score.score_elements.total_net_algae
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.auto_net_algae = self._decrement_goal(
+                        score.score_elements.auto_net_algae
+                    )
+                    _, score.score_elements.total_net_algae = self._decrement_goal(
+                        score.score_elements.total_net_algae
+                    )
+            
+            elif command == 'net_total':
+                if action == 'plus':
+                    score_changed, score.score_elements.total_net_algae = self._increment_goal(
+                        score.score_elements.total_net_algae
+                    )
+                elif action == 'minus':
+                    score_changed, score.score_elements.total_net_algae = self._decrement_goal(
+                        score.score_elements.total_net_algae
+                    )
+            
+            elif command == 'branches_auto':
+                if (position is not None and level is not None and 
+                    0 <= position < game.BranchLocation.COUNT and 
+                    0 <= level < game.BranchLevel.COUNT):
+                    score_changed, score.score_elements.branches_auto[position][level] = self._set_goal(
+                        score.score_elements.branches_auto[position][level], state
+                    )
+                    _, score.score_elements.branches[position][level] = self._set_goal(
+                        score.score_elements.branches[position][level], state
+                    )
+            
+            elif command == 'branches':
+                if (position is not None and level is not None and 
+                    0 <= position < game.BranchLocation.COUNT and 
+                    0 <= level < game.BranchLevel.COUNT):
+                    score_changed, score.score_elements.branches[position][level] = self._set_goal(
+                        score.score_elements.branches[position][level], state
+                    )
+            
+            elif command == 'branches_algaes':
+                if position is not None and level is not None and 0 <= position < 6 and 0 <= level < 2:
+                    score_changed, score.score_elements.branch_algaes[position][level] = self._set_goal(
+                        score.score_elements.branch_algaes[position][level], state
+                    )
+            
+            if score_changed:
+                await asyncio.to_thread(score.summarize, opponent)
+                await self.realtime_score_notifier.notify()
+                self.broadcast_full_state()
+        
+        except Exception as e:
+            logger.error(f'Error processing scoring command {command}: {e}')
+    
+    def _increment_goal(self, goal):
+        """Helper to increment a goal value."""
+        return True, goal + 1
+    
+    def _decrement_goal(self, goal):
+        """Helper to decrement a goal value."""
+        if goal > 0:
+            return True, goal - 1
+        return False, goal
+    
+    def _set_goal(self, goal, value):
+        """Helper to set a goal value."""
+        if goal != value:
+            return True, value
+        return False, goal
     
     def broadcast_full_state(self):
         """Broadcast complete Arena state to Web process."""

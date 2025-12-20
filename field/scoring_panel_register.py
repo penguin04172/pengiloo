@@ -1,8 +1,9 @@
+from typing import Union
 from fastapi import WebSocket
 
 
 class ScoringPanelRegister:
-    scoring_panels: dict[str, dict[WebSocket, bool]]
+    scoring_panels: dict[str, dict[Union[WebSocket, str], bool]]
 
     def __init__(self):
         self.scoring_panels = {'red': {}, 'blue': {}}
@@ -18,11 +19,13 @@ class ScoringPanelRegister:
     def get_num_score_commited(self, alliance: str):
         return sum(self.scoring_panels[alliance].values())
 
-    def register_panel(self, alliance: str, panel: WebSocket):
+    def register_panel(self, alliance: str, panel: Union[WebSocket, str]):
         self.scoring_panels[alliance][panel] = False
 
-    def set_score_commited(self, alliance: str, panel: WebSocket):
-        self.scoring_panels[alliance][panel] = True
+    def set_score_commited(self, alliance: str, panel: Union[WebSocket, str]):
+        if panel in self.scoring_panels[alliance]:
+            self.scoring_panels[alliance][panel] = True
 
-    def unregister_panel(self, alliance: str, panel: WebSocket):
-        del self.scoring_panels[alliance][panel]
+    def unregister_panel(self, alliance: str, panel: Union[WebSocket, str]):
+        if panel in self.scoring_panels[alliance]:
+            del self.scoring_panels[alliance][panel]
