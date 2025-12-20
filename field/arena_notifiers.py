@@ -1,8 +1,14 @@
+"""Arena message generation methods.
+
+This module contains methods for generating WebSocket messages that are broadcast
+by ArenaBroadcaster. These methods are used by the Arena to prepare state updates
+for the Web process.
+"""
+
 from pydantic import BaseModel
 
 import game
 import models
-from ws.notifier import Notifier
 
 from .display import Display
 from .realtime_score import RealtimeScore
@@ -20,10 +26,11 @@ class AudienceAllianceScoreFields(BaseModel):
 
 
 class ArenaNotifiersMixin:
-    # DEPRECATED: These notifier attributes are no longer used.
-    # The Arena now uses ArenaBroadcaster instead of individual notifiers.
-    # These type hints are kept for backward compatibility but are not initialized.
-    # TODO: Remove in next major version after confirming no external dependencies.
+    """Mixin providing message generation methods for Arena state broadcasting.
+    
+    These methods generate message payloads that are broadcast via ArenaBroadcaster
+    to the Web process, which then forwards them to connected WebSocket clients.
+    """
 
     @staticmethod
     def get_audience_alliance_score_fields(
@@ -47,9 +54,7 @@ class ArenaNotifiersMixin:
         return rules
 
     def __init__(self, *args, **kwargs):
-        # DEPRECATED: Notifier initialization has been removed.
-        # The Arena now uses ArenaBroadcaster for all state updates.
-        # Message generation methods below are still used by the broadcaster.
+        """Initialize the mixin."""
         super().__init__(*args, **kwargs)
 
     def generate_alliance_selection_message(self):
