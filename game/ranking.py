@@ -48,12 +48,11 @@ class RankingField(BaseModel):
 
 
 class Ranking(RankingField):
+    model_config = {'from_attributes': True}
+    
     team_id: int
     rank: int = 0
     previous_rank: int = 0
-
-    class Config:
-        from_attributes = True
 
     def __lt__(self, other: 'Ranking'):
         if self.ranking_points * other.played == other.ranking_points * self.played:

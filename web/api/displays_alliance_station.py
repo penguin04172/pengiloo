@@ -16,22 +16,3 @@ async def alliance_station_display(request: Request, display_id: str = '', nickn
         return {'status': 'redirect', 'path': path}
     return {'status': 'success'}
 
-
-@router.websocket('/websocket')
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        display = await register_display(websocket)
-    except ValueError as e:
-        await websocket.send_text(str(e))
-        await websocket.close()
-        return
-
-    # State updates are handled by main /ws/arena WebSocket
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        pass
-    finally:
-        pass

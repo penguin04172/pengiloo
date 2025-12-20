@@ -10,28 +10,3 @@ router = APIRouter(prefix='/setup/field_testing', tags=['field_testing'])
 async def get_field_testing() -> list[game.MatchSound]:
     return game.get_sounds()
 
-
-@router.websocket('/websocket')
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if 'type' not in data:
-                continue
-            message_type = data['type']
-
-            if message_type == 'play_sound':
-                sound = data['data']
-                arena_commands.play_sound(sound)
-
-            else:
-                await websocket.send_json(
-                    {'type': 'error', 'data': {'message': f'Invalid data type{message_type}'}}
-                )
-                continue
-    except WebSocketDisconnect:
-        pass
-    finally:
-        pass

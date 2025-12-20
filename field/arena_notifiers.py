@@ -20,21 +20,10 @@ class AudienceAllianceScoreFields(BaseModel):
 
 
 class ArenaNotifiersMixin:
-    alliance_selection_notifier: Notifier
-    alliance_station_display_mode_notifier: Notifier
-    arena_status_notifier: Notifier
-    audience_display_mode_notifier: Notifier
-    display_configuration_notifier: Notifier
-    event_status_notifier: Notifier
-    lower_third_notifier: Notifier
-    match_load_notifier: Notifier
-    match_time_notifier: Notifier
-    match_timing_notifier: Notifier
-    play_sound_notifier: Notifier
-    realtime_score_notifier: Notifier
-    reload_displays_notifier: Notifier
-    score_posted_notifier: Notifier
-    scoring_status_notifier: Notifier
+    # DEPRECATED: These notifier attributes are no longer used.
+    # The Arena now uses ArenaBroadcaster instead of individual notifiers.
+    # These type hints are kept for backward compatibility but are not initialized.
+    # TODO: Remove in next major version after confirming no external dependencies.
 
     @staticmethod
     def get_audience_alliance_score_fields(
@@ -58,33 +47,9 @@ class ArenaNotifiersMixin:
         return rules
 
     def __init__(self, *args, **kwargs):
-        self.alliance_selection_notifier = Notifier(
-            'alliance_selection', self.generate_alliance_selection_message
-        )
-        self.alliance_station_display_mode_notifier = Notifier(
-            'alliance_station_display_mode', self.generate_alliance_station_display_mode_message
-        )
-        self.arena_status_notifier = Notifier('arena_status', self.generate_arena_status_message)
-        self.audience_display_mode_notifier = Notifier(
-            'audience_display_mode', self.generate_audience_display_mode_message
-        )
-        self.display_configuration_notifier = Notifier(
-            'display_configuration', self.generate_display_configuration_message
-        )
-        self.event_status_notifier = Notifier('event_status', self.generate_event_status_message)
-        self.lower_third_notifier = Notifier('lower_third', self.generate_lower_third_message)
-        self.match_load_notifier = Notifier('match_load', self.generate_match_load_message)
-        self.match_time_notifier = Notifier('match_time', self.generate_match_time_message)
-        self.match_timing_notifier = Notifier('match_timing', self.generate_match_timing_message)
-        self.play_sound_notifier = Notifier('play_sound', None)
-        self.realtime_score_notifier = Notifier(
-            'realtime_score', self.generate_realtime_score_message
-        )
-        self.reload_displays_notifier = Notifier('reload_displays', None)
-        self.score_posted_notifier = Notifier('score_posted', self.generate_score_posted_message)
-        self.scoring_status_notifier = Notifier(
-            'scoring_status', self.generate_scoring_status_message
-        )
+        # DEPRECATED: Notifier initialization has been removed.
+        # The Arena now uses ArenaBroadcaster for all state updates.
+        # Message generation methods below are still used by the broadcaster.
         super().__init__(*args, **kwargs)
 
     def generate_alliance_selection_message(self):

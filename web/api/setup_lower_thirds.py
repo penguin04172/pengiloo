@@ -15,66 +15,6 @@ async def get_lower_thirds() -> list[models.LowerThird]:
     return lower_thirds
 
 
-@router.websocket('/websocket')
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if 'type' not in data:
-                continue
-            message_type = data['type']
-
-            if message_type == 'save_lower_third':
-                lower_third = models.LowerThird(**data['data'])
-                save_lower_third(lower_third)
-
-            elif message_type == 'delete_lower_third':
-                lower_third = models.LowerThird(**data['data'])
-                models.delete_lower_third(lower_third.id)
-
-            elif message_type == 'show_lower_third':
-                lower_third = models.LowerThird(**data['data'])
-                save_lower_third(lower_third)
-                arena_commands.show_lower_third(lower_third.model_dump())
-                continue
-
-            elif message_type == 'hide_lower_third':
-                lower_third = models.LowerThird(**data['data'])
-                save_lower_third(lower_third)
-                arena_commands.hide_lower_third()
-                continue
-
-            elif message_type == 'reorder_lower_third':
-                id = data['data']['id']
-                move_up = data['data']['move_up']
-
-                try:
-                    reorder_lower_third(id, move_up)
-                except ValueError as e:
-                    await websocket.send_json({'type': 'error', 'data': {'message': str(e)}})
-                    continue
-
-            elif message_type == 'set_audience_display':
-                mode = str(data['data'])
-                arena_commands.set_audience_display(mode)
-
-            else:
-                await websocket.send_json(
-                    {'type': 'error', 'data': {'message': f'Invalid data type{message_type}'}}
-                )
-                continue
-
-            # Notify displays to reload after any change
-            arena_commands.reload_displays()
-
-    except WebSocketDisconnect:
-        pass
-    finally:
-        pass
-
-
 def save_lower_third(lower_third: models.LowerThird):
     old_lower_third = models.read_lower_third_by_id(lower_third.id)
     if old_lower_third is None:

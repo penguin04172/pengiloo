@@ -11,12 +11,6 @@ TEST_DB_PATH = Path(__file__).parent / "test_pengiloo.db"
 
 
 @pytest.fixture(scope="session")
-def event_loop_policy():
-    """Use the same event loop policy for all tests."""
-    return asyncio.get_event_loop_policy()
-
-
-@pytest.fixture(scope="session")
 def test_db_path():
     """Provide test database path."""
     return TEST_DB_PATH
