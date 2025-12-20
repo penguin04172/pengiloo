@@ -68,13 +68,13 @@ class EventStatusMixin:
 
         self.event_status.last_match_start_time = match_start_time
         self.event_status.last_match_scheduled_start_time = self.current_match.scheduled_time
-        await self.event_status_notifier.notify()
+        self.broadcaster.notify_event_status()
 
     async def update_early_late_message(self):
         new_early_late_message = self.get_early_late_message()
         if new_early_late_message != self.event_status.early_late_message:
             self.event_status.early_late_message = new_early_late_message
-            await self.event_status_notifier.notify()
+            self.broadcaster.notify_event_status()
 
     def get_early_late_message(self):
         current_match = self.current_match

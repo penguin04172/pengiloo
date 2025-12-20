@@ -124,7 +124,7 @@ function handleRealtimeScore (data) {
 let urlParams = new URLSearchParams(window.location.search);
 station = urlParams.get('station');
 
-websocket = new wsHandler("/api/displays/alliance_station/websocket" + window.location.search, {
+websocket = new wsHandler("/ws/displays/alliance_station" + window.location.search, {
     alliance_station_display_mode: (e) => { handleAllianceStationDisplayMode(e.data) },
     arena_status: (e) => { handleArenaStatus(e.data) },
     match_load: (e) => { handleMatchLoad(e.data) },

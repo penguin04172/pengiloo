@@ -19,6 +19,6 @@ const playSound = (soundName) => {
 getData('/api/setup/field_testing')
 .then(data => renewMatchSounds(data))
 
-let websocket = new wsHandler('/api/setup/field_testing/websocket', {
+let websocket = new wsHandler('/ws/setup/field_testing', {
 
 })

@@ -388,7 +388,7 @@ const formatPlayoffAllianceInfo = (allianceNumber, offFieldTeams) => {
 const tooltipTriggerList = $$('[data-bs-toggle="tooltip"]');
 const tooltipList = [...tooltipTriggerList].map(element => new bootstrap.Tooltip(element));
 websocket = new wsHandler(
-    '/api/match/control/websocket', {
+    '/ws/match_control', {
         alliance_station_display_mode: (e) => { handleAllianceStationDisplayMode(e.data) },
         arena_status: (e) => { handleArenaStatus(e.data) },
         audience_display_mode: (e) => { handleAudienceDisplayMode(e.data) },

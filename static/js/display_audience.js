@@ -778,7 +778,7 @@ $(function() {
   }
 
   // Set up the websocket back to the server.
-  websocket = new wsHandler("/api/displays/audience/websocket", {
+  websocket = new wsHandler("/ws/displays/audience", {
     alliance_selection: function(event) { handleAllianceSelection(event.data); },
     audience_display_mode: function(event) { handleAudienceDisplayMode(event.data); },
     lower_third: function(event) { handleLowerThird(event.data); },

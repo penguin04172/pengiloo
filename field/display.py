@@ -1,8 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
 
-from ws.notifier import Notifier
-
 MIN_DISPLAY_ID = 100
 DISPLAY_PURGE_TTL_MIN = 30
 
@@ -85,7 +83,6 @@ class Display:
     display_configuration: DisplayConfiguration
     ip_address: str
     connection_count: int = 0
-    notifier: Notifier = None
     last_connected_time: datetime
 
     def __init__(
@@ -143,18 +140,15 @@ class DisplayMixin:
                     ip_address=ip_address,
                     last_connected_time=datetime.now(),
                 )
-                display.notifier = Notifier(
-                    'display', display.generate_display_cononfiguration_message
-                )
                 self.displays[config.id] = display
 
             display.display_configuration = config
             display.ip_address = ip_address
             display.connection_count += 1
             display.last_connected_time = datetime.now()
-            await display.notifier.notify()
+            self.broadcaster.notify_display_configuration()
 
-        await self.display_configuration_notifier.notify()
+        self.broadcaster.notify_display_configuration()
         return display
 
     async def update_display(self, config: DisplayConfiguration):
@@ -164,8 +158,7 @@ class DisplayMixin:
 
         if vars(display.display_configuration) != vars(config):
             display.display_configuration = config
-            await display.notifier.notify()
-            await self.display_configuration_notifier.notify()
+            self.broadcaster.notify_display_configuration()
 
     async def mark_display_disconnect(self, display_id: str):
         display = self.displays.get(display_id)
@@ -181,7 +174,7 @@ class DisplayMixin:
                 display.connection_count -= 1
 
             display.last_connected_time = datetime.now()
-            await self.display_configuration_notifier.notify()
+            self.broadcaster.notify_display_configuration()
 
     async def purge_disconnected_displays(self):
         deleted = False
@@ -196,7 +189,7 @@ class DisplayMixin:
                 deleted = True
 
         if deleted:
-            await self.display_configuration_notifier.notify()
+            self.broadcaster.notify_display_configuration()
 
 
 def display_from_url(path: str, query: dict[str, list[str]]):

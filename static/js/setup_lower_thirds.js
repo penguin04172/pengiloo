@@ -92,7 +92,7 @@ const handleAudienceDisplayMode = function (data) {
     $(`input[name=audienceDisplay][value=${data.data}]`).checked = true;
 }
 
-let websocket = new wsHandler('/api/setup/lower_thirds/websocket', {
+let websocket = new wsHandler('/ws/setup/lower_thirds', {
     audience_display_mode: handleAudienceDisplayMode,
 })
 

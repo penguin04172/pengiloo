@@ -72,6 +72,6 @@ function handleDisplayConfiguration(data) {
 }
 
 let displayTypeNames = getData('/api/setup/displays').then(data => data);
-let websocket = new wsHandler("/api/setup/displays/websocket", {
+let websocket = new wsHandler("/ws/setup/displays", {
     display_configuration: (e) => handleDisplayConfiguration(e.data)
 })
