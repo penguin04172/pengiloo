@@ -34,6 +34,8 @@ def create_ranking(ranking: Ranking) -> Optional[Ranking]:
 
 
 def read_ranking_for_team(team_id: int) -> Optional[Ranking]:
+    if not team_id:
+        return None
     with Session(engine) as session:
         return session.get(Ranking, team_id)
 

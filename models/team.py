@@ -25,6 +25,8 @@ def read_all_teams() -> List[Team]:
         return list(results.all())
 
 def read_team_by_id(id: int) -> Optional[Team]:
+    if not id:
+        return None
     with Session(engine) as session:
         return session.get(Team, id)
 

@@ -987,7 +987,7 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 'audience_display_mode': self.audience_display_mode,
                 'alliance_station_display_mode': self.alliance_station_display_mode,
                 'event_name': self.event.name if self.event else 'Unknown Event',
-                'event_code': self.event.code if self.event else '',
+                'event_code': self.event.tba_event_code if self.event and self.event.tba_event_code else '',
             }
             
             # Alliance stations status
