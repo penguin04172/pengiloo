@@ -37,7 +37,7 @@ def create_team(team: Team) -> Optional[Team]:
         session.add(team)
         session.commit()
         session.refresh(team)
-        return team
+    return team
 
 def update_team(team: Team) -> Optional[Team]:
     with Session(engine) as session:

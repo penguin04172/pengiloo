@@ -28,7 +28,7 @@ class Match(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     type: int
     type_order: int
-    scheduled_time: datetime
+    scheduled_time: datetime = Field(default_factory=datetime.now)
     long_name: Optional[str] = None
     short_name: Optional[str] = None
     name_detail: Optional[str] = None
@@ -108,12 +108,14 @@ def update_match(match_data: Match) -> Optional[Match]:
         session.refresh(target)
         return target
 
-def delete_match(id: int):
+def delete_match(id: int) -> bool:
     with Session(engine) as session:
         match = session.get(Match, id)
         if match:
             session.delete(match)
             session.commit()
+            return True
+        return False
 
 def truncate_matches():
     with Session(engine) as session:

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+import models
 from web.arena import get_arena
 from web.template_config import templates
 
@@ -18,8 +19,11 @@ async def get_result(request: Request):
 
 @router.get('/control')
 async def get_control(request: Request):
+    from web.arena import APIArena
+    # In multiprocessing mode, read event from database
+    event = models.read_event_settings()
     return templates.TemplateResponse(
         request,
         'match_control.html.jinja',
-        {'settings': get_arena().event, 'plc_is_enabled': False, 'plc_armor_block_statuses': {}},
+        {'settings': event, 'plc_is_enabled': False, 'plc_armor_block_statuses': {}},
     )
