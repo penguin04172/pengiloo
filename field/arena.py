@@ -647,6 +647,36 @@ class Arena(DisplayMixin, EventStatusMixin, DriverStationConnectionMixin, ArenaN
                 await self.load_next_match(payload.get('start_break', True))
             elif cmd == 'reset_match':
                 self.reset_match()
+            elif cmd == 'update_alliance_selection':
+                # Update alliance selection data
+                self.alliance_selection_alliances = [
+                    models.Alliance(**a) for a in payload['alliances']
+                ]
+                self.alliance_selection_ranked_teams = [
+                    models.AllianceSelectionRankedTeam(**t) for t in payload['ranked_teams']
+                ]
+                await self.alliance_selection_notifier.notify()
+                self.broadcast_full_state()
+            elif cmd == 'reset_alliance_selection':
+                self.alliance_selection_alliances = []
+                self.alliance_selection_ranked_teams = []
+                await self.alliance_selection_notifier.notify()
+                self.broadcast_full_state()
+            elif cmd == 'create_playoff_matches':
+                from datetime import datetime
+                start_time = datetime.fromisoformat(payload['start_time'])
+                self.create_playoff_matches(start_time)
+            elif cmd == 'start_alliance_selection_timer':
+                if not self.alliance_selection_show_timer:
+                    self.alliance_selection_show_timer = True
+                    self.alliance_selection_time_remaining_sec = payload['time_limit_sec']
+                    await self.alliance_selection_notifier.notify()
+                    self.broadcast_full_state()
+            elif cmd == 'stop_alliance_selection_timer':
+                self.alliance_selection_show_timer = False
+                self.alliance_selection_time_remaining_sec = 0
+                await self.alliance_selection_notifier.notify()
+                self.broadcast_full_state()
             else:
                 logger.warning(f'Unknown IPC command: {cmd}')
         except Exception as e:

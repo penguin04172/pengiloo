@@ -116,3 +116,48 @@ def load_next_match(start_break: bool = True):
 def reset_match():
     """Reset the current match state."""
     APIArena.send_command('reset_match')
+
+
+def update_alliance_selection(alliances: list, ranked_teams: list):
+    """
+    Update alliance selection data in Arena.
+    
+    Args:
+        alliances: List of alliance dictionaries
+        ranked_teams: List of ranked team dictionaries
+    """
+    APIArena.send_command('update_alliance_selection', {
+        'alliances': alliances,
+        'ranked_teams': ranked_teams
+    })
+
+
+def reset_alliance_selection():
+    """Reset alliance selection to initial state."""
+    APIArena.send_command('reset_alliance_selection', {})
+
+
+def create_playoff_matches(start_time: str):
+    """
+    Create playoff matches.
+    
+    Args:
+        start_time: ISO format datetime string
+    """
+    APIArena.send_command('create_playoff_matches', {'start_time': start_time})
+
+
+def start_alliance_selection_timer(time_limit_sec: int):
+    """
+    Start alliance selection timer.
+    
+    Args:
+        time_limit_sec: Timer duration in seconds
+    """
+    APIArena.send_command('start_alliance_selection_timer', {'time_limit_sec': time_limit_sec})
+
+
+def stop_alliance_selection_timer():
+    """Stop alliance selection timer."""
+    APIArena.send_command('stop_alliance_selection_timer', {})
+
