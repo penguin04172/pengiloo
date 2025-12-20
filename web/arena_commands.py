@@ -273,3 +273,72 @@ def load_settings():
     """Reload Arena settings from database."""
     APIArena.send_command('load_settings', {})
 
+
+def register_display(display_config: dict, ip_address: str):
+    """
+    Register a display with the Arena.
+    
+    Args:
+        display_config: Display configuration dictionary
+        ip_address: IP address of the display
+    """
+    APIArena.send_command('register_display', {
+        'display_config': display_config,
+        'ip_address': ip_address
+    })
+
+
+def add_foul(alliance: str, is_major: bool):
+    """
+    Add a foul to an alliance.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        is_major: True for major foul, False for minor
+    """
+    APIArena.send_command('add_foul', {
+        'alliance': alliance,
+        'is_major': is_major
+    })
+
+
+def update_foul(alliance: str, command: str, index: int, team_id: int = 0, rule_id: int = 0):
+    """
+    Update a foul (toggle type, update team, update rule, or delete).
+    
+    Args:
+        alliance: 'red' or 'blue'
+        command: 'toggle_foul_type', 'update_foul_team', 'update_foul_rule', 'delete_foul'
+        index: Index of the foul to modify
+        team_id: Team ID for update_foul_team command
+        rule_id: Rule ID for update_foul_rule command
+    """
+    APIArena.send_command('update_foul', {
+        'alliance': alliance,
+        'command': command,
+        'index': index,
+        'team_id': team_id,
+        'rule_id': rule_id
+    })
+
+
+def assign_card(alliance: str, team_id: int, card: str):
+    """
+    Assign a card (yellow/red) to a team or alliance.
+    
+    Args:
+        alliance: 'red' or 'blue'
+        team_id: Team ID to assign card to
+        card: Card type ('yellow', 'red', or empty string to clear)
+    """
+    APIArena.send_command('assign_card', {
+        'alliance': alliance,
+        'team_id': team_id,
+        'card': card
+    })
+
+
+def commit_fouls():
+    """Commit fouls for the current match (marks fouls as committed)."""
+    APIArena.send_command('commit_fouls', {})
+

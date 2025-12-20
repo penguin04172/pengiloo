@@ -1,7 +1,7 @@
 from fastapi import Request, WebSocket
 
 import field
-from web.arena import get_arena
+from web import arena_commands, arena_state
 
 
 async def enforce_display_configuration(
@@ -11,7 +11,10 @@ async def enforce_display_configuration(
     configuration = dict[str, str]()
 
     if display_id == '':
-        display_id = get_arena().next_display_id()
+        # Get next display ID from state
+        state = arena_state.get_full_state()
+        next_id = state.get('next_display_id', 100)
+        display_id = str(next_id)
         all_present = False
 
     if nickname != '':
@@ -46,4 +49,11 @@ async def register_display(websocket: WebSocket) -> field.Display:
     if ip_address == '':
         ip_address = websocket.client.host
 
-    return await get_arena().register_display(display_configuration, ip_address)
+    # Send register command to Arena via IPC
+    arena_commands.register_display(display_configuration.model_dump(), ip_address)
+    
+    # Return a basic Display object (actual registration happens in Arena)
+    return field.Display(
+        display_configuration=display_configuration,
+        ip_address=ip_address
+    )

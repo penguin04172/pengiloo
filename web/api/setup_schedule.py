@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 import models
 import tournament
-from web.arena import get_arena
 
 router = APIRouter(prefix='/setup/schedule', tags=['schedule'])
 

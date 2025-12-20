@@ -3,7 +3,7 @@ import asyncio
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
 import ws
-from web.arena import get_arena
+from web import arena_state
 
 from .display_util import enforce_display_configuration, register_display
 
@@ -20,12 +20,26 @@ async def announcer_display(request: Request, display_id: str = '', nickname='')
 
 @router.get('/match_load')
 async def announcer_match_load() -> dict:
-    return get_arena().generate_match_load_message()
+    # Return match load information from cached state
+    match_name = arena_state.get_match_name()
+    match_type = arena_state.get_match_type()
+    return {
+        'match_name': match_name,
+        'match_type': match_type.value if match_type else 'test',
+        'state': arena_state.get_match_state().value if arena_state.get_match_state() else 'PRE_MATCH'
+    }
 
 
 @router.get('/score_posted')
 async def announcer_score_posted() -> dict:
-    return get_arena().generate_score_posted_message()
+    # Return score posted information from cached state
+    red_score = arena_state.get_red_score()
+    blue_score = arena_state.get_blue_score()
+    return {
+        'red_score': red_score,
+        'blue_score': blue_score,
+        'match_name': arena_state.get_match_name()
+    }
 
 
 @router.websocket('/websocket')
@@ -38,30 +52,11 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    notifiers_task = asyncio.create_task(
-        ws.handle_notifiers(
-            websocket,
-            display.notifier,
-            get_arena().match_timing_notifier,
-            get_arena().audience_display_mode_notifier,
-            get_arena().event_status_notifier,
-            get_arena().match_load_notifier,
-            get_arena().match_time_notifier,
-            get_arena().realtime_score_notifier,
-            get_arena().score_posted_notifier,
-            get_arena().reload_displays_notifier,
-        )
-    )
-
+    # State updates are handled by main /ws/arena WebSocket
     try:
-        await websocket.receive_text()
+        while True:
+            await websocket.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
-        notifiers_task.cancel()
-        try:
-            await notifiers_task
-        except asyncio.CancelledError:
-            pass
-
-        await get_arena().mark_display_disconnect(display.display_configuration.id)
+        pass

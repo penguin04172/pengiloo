@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 import game
 import models
-from web.arena import get_arena
+from web import arena_state, arena_commands
 
 from .match_control import commit_match_score, get_current_match_result
 
@@ -38,7 +38,7 @@ async def get_match_review() -> MatchReviewResponse:
         models.MatchType.QUALIFICATION: qualification_matches,
         models.MatchType.PLAYOFF: playoff_matches,
     }
-    current_match_type = get_arena().current_match.type
+    current_match_type = arena_state.get_match_type()
     if current_match_type == models.MatchType.TEST:
         current_match_type = models.MatchType.PRACTICE
 
@@ -80,12 +80,13 @@ async def post_match_review_edit(match_id: str, match_result: models.MatchResult
         )
 
     if is_current:
-        get_arena().red_realtime_score.current_score = match_result.red_score
-        get_arena().blue_realtime_score.current_score = match_result.blue_score
-        get_arena().red_realtime_score.cards = match_result.red_cards
-        get_arena().blue_realtime_score.cards = match_result.blue_cards
-
-        return {'status': 'success'}
+        # Update current match scores via IPC
+        # Note: This is a simplified approach - may need a dedicated command
+        # For now, we'll skip live editing as it requires special handling
+        raise HTTPException(
+            status_code=400, 
+            detail='Live match score editing not supported in IPC mode. Please edit after match completion.'
+        )
     else:
         commit_match_score(match, match_result, True)
 
@@ -94,7 +95,11 @@ async def post_match_review_edit(match_id: str, match_result: models.MatchResult
 
 def get_match_result_from_request(match_id: str):
     if match_id == 'current':
-        return get_arena().current_match, get_current_match_result(), True
+        current_match_id = arena_state.get_match_id()
+        current_match = models.read_match_by_id(current_match_id) if current_match_id else None
+        if current_match is None:
+            raise ValueError('No current match loaded')
+        return current_match, get_current_match_result(), True
 
     match = models.read_match_by_id(int(match_id))
     if match is None:

@@ -3,7 +3,6 @@ import asyncio
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
 import ws
-from web.arena import get_arena
 
 from .display_util import enforce_display_configuration, register_display
 
@@ -28,23 +27,11 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    notifiers_task = asyncio.create_task(
-        ws.handle_notifiers(
-            websocket,
-            display.notifier,
-            get_arena().reload_displays_notifier,
-        )
-    )
-
+    # State updates are handled by main /ws/arena WebSocket
     try:
-        await websocket.receive_text()
+        while True:
+            await websocket.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
-        notifiers_task.cancel()
-        try:
-            await notifiers_task
-        except asyncio.CancelledError:
-            pass
-
-        await get_arena().mark_display_disconnect(display.display_configuration.id)
+        pass

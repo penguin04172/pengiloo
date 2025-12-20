@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 import game
 import models
-from web.arena import get_arena
+from web import arena_state
 
 router = APIRouter(prefix='/match/logs', tags=['match_logs'])
 
@@ -71,7 +71,7 @@ async def get_match_logs() -> MatchLogsResponse:
         models.MatchType.QUALIFICATION: qualification_matches,
         models.MatchType.PLAYOFF: playoff_matches,
     }
-    current_match_type = get_arena().current_match.type
+    current_match_type = arena_state.get_match_type()
     if current_match_type == models.MatchType.TEST:
         current_match_type = models.MatchType.PRACTICE
 
